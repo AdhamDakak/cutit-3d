@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Lustre — Cairo beauty, booked beautifully',
+  title: 'Cutit — Cairo beauty, booked beautifully',
   description: 'Discover Cairo\'s best salons and barbershops, curated for your next signature look.',
   generator: 'v0.app',
   icons: {

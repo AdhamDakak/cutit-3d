@@ -417,7 +417,7 @@ export default function Page() {
               <div className={`grid size-9 place-items-center rounded-xl ${darkMode ? 'bg-zinc-800' : 'bg-stone-900'} ${darkMode ? 'text-zinc-300' : 'text-white'}`}>
                 <Scissors aria-hidden="true" className="size-4" />
               </div>
-              <span className={`font-serif text-xl font-semibold tracking-tight ${textClass}`}>Lustre</span>
+              <span className={`font-serif text-xl font-semibold tracking-tight ${textClass}`}>Cutit</span>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode" className={`grid size-9 place-items-center rounded-full ${darkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-yellow-400' : 'text-stone-500 hover:bg-stone-200/60'}`}>
