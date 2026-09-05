@@ -16,7 +16,6 @@ import {
   Moon,
   RotateCcw,
   Search,
-  Scissors,
   SlidersHorizontal,
   Sparkles,
   Star,
@@ -414,9 +413,6 @@ export default function Page() {
         <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className={`grid size-9 place-items-center rounded-xl ${darkMode ? 'bg-zinc-800' : 'bg-stone-900'} ${darkMode ? 'text-zinc-300' : 'text-white'}`}>
-                <Scissors aria-hidden="true" className="size-4" />
-              </div>
               <span className={`font-serif text-xl font-semibold tracking-tight ${textClass}`}>Cutit</span>
             </div>
             <div className="flex items-center gap-1">
