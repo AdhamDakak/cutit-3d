@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Lustre — Cairo beauty, booked beautifully',
+  description: 'Discover Cairo\'s best salons and barbershops, curated for your next signature look.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -26,11 +26,9 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
+  colorScheme: 'light',
+  userScalable: false,
+  themeColor: '#f7f5f1',
 }
 
 export default function RootLayout({
