@@ -159,6 +159,7 @@
   }
   html {
     background: #f7f5f1;
+    color-scheme: light;
   }
   body {
     @apply bg-background text-foreground;
