@@ -413,7 +413,7 @@ export default function Page() {
         <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img src="/cutit-logo.svg" alt="Cutit" className={`h-9 w-[72px] rounded-lg object-contain ${darkMode ? 'bg-zinc-950 invert' : 'bg-[#f7f5f1]'}`} />
+              <img src="/cutit-logo.svg" alt="Cutit" className={`h-11 w-[88px] rounded-lg object-contain ${darkMode ? 'bg-zinc-950 invert' : 'bg-[#f7f5f1]'}`} />
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode" className={`grid size-9 place-items-center rounded-full ${darkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-yellow-400' : 'text-stone-500 hover:bg-stone-200/60'}`}>
