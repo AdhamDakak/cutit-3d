@@ -412,8 +412,8 @@ export default function Page() {
       <div className={`mx-auto min-h-screen max-w-2xl ${bgClass} pb-24 ${!darkMode ? 'shadow-[0_0_60px_rgba(62,48,35,0.06)]' : ''}`}>
         <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className={`font-serif text-xl font-semibold tracking-tight ${textClass}`}>Cutit</span>
+            <div className="flex items-center">
+              <img src="/cutit-logo.svg" alt="Cutit" className={`h-9 w-[72px] object-contain ${darkMode ? 'invert' : ''}`} />
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode" className={`grid size-9 place-items-center rounded-full ${darkMode ? 'bg-zinc-800 hover:bg-zinc-700 text-yellow-400' : 'text-stone-500 hover:bg-stone-200/60'}`}>
