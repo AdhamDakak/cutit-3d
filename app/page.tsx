@@ -6,6 +6,10 @@ import {
   ArrowLeft,
   Bell,
   CalendarDays,
+  CalendarX2,
+  CheckCircle2,
+  ChevronLeft,
+  CircleAlert,
   ChevronRight,
   Cake,
   CreditCard,
@@ -29,6 +33,7 @@ import {
   Moon,
   Pencil,
   Phone,
+  PhoneCall,
   Plus,
   RotateCcw,
   Search,
@@ -458,6 +463,24 @@ function ProfileScreen({ darkMode, textClass, mutedClass, cardClass, onToggleDar
   </section>
 }
 
+function BookingsScreen({ darkMode, textClass, mutedClass, onExplore }: { darkMode: boolean; textClass: string; mutedClass: string; onExplore: () => void }) {
+  const [tab, setTab] = useState<'Upcoming' | 'Past History'>('Upcoming')
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [rating, setRating] = useState(0)
+  const card = `rounded-2xl border ${darkMode ? 'border-zinc-800 bg-zinc-900' : 'border-stone-200 bg-white'} shadow-sm`
+  const upcoming = { name: 'The Grooming Society', district: 'New Cairo', image: establishments[0].image, stylist: 'Kareem', service: 'Haircut & Beard', total: 350, mode: 'In-Salon' }
+  const past = { name: 'Luma Beauty House', district: 'Zamalek', image: establishments[1].image, date: 'June 14, 2024', total: 650 }
+  return <section className="pb-6">
+    <header className={`sticky top-0 z-20 border-b px-5 py-4 backdrop-blur-md ${darkMode ? 'border-zinc-800 bg-zinc-950/90' : 'border-stone-200 bg-[#f7f5f1]/90'}`}><div className="flex items-center justify-between"><div><p className={`text-[11px] font-medium uppercase tracking-[0.18em] ${mutedClass}`}>Your visits</p><h1 className={`mt-1 font-serif text-2xl font-semibold ${textClass}`}>My Bookings</h1></div><button aria-label="Notifications" className={`relative grid size-10 place-items-center rounded-full border ${darkMode ? 'border-zinc-700 bg-zinc-900' : 'border-stone-200 bg-white'}`}><Bell className={`size-4 ${textClass}`} /><span className="absolute right-2 top-2 size-1.5 rounded-full bg-blue-600" /></button></div><div className={`mt-5 flex rounded-xl p-1 ${darkMode ? 'bg-zinc-900' : 'bg-stone-200/70'}`}>{(['Upcoming', 'Past History'] as const).map((item) => <button key={item} onClick={() => setTab(item)} className={`flex-1 rounded-lg py-2.5 text-sm font-semibold ${tab === item ? (darkMode ? 'bg-zinc-800 text-white' : 'bg-white text-stone-900 shadow-sm') : mutedClass}`}>{item}</button>)}</div></header>
+    <div className="flex flex-col gap-4 px-5 pt-5">{tab === 'Upcoming' ? <>
+      <div className={`flex items-center gap-3 rounded-2xl px-4 py-4 ${darkMode ? 'bg-blue-950/50 text-blue-100' : 'bg-blue-50 text-blue-900'}`}><div className="grid size-10 place-items-center rounded-xl bg-blue-600 text-white"><Clock3 className="size-5" /></div><div><p className="text-sm font-semibold">Your appointment is in 1 hour and 45 minutes</p><p className="mt-1 text-xs opacity-70">Today, 4:30 PM · Please arrive 10 minutes early</p></div></div>
+      <article className={`${card} overflow-hidden`}><div className="flex gap-3 p-4"><img src={upcoming.image} alt="The Grooming Society" className="size-16 rounded-xl object-cover" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h2 className={`truncate text-sm font-semibold ${textClass}`}>{upcoming.name}</h2><span className={`mt-1 inline-flex rounded-full px-2 py-1 text-[10px] ${darkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-stone-100 text-stone-600'}`}>{upcoming.district}</span></div><span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">Confirmed</span></div></div></div><div className={`mx-4 flex items-center gap-3 border-y py-3 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}><div className="grid size-9 place-items-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700">KA</div><div className="flex-1"><p className={`text-sm font-medium ${textClass}`}>{upcoming.stylist} <span className={mutedClass}>(Master Barber)</span></p><p className={`mt-1 text-xs ${mutedClass}`}>{upcoming.service} · EGP {upcoming.total}</p></div></div><div className="flex items-center justify-between px-4 py-3"><span className={`flex items-center gap-1.5 text-xs font-medium ${textClass}`}><CalendarDays className="size-3.5" />Today, 4:30 PM</span><span className={`rounded-full px-2 py-1 text-[10px] font-medium ${darkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-stone-100 text-stone-600'}`}>In-Salon</span></div><div className={`grid grid-cols-2 gap-2 border-t p-4 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}><button className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-semibold ${darkMode ? 'border-zinc-700 text-zinc-200' : 'border-stone-200 text-stone-700'}`}><PhoneCall className="size-3.5" />Call Venue</button><button className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-xs font-semibold text-white"><MessageCircle className="size-3.5" />WhatsApp Support</button><button className={`col-span-2 flex items-center justify-center gap-1.5 py-1 text-xs font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}><MapPin className="size-3.5" />Get Directions <span className={`mx-1 ${mutedClass}`}>·</span><span className={mutedClass}>Reschedule / Cancel</span></button></div></article>
+    </> : <>
+      <article className={`${card} overflow-hidden`}><div className="flex gap-3 p-4"><img src={past.image} alt="Luma Beauty House" className="size-16 rounded-xl object-cover" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h2 className={`truncate text-sm font-semibold ${textClass}`}>{past.name}</h2><p className={`mt-1 text-xs ${mutedClass}`}>{past.district} · {past.date}</p></div><span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">Completed</span></div><p className={`mt-3 text-sm font-semibold ${textClass}`}>Total paid · EGP {past.total}</p></div></div><div className={`grid grid-cols-2 gap-2 border-t p-4 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}><button onClick={onExplore} className="rounded-xl bg-stone-900 py-2.5 text-xs font-semibold text-white">Rebook in 1-Tap</button><button onClick={() => setReviewOpen(true)} className={`rounded-xl border py-2.5 text-xs font-semibold ${darkMode ? 'border-zinc-700 text-zinc-200' : 'border-stone-200 text-stone-700'}`}>Leave a Review</button></div></article><article className={`${card} overflow-hidden`}><div className="flex gap-3 p-4"><div className="grid size-16 place-items-center rounded-xl ${darkMode ? 'bg-zinc-800' : 'bg-stone-100'}"><CalendarX2 className={`size-6 ${mutedClass}`} /></div><div><h2 className={`text-sm font-semibold ${textClass}`}>Maven Studio</h2><p className={`mt-1 text-xs ${mutedClass}`}>Maadi · May 02, 2024</p><span className="mt-3 inline-flex rounded-full bg-stone-200 px-2 py-1 text-[10px] font-semibold text-stone-600">Cancelled</span></div></div></article></>}
+    </div>{reviewOpen && <div className="fixed inset-0 z-50 grid place-items-end bg-black/40 p-4"><div className={`w-full max-w-2xl rounded-2xl p-5 ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}><div className="flex items-center justify-between"><h2 className={`font-serif text-xl font-semibold ${textClass}`}>How was your visit?</h2><button onClick={() => setReviewOpen(false)} aria-label="Close review"><X className={mutedClass} /></button></div><p className={`mt-1 text-sm ${mutedClass}`}>Luma Beauty House</p><div className="flex justify-center gap-2 py-6">{[1,2,3,4,5].map((item) => <button key={item} onClick={() => setRating(item)} aria-label={`${item} stars`}><Star className={`size-8 ${item <= rating ? 'fill-amber-400 text-amber-400' : mutedClass}`} /></button>)}</div><button onClick={() => setReviewOpen(false)} disabled={!rating} className="w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white disabled:opacity-40">Submit Review</button></div></div>}
+  </section>
+}
+
 export default function Page() {
   const [activeGender, setActiveGender] = useState<'For Her' | 'For Him'>('For Her')
   const [service, setService] = useState('All services')
@@ -502,7 +525,7 @@ export default function Page() {
   return (
     <main className={`min-h-screen ${bgClass}`}>
       <div className={`mx-auto min-h-screen max-w-2xl ${bgClass} pb-24 ${!darkMode ? 'shadow-[0_0_60px_rgba(62,48,35,0.06)]' : ''}`}>
-        {activeTab !== 'Profile' && <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
+        {activeTab !== 'Profile' && activeTab !== 'Bookings' && <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img src="/cutit-logo.svg" alt="Cutit" className={`h-11 w-[88px] rounded-lg object-contain ${darkMode ? 'bg-zinc-950 invert' : 'bg-[#f7f5f1]'}`} />
@@ -534,8 +557,9 @@ export default function Page() {
 
         {activeTab === 'Home' && <><ServiceShortcuts darkMode={darkMode} /><RecommendationFeed establishments={establishments} darkMode={darkMode} onBook={setSelectedEstablishment} signedIn={isSignedIn} gender={activeGender} /></>}
         {activeTab === 'Explore' && <ExploreMap establishments={filtered} darkMode={darkMode} onViewShop={setSelectedEstablishment} />}
+        {activeTab === 'Bookings' && <BookingsScreen darkMode={darkMode} textClass={textClass} mutedClass={mutedClass} onExplore={() => setActiveTab('Explore')} />}
 
-        {activeTab !== 'Profile' && <>
+        {activeTab !== 'Profile' && activeTab !== 'Bookings' && <>
         <section className="px-5 pt-7">
           <p className={`text-sm font-medium ${mutedClass}`}>Good afternoon, Amira</p>
           <h1 className={`mt-1 max-w-sm font-serif text-3xl font-semibold leading-tight tracking-tight ${textClass}`}>
