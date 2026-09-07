@@ -502,7 +502,7 @@ export default function Page() {
   return (
     <main className={`min-h-screen ${bgClass}`}>
       <div className={`mx-auto min-h-screen max-w-2xl ${bgClass} pb-24 ${!darkMode ? 'shadow-[0_0_60px_rgba(62,48,35,0.06)]' : ''}`}>
-        <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
+        {activeTab !== 'Profile' && <header className={`sticky top-0 z-20 border-b ${headerBgClass} px-5 py-4 backdrop-blur-md`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img src="/cutit-logo.svg" alt="Cutit" className={`h-11 w-[88px] rounded-lg object-contain ${darkMode ? 'bg-zinc-950 invert' : 'bg-[#f7f5f1]'}`} />
@@ -530,7 +530,7 @@ export default function Page() {
             </div>
             <button onClick={() => setIsSignedIn(!isSignedIn)} aria-label="Toggle signed in recommendation profile" className={`grid size-10 place-items-center rounded-full border ${darkMode ? 'border-zinc-700 bg-zinc-800' : 'border-stone-200 bg-white'} text-sm font-semibold ${textClass}`}>{isSignedIn ? 'AN' : 'G'}</button>
           </div>
-        </header>
+        </header>}
 
         {activeTab === 'Home' && <><ServiceShortcuts darkMode={darkMode} /><RecommendationFeed establishments={establishments} darkMode={darkMode} onBook={setSelectedEstablishment} signedIn={isSignedIn} gender={activeGender} /></>}
         {activeTab === 'Explore' && <ExploreMap establishments={filtered} darkMode={darkMode} onViewShop={setSelectedEstablishment} />}
