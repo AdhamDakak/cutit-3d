@@ -7,22 +7,37 @@ import {
   Bell,
   CalendarDays,
   ChevronRight,
+  Cake,
+  CreditCard,
+  Check,
+  ChevronDown,
   Clock3,
   Compass,
   DoorOpen,
+  FileText,
   Scissors,
   Heart,
+  HelpCircle,
   Home,
+  Languages,
   LocateFixed,
+  LogOut,
+  Mail,
+  MessageCircle,
   MapPin,
   Menu,
   Moon,
+  Pencil,
+  Phone,
+  Plus,
   RotateCcw,
   Search,
   SlidersHorizontal,
   Sparkles,
   Star,
   Sun,
+  Trash2,
+  WalletCards,
   UserRound,
   UsersRound,
   X,
@@ -409,6 +424,40 @@ function ExploreMap({ establishments, darkMode, onViewShop }: { establishments: 
   return <section className="px-5 pt-5"><div className="mb-3 flex items-center justify-between"><h2 className={`font-serif text-xl font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>Nearby in Cairo</h2><div className={`flex rounded-lg p-1 ${darkMode ? 'bg-zinc-800' : 'bg-stone-200'}`}><button onClick={() => setMapView(true)} className={`rounded px-2 py-1 text-[10px] ${mapView ? 'bg-white text-stone-900' : darkMode ? 'text-zinc-400' : 'text-stone-500'}`}>Map</button><button onClick={() => setMapView(false)} className={`rounded px-2 py-1 text-[10px] ${!mapView ? 'bg-white text-stone-900' : darkMode ? 'text-zinc-400' : 'text-stone-500'}`}>List</button></div></div>{mapView ? <div className={`relative h-72 overflow-hidden rounded-2xl border ${darkMode ? 'border-zinc-800 bg-[#202728]' : 'border-stone-200 bg-[#dce5df]'}`}><div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(25deg, transparent 48%, #91a39c 49%, #91a39c 51%, transparent 52%), linear-gradient(115deg, transparent 48%, #91a39c 49%, #91a39c 51%, transparent 52%)', backgroundSize: '80px 80px' }} />{establishments.map((item, index) => <button key={item.id} onClick={() => setSelectedPin(item)} className={`absolute grid size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-4 border-white shadow-md ${selectedPin?.id === item.id ? 'bg-blue-600 text-white' : 'bg-stone-900 text-white'}`} style={{ left: `${20 + (index * 17) % 65}%`, top: `${25 + (index * 23) % 48}%` }} aria-label={`Select ${item.name}`}><MapPin className="size-4 fill-current" /></button>)}<button className="absolute bottom-3 left-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-stone-800 shadow">Search this area</button><button className="absolute bottom-3 right-3 grid size-9 place-items-center rounded-lg bg-white text-stone-800 shadow" aria-label="My location"><LocateFixed className="size-4" /></button>{selectedPin && <div className={`absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-xl p-2 shadow-lg ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}><img src={selectedPin.image} alt="" className="size-12 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className={`truncate text-xs font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>{selectedPin.name}</p><p className={`text-[10px] ${darkMode ? 'text-zinc-400' : 'text-stone-500'}`}>★ {selectedPin.rating} · From EGP {selectedPin.price}</p></div><button onClick={() => onViewShop(selectedPin)} className="rounded-lg bg-stone-900 px-2.5 py-2 text-[10px] font-semibold text-white">View Shop</button></div>}</div> : <div className="flex flex-col gap-3">{establishments.map((item) => <EstablishmentCard key={item.id} establishment={item} onClick={() => onViewShop(item)} />)}</div>}</section>
 }
 
+function ProfileScreen({ darkMode, textClass, mutedClass, cardClass, onToggleDarkMode, activeGender, setActiveGender, onSignOut }: { darkMode: boolean; textClass: string; mutedClass: string; cardClass: string; onToggleDarkMode: () => void; activeGender: 'For Her' | 'For Him'; setActiveGender: (value: 'For Her' | 'For Him') => void; onSignOut: () => void }) {
+  const [language, setLanguage] = useState('English')
+  const [reminders, setReminders] = useState(true)
+  const [offers, setOffers] = useState(false)
+  const [stylistUpdates, setStylistUpdates] = useState(true)
+
+  const SettingRow = ({ icon: Icon, label, value, onClick }: { icon: typeof UserRound; label: string; value?: string; onClick?: () => void }) => (
+    <button onClick={onClick} className={`flex min-h-14 w-full items-center gap-3 border-b px-4 py-3 text-left last:border-0 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}>
+      <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${darkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-stone-100 text-stone-600'}`}><Icon className="size-4" /></span>
+      <span className="min-w-0 flex-1"><span className={`block text-sm font-medium ${textClass}`}>{label}</span>{value && <span className={`mt-0.5 block truncate text-xs ${mutedClass}`}>{value}</span>}</span>
+      <ChevronRight className={`size-4 shrink-0 ${mutedClass}`} />
+    </button>
+  )
+  const ToggleRow = ({ icon: Icon, label, checked, onChange }: { icon: typeof Bell; label: string; checked: boolean; onChange: () => void }) => (
+    <button onClick={onChange} className={`flex min-h-14 w-full items-center gap-3 border-b px-4 py-3 text-left last:border-0 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}>
+      <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${darkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-stone-100 text-stone-600'}`}><Icon className="size-4" /></span><span className={`flex-1 text-sm font-medium ${textClass}`}>{label}</span><span className={`relative h-6 w-11 rounded-full transition ${checked ? 'bg-blue-600' : darkMode ? 'bg-zinc-700' : 'bg-stone-200'}`}><span className={`absolute top-1 size-4 rounded-full bg-white shadow transition ${checked ? 'left-6' : 'left-1'}`} /></span>
+    </button>
+  )
+  const sectionClass = `overflow-hidden rounded-2xl border ${darkMode ? 'border-zinc-800 bg-zinc-900' : 'border-stone-200 bg-white'} shadow-sm`
+  return <section className="px-5 pb-6 pt-5">
+    <div className="mb-5 flex items-center justify-between"><div><p className={`text-[11px] font-medium uppercase tracking-[0.18em] ${mutedClass}`}>Your account</p><h1 className={`mt-1 font-serif text-3xl font-semibold ${textClass}`}>Profile</h1></div><button aria-label="Edit profile" className={`grid size-9 place-items-center rounded-full ${darkMode ? 'bg-zinc-800' : 'bg-white shadow-sm'} ${mutedClass}`}><Pencil className="size-4" /></button></div>
+    <div className="flex items-center gap-4"><div className="relative"><img src="https://i.pravatar.cc/120?img=47" alt="Amira Nabil" className="size-20 rounded-full object-cover ring-4 ring-white/50" /><button aria-label="Edit photo" className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full bg-blue-600 text-white shadow-md"><Pencil className="size-3.5" /></button></div><div><h2 className={`text-lg font-semibold ${textClass}`}>Amira Nabil</h2><p className={`mt-1 flex items-center gap-1 text-sm ${mutedClass}`}><Phone className="size-3.5" />+20 100 123 4567 <Check className="size-3.5 text-blue-500" /></p><p className={`mt-1 text-xs ${mutedClass}`}>Member since 2024</p></div></div>
+    <div className={`mt-6 grid grid-cols-3 divide-x rounded-2xl border py-4 ${darkMode ? 'divide-zinc-800 border-zinc-800 bg-zinc-900' : 'divide-stone-200 border-stone-200 bg-white'}`}><div className="text-center"><p className={`text-lg font-semibold ${textClass}`}>12</p><p className={`mt-1 text-[10px] ${mutedClass}`}>Bookings</p></div><div className="text-center"><p className={`text-lg font-semibold ${textClass}`}>2</p><p className={`mt-1 text-[10px] ${mutedClass}`}>Addresses</p></div><div className="text-center"><p className={`text-lg font-semibold ${textClass}`}>350</p><p className={`mt-1 text-[10px] ${mutedClass}`}>Wallet · EGP</p></div></div>
+    <div className="mt-7 flex flex-col gap-5">
+      <div><p className={`mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.16em] ${mutedClass}`}>Personal information</p><div className={sectionClass}><SettingRow icon={UserRound} label="Full Name" value="Amira Nabil" /><SettingRow icon={Mail} label="Email Address" value="amira.nabil@email.com" /><div className={`flex items-center gap-3 border-b px-4 py-3 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}><span className={`grid size-8 place-items-center rounded-lg ${darkMode ? 'bg-zinc-800 text-zinc-300' : 'bg-stone-100 text-stone-600'}`}><UsersRound className="size-4" /></span><span className={`flex-1 text-sm font-medium ${textClass}`}>Smart recommendations</span><div className={`flex rounded-lg p-0.5 ${darkMode ? 'bg-zinc-800' : 'bg-stone-100'}`}>{(['For Her', 'For Him'] as const).map((item) => <button key={item} onClick={() => setActiveGender(item)} className={`rounded-md px-2 py-1.5 text-[10px] font-semibold ${activeGender === item ? 'bg-blue-600 text-white' : mutedClass}`}>{item.replace('For ', '')}</button>)}</div></div><SettingRow icon={Cake} label="Date of Birth" value="Not added" /></div></div>
+      <div><p className={`mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.16em] ${mutedClass}`}>Saved addresses</p><div className={sectionClass}><SettingRow icon={Home} label="Home" value="New Cairo, 5th Settlement" /><SettingRow icon={MapPin} label="Work" value="Zamalek" /><button className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-blue-600"><Plus className="size-4" />Add New Address</button></div></div>
+      <div><p className={`mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.16em] ${mutedClass}`}>Payment & wallet</p><div className={sectionClass}><div className={`flex items-center gap-3 border-b px-4 py-4 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}><span className="grid size-9 place-items-center rounded-xl bg-blue-600 text-white"><WalletCards className="size-4" /></span><span className="flex-1"><span className={`block text-sm font-semibold ${textClass}`}>CUTIT Wallet</span><span className={`text-xs ${mutedClass}`}>Available balance</span></span><span className={`text-sm font-bold ${textClass}`}>EGP 350</span><button aria-label="Top up wallet" className="grid size-7 place-items-center rounded-full bg-blue-50 text-blue-600"><Plus className="size-4" /></button></div><SettingRow icon={CreditCard} label="Saved cards" value="Visa ending in 4242" /><SettingRow icon={WalletCards} label="Default payment" value="Card" /></div></div>
+      <div><p className={`mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.16em] ${mutedClass}`}>Preferences</p><div className={sectionClass}><ToggleRow icon={darkMode ? Moon : Sun} label="Appearance · Dark mode" checked={darkMode} onChange={onToggleDarkMode} /><div className={`flex min-h-14 items-center gap-3 border-b px-4 py-3 ${darkMode ? 'border-zinc-800' : 'border-stone-100'}`}><Languages className={`size-4 ${mutedClass}`} /><span className={`flex-1 text-sm font-medium ${textClass}`}>Language</span><div className={`flex rounded-lg p-0.5 ${darkMode ? 'bg-zinc-800' : 'bg-stone-100'}`}>{['English', 'العربية'].map((item) => <button key={item} onClick={() => setLanguage(item)} className={`rounded-md px-2 py-1.5 text-[10px] font-semibold ${language === item ? 'bg-blue-600 text-white' : mutedClass}`}>{item}</button>)}</div></div><ToggleRow icon={Bell} label="Appointment reminders" checked={reminders} onChange={() => setReminders(!reminders)} /><ToggleRow icon={Sparkles} label="Exclusive offers" checked={offers} onChange={() => setOffers(!offers)} /><ToggleRow icon={Heart} label="Stylist updates" checked={stylistUpdates} onChange={() => setStylistUpdates(!stylistUpdates)} /></div></div>
+      <div><p className={`mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.16em] ${mutedClass}`}>Support & legal</p><div className={sectionClass}><SettingRow icon={MessageCircle} label="WhatsApp support" value="Chat with our team" /><SettingRow icon={HelpCircle} label="FAQs" /><SettingRow icon={FileText} label="Report a booking issue" /><SettingRow icon={FileText} label="Terms of Service" /><SettingRow icon={FileText} label="Privacy Policy" /></div></div>
+      <div className="flex flex-col gap-3"><button onClick={onSignOut} className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${darkMode ? 'border-zinc-700 text-zinc-200' : 'border-stone-200 text-stone-800'}`}><LogOut className="size-4" />Log Out</button><button className="py-2 text-xs text-red-500"><Trash2 className="mr-1 inline size-3.5" />Delete Account</button></div>
+    </div>
+  </section>
+}
+
 export default function Page() {
   const [activeGender, setActiveGender] = useState<'For Her' | 'For Him'>('For Her')
   const [service, setService] = useState('All services')
@@ -486,6 +535,7 @@ export default function Page() {
         {activeTab === 'Home' && <><ServiceShortcuts darkMode={darkMode} /><RecommendationFeed establishments={establishments} darkMode={darkMode} onBook={setSelectedEstablishment} signedIn={isSignedIn} gender={activeGender} /></>}
         {activeTab === 'Explore' && <ExploreMap establishments={filtered} darkMode={darkMode} onViewShop={setSelectedEstablishment} />}
 
+        {activeTab !== 'Profile' && <>
         <section className="px-5 pt-7">
           <p className={`text-sm font-medium ${mutedClass}`}>Good afternoon, Amira</p>
           <h1 className={`mt-1 max-w-sm font-serif text-3xl font-semibold leading-tight tracking-tight ${textClass}`}>
@@ -591,6 +641,8 @@ export default function Page() {
             </div>
           )}
         </section>
+        </>}
+        {activeTab === 'Profile' && <ProfileScreen darkMode={darkMode} textClass={textClass} mutedClass={mutedClass} cardClass={cardClass} onToggleDarkMode={() => setDarkMode(!darkMode)} activeGender={activeGender} setActiveGender={setActiveGender} onSignOut={() => setIsSignedIn(false)} />}
 
         <nav className={`fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-2xl items-center justify-around border-t ${darkMode ? 'border-zinc-800 bg-zinc-900/95' : 'border-stone-200 bg-white/95'} px-3 py-3 backdrop-blur-md`} aria-label="Main navigation">
           {[{ label: 'Home', icon: Home }, { label: 'Explore', icon: Compass }, { label: 'Bookings', icon: Clock3 }, { label: 'Profile', icon: UserRound }].map(({ label, icon: Icon }) => (
