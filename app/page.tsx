@@ -233,6 +233,10 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
   const [selectedServices, setSelectedServices] = useState<Set<number>>(new Set())
   const [selectedDate, setSelectedDate] = useState<number>(0)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [serviceQuery, setServiceQuery] = useState('')
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewText, setReviewText] = useState('')
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const today = new Date()
   const dates = Array.from({ length: 7 }, (_, i) => {
@@ -261,11 +265,11 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
     <div className={`fixed inset-0 z-50 overflow-y-auto ${bgClass}`}>
       <div className="mx-auto max-w-2xl">
         <div className={`sticky top-0 z-40 flex items-center justify-between border-b ${darkMode ? 'border-zinc-800 bg-zinc-900/95' : 'border-stone-200'} ${cardClass} px-5 py-4 backdrop-blur-md`}>
-          <button onClick={onBack} className={`grid size-9 place-items-center rounded-full hover:${darkMode ? 'bg-zinc-800' : 'bg-stone-200/60'}`}>
+          <button onClick={onBack} aria-label="Back" className={`grid size-9 place-items-center rounded-full border ${darkMode ? 'border-zinc-800 bg-zinc-900/80 text-zinc-100' : 'border-zinc-300 bg-white/80 text-zinc-900'}`}>
             <ArrowLeft className="size-5" />
           </button>
           <h2 className={`font-serif text-lg font-semibold ${textClass}`}>{establishment.name}</h2>
-          <button className={`grid size-9 place-items-center rounded-full`}>
+          <button aria-label="Save venue" className={`grid size-9 place-items-center rounded-full border ${darkMode ? 'border-zinc-800 bg-zinc-900/80 text-zinc-100' : 'border-zinc-300 bg-white/80 text-zinc-900'}`}>
             <Heart className="size-5" />
           </button>
         </div>
@@ -308,9 +312,10 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
           </div>
 
           <div className="mt-8">
-            <h4 className={`font-semibold ${textClass} mb-4`}>Select Services</h4>
-            <div className="space-y-3">
-              {establishment.serviceList?.map((service, idx) => (
+            <div className="mb-4 flex items-center justify-between gap-3"><h4 className={`font-semibold ${textClass}`}>Select Services</h4><span className={`text-xs ${mutedClass}`}>{establishment.serviceList?.length ?? 0} options</span></div>
+            <label className={`mb-3 flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 ${darkMode ? 'border-zinc-700 bg-zinc-900' : 'border-stone-200 bg-white'}`}><Search className={`size-4 ${mutedClass}`} /><input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Search services" className={`min-w-0 flex-1 bg-transparent text-sm outline-none ${textClass}`} /></label>
+            <div className="flex flex-col gap-3">
+              {establishment.serviceList?.filter((service) => service.name.toLowerCase().includes(serviceQuery.toLowerCase())).map((service, idx) => (
                 <label key={idx} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${selectedServices.has(idx) ? (darkMode ? 'border-blue-500 bg-blue-900/20' : 'border-stone-900 bg-stone-50') : (darkMode ? 'border-zinc-700 bg-zinc-800' : 'border-stone-200 bg-white')}`}>
                   <input
                     type="checkbox"
@@ -321,7 +326,7 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
                       else newSet.delete(idx)
                       setSelectedServices(newSet)
                     }}
-                    className="mt-1"
+                    className="mt-1 size-4 appearance-none rounded border border-zinc-300 bg-white checked:border-blue-600 checked:bg-blue-600"
                   />
                   <div className="flex-1">
                     <p className={`font-medium ${textClass}`}>{service.name}</p>
@@ -360,7 +365,7 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
                       <button
                         key={slot.time}
                         onClick={() => setSelectedTime(slot.time)}
-                        className={`rounded-lg py-2 text-xs font-medium transition ${selectedTime === slot.time ? (darkMode ? 'bg-blue-600' : 'bg-stone-900 text-white') : (darkMode ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-stone-100 hover:bg-stone-200')}`}
+                        className={`rounded-lg py-2 text-xs font-medium transition ${selectedTime === slot.time ? (darkMode ? 'bg-blue-600' : 'bg-stone-900 text-white') : (darkMode ? 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700' : 'bg-stone-100 text-zinc-900 hover:bg-stone-200')}`}
                       >
                         {slot.time}
                       </button>
@@ -371,9 +376,10 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
             </div>
           </div>
 
-          <div className="mt-12 pb-24" />
+          <div className="mt-10 border-t border-stone-200/70 pt-6"><div className="flex items-center justify-between"><div><h4 className={`font-semibold ${textClass}`}>Customer reviews</h4><p className={`mt-1 text-xs ${mutedClass}`}>What guests say about this venue</p></div><button onClick={() => setReviewOpen(true)} className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Write a Review</button></div><div className={`mt-4 rounded-xl p-4 ${cardClass} border`}><div className="flex items-center gap-2"><Star className="size-4 fill-amber-400 text-amber-400" /><span className={`font-semibold ${textClass}`}>{establishment.rating}</span><span className={`text-xs ${mutedClass}`}>from {establishment.reviews} reviews</span></div></div></div><div className="mt-12 pb-24" />
         </div>
       </div>
+      {reviewOpen && <div className="fixed inset-0 z-[60] grid place-items-end bg-black/40 p-4"><div className={`w-full max-w-md rounded-2xl p-5 ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}><div className="flex items-center justify-between"><h3 className={`font-serif text-xl font-semibold ${textClass}`}>Write a Review</h3><button onClick={() => setReviewOpen(false)} aria-label="Close review"><X className={mutedClass} /></button></div><div className="flex justify-center gap-2 py-5">{[1,2,3,4,5].map((item) => <button key={item} onClick={() => setReviewRating(item)} aria-label={`${item} stars`}><Star className={`size-8 ${item <= reviewRating ? 'fill-amber-400 text-amber-400' : mutedClass}`} /></button>)}</div><textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} placeholder="Tell us about your visit" className={`min-h-24 w-full rounded-xl border p-3 text-sm outline-none ${darkMode ? 'border-zinc-700 bg-zinc-950 text-white' : 'border-stone-200 bg-stone-50 text-zinc-900'}`} /><button disabled={!reviewRating || !reviewText.trim()} onClick={() => setReviewOpen(false)} className="mt-3 w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white disabled:opacity-40">Submit Review</button></div></div>}
 
       <div className={`fixed inset-x-0 bottom-0 z-40 mx-auto max-w-2xl border-t ${darkMode ? 'border-zinc-800 bg-zinc-900' : 'border-stone-200 bg-white'} px-5 py-4 shadow-lg`}>
         <div className="flex items-center justify-between">
@@ -381,7 +387,7 @@ function DetailView({ establishment, onBack, darkMode }: { establishment: Establ
             <p className={`text-xs uppercase tracking-widest ${mutedClass}`}>Total</p>
             <p className={`text-2xl font-bold ${textClass}`}>EGP {totalPrice}</p>
           </div>
-          <button disabled={selectedServices.size === 0 || !selectedTime} className={`rounded-xl px-6 py-3 font-semibold transition disabled:opacity-50 ${darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-stone-900 hover:bg-stone-700 text-white'}`}>
+          <button disabled={selectedServices.size === 0 || !selectedTime} className={`rounded-xl px-6 py-3 font-semibold transition disabled:opacity-50 bg-blue-600 hover:bg-blue-700 text-white`}>
             Confirm Booking
           </button>
         </div>
@@ -480,7 +486,17 @@ function BookingsScreen({ darkMode, textClass, mutedClass, onExplore }: { darkMo
   </section>
 }
 
+function OnboardingScreen({ darkMode, onGuest, onStart }: { darkMode: boolean; onGuest: () => void; onStart: () => void }) {
+  const [slide, setSlide] = useState(0)
+  const slides = [{ title: 'Your next signature look', body: 'Discover trusted salons and barbershops across Egypt, all in one place.' }, { title: 'In-salon or at home', body: 'Book your preferred service, stylist, date, and time in just a few taps.' }, { title: 'Beauty, made personal', body: 'Get thoughtful recommendations built around your style and routine.' }]
+  return <main className={`grid min-h-screen w-full place-items-center px-5 ${darkMode ? 'bg-zinc-950' : 'bg-[#f7f5f1]'}`}><section className="w-full max-w-md text-center"><img src="/cutit-logo.svg" alt="Cutit" className={`mx-auto h-14 w-32 rounded-xl object-contain ${darkMode ? 'bg-zinc-950 invert' : 'bg-[#f7f5f1]'}`} /><div className={`mx-auto mt-12 grid size-40 place-items-center rounded-full ${darkMode ? 'bg-zinc-900 text-blue-300' : 'bg-blue-50 text-blue-600'}`}><Sparkles className="size-16" /></div><div className="mt-10"><h1 className={`font-serif text-3xl font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>{slides[slide].title}</h1><p className={`mx-auto mt-4 max-w-xs text-sm leading-6 ${darkMode ? 'text-zinc-400' : 'text-stone-500'}`}>{slides[slide].body}</p></div><div className="mt-8 flex justify-center gap-1.5">{slides.map((_, index) => <button key={index} onClick={() => setSlide(index)} aria-label={`Go to slide ${index + 1}`} className={`h-1.5 rounded-full transition ${index === slide ? 'w-7 bg-blue-600' : 'w-1.5 bg-stone-300'}`} />)}</div><button onClick={slide < 2 ? () => setSlide(slide + 1) : onStart} className="mt-10 w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white">{slide < 2 ? 'Continue' : 'Get Started'}</button><button onClick={onGuest} className={`mt-4 w-full py-3 text-sm font-semibold ${darkMode ? 'text-zinc-300' : 'text-stone-700'}`}>Continue as Guest</button></section></main>
+}
+
+function AuthScreen({ darkMode, onContinue }: { darkMode: boolean; onContinue: () => void }) { const [phone, setPhone] = useState('+20 '); const [step, setStep] = useState<'phone' | 'otp' | 'profile'>('phone'); const [otp, setOtp] = useState(''); const [name, setName] = useState(''); return <main className={`min-h-screen px-5 py-10 ${darkMode ? 'bg-zinc-950' : 'bg-[#f7f5f1]'}`}><section className="mx-auto w-full max-w-md"><img src="/cutit-logo.svg" alt="Cutit" className={`h-11 w-24 rounded-lg object-contain ${darkMode ? 'invert' : ''}`} /><button onClick={onContinue} className={`mt-8 text-sm ${darkMode ? 'text-zinc-400' : 'text-stone-500'}`}>Continue as Guest</button>{step === 'phone' && <div className="mt-20"><h1 className={`font-serif text-3xl font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>Welcome to Cutit</h1><p className={`mt-3 text-sm ${darkMode ? 'text-zinc-400' : 'text-stone-500'}`}>Sign in with your mobile number.</p><input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" className="mt-8 w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm" /><button onClick={() => setStep('otp')} disabled={phone.replace(/\\D/g, '').length < 10} className="mt-4 w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white disabled:opacity-40">Send OTP</button></div>}{step === 'otp' && <div className="mt-20"><h1 className={`font-serif text-3xl font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>Verify your number</h1><input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="Enter 6-digit code" className="mt-8 w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-center text-lg tracking-[0.4em]" /><p className="mt-3 text-center text-xs text-stone-500">Resend code in 30s</p><button onClick={() => setStep('profile')} disabled={otp.length < 4} className="mt-6 w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white disabled:opacity-40">Verify & Continue</button></div>}{step === 'profile' && <div className="mt-20"><h1 className={`font-serif text-3xl font-semibold ${darkMode ? 'text-white' : 'text-stone-900'}`}>Create your profile</h1><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" className="mt-8 w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm" /><input placeholder="Email address (optional)" className="mt-3 w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm" /><button onClick={onContinue} disabled={!name.trim()} className="mt-6 w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white disabled:opacity-40">Continue</button></div>}</section></main> }
+
 export default function Page() {
+  const [onboarding, setOnboarding] = useState(true)
+  const [auth, setAuth] = useState(false)
   const [activeGender, setActiveGender] = useState<'For Her' | 'For Him'>('For Her')
   const [service, setService] = useState('All services')
   const [query, setQuery] = useState('')
@@ -489,6 +505,8 @@ export default function Page() {
   const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null)
   const [darkMode, setDarkMode] = useState(false)
   const [isSignedIn, setIsSignedIn] = useState(false)
+
+  const enterApp = () => { setOnboarding(false); setAuth(false); setIsSignedIn(true) }
 
   const filtered = useMemo(() => {
     return establishments.filter((item) => {
@@ -517,6 +535,8 @@ export default function Page() {
   const textClass = darkMode ? 'text-white' : 'text-stone-900'
   const mutedClass = darkMode ? 'text-zinc-400' : 'text-stone-500'
 
+  if (onboarding) return <OnboardingScreen darkMode={darkMode} onGuest={() => { setOnboarding(false); setIsSignedIn(false) }} onStart={() => setAuth(true)} />
+  if (auth) return <AuthScreen darkMode={darkMode} onContinue={enterApp} />
   if (selectedEstablishment) {
     return <DetailView establishment={selectedEstablishment} onBack={() => setSelectedEstablishment(null)} darkMode={darkMode} />
   }
@@ -665,7 +685,7 @@ export default function Page() {
           )}
         </section>
         </>}
-        {activeTab === 'Profile' && <ProfileScreen darkMode={darkMode} textClass={textClass} mutedClass={mutedClass} cardClass={cardClass} onToggleDarkMode={() => setDarkMode(!darkMode)} activeGender={activeGender} setActiveGender={setActiveGender} onSignOut={() => setIsSignedIn(false)} />}
+        {activeTab === 'Profile' && <ProfileScreen darkMode={darkMode} textClass={textClass} mutedClass={mutedClass} cardClass={cardClass} onToggleDarkMode={() => setDarkMode(!darkMode)} activeGender={activeGender} setActiveGender={setActiveGender} onSignOut={() => { setIsSignedIn(false); setOnboarding(true) }} />}
 
         <nav className={`fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-2xl items-center justify-around border-t ${darkMode ? 'border-zinc-800 bg-zinc-900/95' : 'border-stone-200 bg-white/95'} px-3 py-3 backdrop-blur-md`} aria-label="Main navigation">
           {[{ label: 'Home', icon: Home }, { label: 'Explore', icon: Compass }, { label: 'Bookings', icon: Clock3 }, { label: 'Profile', icon: UserRound }].map(({ label, icon: Icon }) => (
