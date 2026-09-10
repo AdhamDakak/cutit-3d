@@ -1,33 +1,29 @@
-# cutit-3d
+# Cutit
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+A Cairo salon & barbershop booking app — browse venues, book in-salon or at-home services (barbering, beauty, bridal/events), manage bookings, and a profile/wallet section.
 
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_HSzlcKtZf4cOD3BFrvmDFmUeXXuc)
+Built with [Expo](https://expo.dev) + [expo-router](https://docs.expo.dev/router/introduction/) + [NativeWind](https://www.nativewind.dev/) (Tailwind for React Native).
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run the app:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm start
+```
 
-## Learn More
+Then open it in an iOS Simulator, Android Emulator, or the Expo Go app on a physical device.
 
-To learn more, take a look at the following resources:
+## Project structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+- `app/` — expo-router routes: `onboarding`, `auth`, the `(tabs)` group (Home, Explore, Bookings, Profile), and `venue/[id]` for the booking flow, presented as a modal.
+- `components/` — shared UI building blocks (venue cards, review modal, settings rows, etc).
+- `lib/` — mock data (`data.ts`) and app-wide state (`app-state.tsx`).
+
+This is UI-first: all data is currently mocked in `lib/data.ts`. Backend, auth, and payments are not wired up yet.
