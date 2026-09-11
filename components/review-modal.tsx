@@ -8,14 +8,12 @@ export function ReviewModal({
   visible,
   title,
   subtitle,
-  requireText = false,
   onClose,
   onSubmit,
 }: {
   visible: boolean
   title: string
   subtitle?: string
-  requireText?: boolean
   onClose: () => void
   onSubmit: (rating: number, text: string) => void
 }) {
@@ -23,7 +21,7 @@ export function ReviewModal({
   const [text, setText] = useState('')
   const colors = useThemeColors()
 
-  const canSubmit = rating > 0 && (!requireText || text.trim().length > 0)
+  const canSubmit = rating > 0
 
   const handleClose = () => {
     setRating(0)
@@ -51,16 +49,14 @@ export function ReviewModal({
             ))}
           </View>
 
-          {requireText && (
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder="Tell us about your visit"
-              placeholderTextColor={colors.muted}
-              multiline
-              className="min-h-24 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-            />
-          )}
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Share more about your experience (optional)"
+            placeholderTextColor={colors.muted}
+            multiline
+            className="min-h-24 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          />
 
           <Pressable
             disabled={!canSubmit}

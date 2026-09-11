@@ -10,7 +10,6 @@ import {
   Clock3,
   HelpCircle,
   MapPin,
-  MessageCircle,
   PhoneCall,
 } from 'lucide-react-native'
 
@@ -121,11 +120,7 @@ export default function BookingsScreen() {
                     <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">Get Directions</Text>
                   </Pressable>
                 </View>
-                <Pressable className="flex-row items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5">
-                  <MessageCircle size={14} color="#ffffff" />
-                  <Text className="text-xs font-semibold text-white">WhatsApp Support</Text>
-                </Pressable>
-                <Pressable className="flex-row items-center justify-center gap-1.5 py-1">
+                <Pressable onPress={() => router.push('/help')} className="flex-row items-center justify-center gap-1.5 py-1">
                   <HelpCircle size={14} color={colors.accent} />
                   <Text className="text-xs font-semibold text-blue-600 dark:text-blue-400">Need Help with this Booking?</Text>
                 </Pressable>

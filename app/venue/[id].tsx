@@ -3,11 +3,20 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, Heart, MapPin, Search, Star } from 'lucide-react-native'
+import { ArrowLeft, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound } from 'lucide-react-native'
 
 import { ReviewModal } from '@/components/review-modal'
 import { establishments, timeSlots } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
 
 export default function VenueScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -59,7 +68,14 @@ export default function VenueScreen() {
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-28">
-        <Image source={{ uri: establishment.image }} className="h-64 w-full" contentFit="cover" />
+        {establishment.image ? (
+          <Image source={{ uri: establishment.image }} className="h-64 w-full" contentFit="cover" />
+        ) : (
+          <View className="h-64 w-full items-center justify-center border border-stone-200 bg-stone-100 dark:border-zinc-800 dark:bg-zinc-900">
+            <ImageIcon size={32} color={colors.muted} />
+            <Text className="mt-2 text-xs text-stone-500 dark:text-zinc-400">No photo yet</Text>
+          </View>
+        )}
 
         <View className="px-5 py-6">
           <View className="flex-row items-start justify-between gap-4 rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -92,7 +108,9 @@ export default function VenueScreen() {
                       {person.photo ? (
                         <Image source={{ uri: person.photo }} className="size-10 rounded-full" />
                       ) : (
-                        <View className="size-10 rounded-full bg-stone-300 dark:bg-zinc-600" />
+                        <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
+                          <UserRound size={18} color={colors.mutedStrong} />
+                        </View>
                       )}
                       <View className="items-center">
                         <Text className={`text-xs ${active ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{person.name}</Text>
@@ -139,7 +157,7 @@ export default function VenueScreen() {
                   >
                     <View
                       className={`mt-1 size-4 items-center justify-center rounded border ${
-                        selected ? 'border-blue-600 bg-blue-600' : 'border-stone-300 bg-white dark:border-zinc-600 dark:bg-zinc-900'
+                        selected ? 'border-blue-600 bg-blue-600' : 'border-stone-300 bg-white dark:border-zinc-600'
                       }`}
                     >
                       {selected && <View className="size-2 rounded-sm bg-white" />}
@@ -190,7 +208,9 @@ export default function VenueScreen() {
                         <Pressable
                           key={slot.time}
                           onPress={() => setSelectedTime(slot.time)}
-                          className={`min-w-[70px] items-center rounded-lg py-2 ${active ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
+                          className={`min-w-[70px] items-center rounded-lg border py-2 ${
+                            active ? 'border-transparent bg-stone-900 dark:bg-blue-600' : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
+                          }`}
                         >
                           <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{slot.time}</Text>
                         </Pressable>
@@ -218,6 +238,26 @@ export default function VenueScreen() {
                 <Text className="text-xs text-stone-500 dark:text-zinc-400">from {establishment.reviews} reviews</Text>
               </View>
             </View>
+
+            <View className="mt-4 gap-3">
+              {establishment.reviewList.map((review) => (
+                <View key={review.id} className="rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-2">
+                      <View className="size-8 items-center justify-center rounded-full bg-stone-200 dark:bg-zinc-700">
+                        <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{getInitials(review.author)}</Text>
+                      </View>
+                      <Text className="text-sm font-medium text-stone-900 dark:text-white">{review.author}</Text>
+                    </View>
+                    <View className="flex-row items-center gap-1">
+                      <Star size={12} color={colors.amber} fill={colors.amber} />
+                      <Text className="text-xs font-semibold text-stone-900 dark:text-white">{review.rating}</Text>
+                    </View>
+                  </View>
+                  <Text className="mt-2 text-sm leading-5 text-stone-600 dark:text-zinc-300">{review.text}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -237,7 +277,6 @@ export default function VenueScreen() {
       <ReviewModal
         visible={reviewOpen}
         title="Write a Review"
-        requireText
         onClose={() => setReviewOpen(false)}
         onSubmit={() => {}}
       />

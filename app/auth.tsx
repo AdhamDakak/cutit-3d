@@ -1,20 +1,32 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 
+import { CountryCodePicker, COUNTRY_CODES, type CountryCode } from '@/components/country-code-picker'
 import { Logo } from '@/components/logo'
 import { useAppState } from '@/lib/app-state'
 
 type Step = 'phone' | 'otp' | 'profile'
 
 export default function AuthScreen() {
-  const [phone, setPhone] = useState('+20 ')
+  const [country, setCountry] = useState<CountryCode>(COUNTRY_CODES[0])
+  const [phone, setPhone] = useState('')
   const [step, setStep] = useState<Step>('phone')
-  const [otp, setOtp] = useState('')
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(''))
   const [name, setName] = useState('')
+  const otpRefs = useRef<Array<TextInput | null>>([])
+  const autoSubmittedRef = useRef(false)
   const router = useRouter()
   const { signIn, completeOnboarding } = useAppState()
+
+  useEffect(() => {
+    const code = otpDigits.join('')
+    if (code.length === 6 && !autoSubmittedRef.current) {
+      autoSubmittedRef.current = true
+      setStep('profile')
+    }
+  }, [otpDigits])
 
   const finish = () => {
     signIn()
@@ -22,22 +34,50 @@ export default function AuthScreen() {
     router.replace('/(tabs)')
   }
 
+  const updateOtpDigit = (index: number, raw: string) => {
+    const digit = raw.replace(/\D/g, '').slice(-1)
+    setOtpDigits((prev) => {
+      const next = [...prev]
+      next[index] = digit
+      return next
+    })
+    if (digit && index < 5) otpRefs.current[index + 1]?.focus()
+  }
+
+  const handleOtpKeyPress = (index: number, key: string) => {
+    if (key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus()
+      setOtpDigits((prev) => {
+        const next = [...prev]
+        next[index - 1] = ''
+        return next
+      })
+    }
+  }
+
   const inputClass =
     'mt-8 w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white'
+  const centeredTextStyle = { textAlignVertical: 'center' as const }
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] px-5 dark:bg-zinc-950" edges={['top', 'bottom']}>
-      <View className="mx-auto w-full max-w-md flex-1 pt-6">
+      <View className="mx-auto w-full max-w-md flex-1 pb-28 pt-6">
         <Logo />
-        <Pressable onPress={finish} className="mt-8 self-start">
-          <Text className="text-sm text-stone-500 dark:text-zinc-400">Continue as Guest</Text>
-        </Pressable>
 
         {step === 'phone' && (
           <View className="mt-16">
             <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">Welcome to Cutit</Text>
             <Text className="mt-3 text-sm text-stone-500 dark:text-zinc-400">Sign in with your mobile number.</Text>
-            <TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" className={inputClass} />
+            <View className="mt-8 flex-row items-center gap-2">
+              <CountryCodePicker value={country} onChange={setCountry} />
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                placeholder="10 1234 5678"
+                className="flex-1 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+              />
+            </View>
             <Pressable
               onPress={() => setStep('otp')}
               disabled={phone.replace(/\D/g, '').length < 10}
@@ -51,17 +91,30 @@ export default function AuthScreen() {
         {step === 'otp' && (
           <View className="mt-16">
             <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">Verify your number</Text>
-            <TextInput
-              value={otp}
-              onChangeText={(text) => setOtp(text.replace(/\D/g, '').slice(0, 6))}
-              keyboardType="number-pad"
-              placeholder="Enter 6-digit code"
-              className={`${inputClass} text-center text-lg tracking-[8px]`}
-            />
+            <Text className="mt-3 text-sm text-stone-500 dark:text-zinc-400">
+              Enter the code sent to {country.code} {phone}
+            </Text>
+            <View className="mt-8 flex-row justify-between gap-2">
+              {otpDigits.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(el) => {
+                    otpRefs.current[index] = el
+                  }}
+                  value={digit}
+                  onChangeText={(text) => updateOtpDigit(index, text)}
+                  onKeyPress={({ nativeEvent }) => handleOtpKeyPress(index, nativeEvent.key)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  style={{ textAlign: 'center' }}
+                  className="h-14 w-12 rounded-xl border border-stone-200 bg-white text-lg font-semibold text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                />
+              ))}
+            </View>
             <Text className="mt-3 text-center text-xs text-stone-500 dark:text-zinc-400">Resend code in 30s</Text>
             <Pressable
               onPress={() => setStep('profile')}
-              disabled={otp.length < 4}
+              disabled={otpDigits.some((d) => !d)}
               className="mt-6 w-full items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-40"
             >
               <Text className="text-sm font-semibold text-white">Verify & Continue</Text>
@@ -72,8 +125,18 @@ export default function AuthScreen() {
         {step === 'profile' && (
           <View className="mt-16">
             <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">Create your profile</Text>
-            <TextInput value={name} onChangeText={setName} placeholder="Full name" className={inputClass} />
-            <TextInput placeholder="Email address (optional)" className={`${inputClass} mt-3`} />
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Full name"
+              style={centeredTextStyle}
+              className={inputClass}
+            />
+            <TextInput
+              placeholder="Email address (optional)"
+              style={centeredTextStyle}
+              className={`${inputClass} mt-3`}
+            />
             <Pressable
               onPress={finish}
               disabled={!name.trim()}
@@ -84,6 +147,12 @@ export default function AuthScreen() {
           </View>
         )}
       </View>
+
+      {step !== 'profile' && (
+        <Pressable onPress={finish} className="absolute inset-x-5 bottom-10 items-center py-4">
+          <Text className="text-sm font-semibold text-stone-700 underline dark:text-zinc-300">Continue as Guest</Text>
+        </Pressable>
+      )}
     </SafeAreaView>
   )
 }

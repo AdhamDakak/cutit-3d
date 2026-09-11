@@ -19,6 +19,9 @@ export default function RootLayout() {
             <Stack.Screen name="auth" />
             <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
             <Stack.Screen name="venue/[id]" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="chat-support" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="help" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>

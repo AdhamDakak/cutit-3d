@@ -1,5 +1,6 @@
 export type Staff = { id: number; name: string; role: string; photo?: string }
 export type Service = { name: string; price: number; duration: number }
+export type Review = { id: number; author: string; rating: number; text: string }
 
 export type Establishment = {
   id: number
@@ -15,6 +16,7 @@ export type Establishment = {
   image: string
   staff: Staff[]
   serviceList: Service[]
+  reviewList: Review[]
 }
 
 export const establishments: Establishment[] = [
@@ -40,6 +42,11 @@ export const establishments: Establishment[] = [
       { name: 'Haircut only', price: 150, duration: 25 },
       { name: 'Beard trim', price: 120, duration: 15 },
     ],
+    reviewList: [
+      { id: 1, author: 'Youssef Adel', rating: 5, text: 'Kareem always nails my fade. Hot towel finish is a nice touch.' },
+      { id: 2, author: 'Mostafa Hany', rating: 5, text: 'Clean shop, friendly staff, never had to wait more than 5 minutes.' },
+      { id: 3, author: 'Amr Salah', rating: 4, text: 'Great haircut, a bit pricier than other places in New Cairo but worth it.' },
+    ],
   },
   {
     id: 2,
@@ -62,6 +69,11 @@ export const establishments: Establishment[] = [
       { name: 'Hair Color', price: 600, duration: 90 },
       { name: 'Manicure', price: 200, duration: 30 },
     ],
+    reviewList: [
+      { id: 1, author: 'Nour Fathy', rating: 5, text: 'Noor is incredibly talented with color. My balayage turned out perfect.' },
+      { id: 2, author: 'Salma Reda', rating: 5, text: 'Beautiful salon, very relaxing atmosphere in Zamalek.' },
+      { id: 3, author: 'Dina Kamal', rating: 4, text: 'Loved my blow dry, will be back for the manicure next time.' },
+    ],
   },
   {
     id: 3,
@@ -80,6 +92,10 @@ export const establishments: Establishment[] = [
       { name: 'Hair Styling', price: 320, duration: 50 },
       { name: 'Nails', price: 250, duration: 45 },
       { name: 'Facials', price: 400, duration: 60 },
+    ],
+    reviewList: [
+      { id: 1, author: 'Heba Younes', rating: 5, text: 'The facial was so relaxing, my skin has never looked better.' },
+      { id: 2, author: 'Karim Fouad', rating: 4, text: 'Unisex spot in Maadi is rare, glad I found this one.' },
     ],
   },
   {
@@ -103,6 +119,10 @@ export const establishments: Establishment[] = [
       { name: 'Kids Cut', price: 120, duration: 20 },
       { name: 'Beard Trim', price: 100, duration: 15 },
     ],
+    reviewList: [
+      { id: 1, author: 'Tarek Ibrahim', rating: 5, text: 'Ahmed is great with kids, my son actually enjoys his haircuts now.' },
+      { id: 2, author: 'Sherif Nabil', rating: 4, text: 'Solid, no-frills barbershop. Good prices for Heliopolis.' },
+    ],
   },
   {
     id: 5,
@@ -124,6 +144,11 @@ export const establishments: Establishment[] = [
       { name: 'Hair Color', price: 600, duration: 120 },
       { name: 'Balayage', price: 800, duration: 150 },
       { name: 'Bridal Package', price: 1200, duration: 180 },
+    ],
+    reviewList: [
+      { id: 1, author: 'Farida Osman', rating: 5, text: 'Layla did my bridal hair and makeup trial, absolutely stunning work.' },
+      { id: 2, author: 'Mariam Adly', rating: 5, text: 'Best balayage I have had in Cairo, worth the drive to Sheikh Zayed.' },
+      { id: 3, author: 'Rana Fahmy', rating: 5, text: 'Atelier feels luxurious from the moment you walk in.' },
     ],
   },
 ]

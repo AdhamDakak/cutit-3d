@@ -169,7 +169,12 @@ export default function ProfileScreen() {
         <View>
           <Text className={labelClass}>Support & legal</Text>
           <View className={sectionClass}>
-            <SettingRow icon={MessageCircle} label="In-App Chat Support" value="Chat with our team" />
+            <SettingRow
+              icon={MessageCircle}
+              label="In-App Chat Support"
+              value="Chat with our team"
+              onPress={() => router.push('/chat-support')}
+            />
             <SettingRow icon={HelpCircle} label="FAQs" />
             <SettingRow icon={FileText} label="Report a booking issue" />
             <SettingRow icon={FileText} label="Terms of Service" />

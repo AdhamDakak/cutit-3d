@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native'
 import { useColorScheme } from 'nativewind'
+import { useRouter } from 'expo-router'
 import { Bell, ChevronRight, MapPin, Menu, Moon, Sun } from 'lucide-react-native'
 
 import { Logo } from '@/components/logo'
@@ -10,6 +11,7 @@ export function AppHeader() {
   const { colorScheme, toggleColorScheme } = useColorScheme()
   const { isSignedIn, signIn, signOut } = useAppState()
   const colors = useThemeColors()
+  const router = useRouter()
   const isDark = colorScheme === 'dark'
 
   return (
@@ -27,7 +29,11 @@ export function AppHeader() {
           <Pressable accessibilityLabel="Notifications" className="size-9 items-center justify-center rounded-full active:opacity-80">
             <Bell size={16} color={colors.muted} />
           </Pressable>
-          <Pressable accessibilityLabel="Open menu" className="size-9 items-center justify-center rounded-full active:opacity-80">
+          <Pressable
+            onPress={() => router.push('/menu')}
+            accessibilityLabel="Open menu"
+            className="size-9 items-center justify-center rounded-full active:opacity-80"
+          >
             <Menu size={16} color={colors.muted} />
           </Pressable>
         </View>

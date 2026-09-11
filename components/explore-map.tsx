@@ -1,11 +1,7 @@
-import { useState } from 'react'
-import { Image } from 'expo-image'
 import { Pressable, Text, View } from 'react-native'
-import { LocateFixed, MapPin } from 'lucide-react-native'
-import { useRouter } from 'expo-router'
+import { Star } from 'lucide-react-native'
 
 import type { Establishment } from '@/lib/data'
-import { useThemeColors } from '@/lib/theme'
 
 const PATTERN_LINES = Array.from({ length: 5 }, (_, i) => i)
 
@@ -30,49 +26,35 @@ function MapPattern() {
   )
 }
 
-export function ExploreMap({ establishments }: { establishments: Establishment[] }) {
-  const [selectedPin, setSelectedPin] = useState<Establishment | null>(null)
-  const colors = useThemeColors()
-  const router = useRouter()
-
+export function ExploreMap({
+  establishments,
+  selectedId,
+  onSelectPin,
+}: {
+  establishments: Establishment[]
+  selectedId?: number | null
+  onSelectPin?: (item: Establishment) => void
+}) {
   return (
-    <View className="relative h-80 overflow-hidden rounded-2xl border border-stone-200 bg-[#dce5df] dark:border-zinc-800 dark:bg-[#202728]">
+    <View className="absolute inset-0 overflow-hidden bg-[#dce5df] dark:bg-[#202728]">
       <MapPattern />
-      {establishments.map((item, index) => (
-        <Pressable
-          key={item.id}
-          onPress={() => setSelectedPin(item)}
-          accessibilityLabel={`Select ${item.name}`}
-          className={`absolute size-9 items-center justify-center rounded-full border-4 border-white ${
-            selectedPin?.id === item.id ? 'bg-blue-600' : 'bg-stone-900'
-          }`}
-          style={{ left: `${20 + ((index * 17) % 65)}%`, top: `${20 + ((index * 23) % 55)}%`, marginLeft: -18, marginTop: -18 }}
-        >
-          <MapPin size={16} color="#ffffff" fill="#ffffff" />
-        </Pressable>
-      ))}
-      <Pressable className="absolute bottom-3 left-3 rounded-lg bg-white px-3 py-2">
-        <Text className="text-xs font-semibold text-stone-800">Search this area</Text>
-      </Pressable>
-      <Pressable accessibilityLabel="My location" className="absolute bottom-3 right-3 size-9 items-center justify-center rounded-lg bg-white">
-        <LocateFixed size={16} color="#292524" />
-      </Pressable>
-      {selectedPin && (
-        <View className="absolute inset-x-3 bottom-16 flex-row items-center gap-3 rounded-xl bg-white p-2 shadow-lg dark:bg-zinc-900">
-          <Image source={{ uri: selectedPin.image }} className="size-12 rounded-lg" contentFit="cover" />
-          <View className="min-w-0 flex-1">
-            <Text numberOfLines={1} className="text-xs font-semibold text-stone-900 dark:text-white">
-              {selectedPin.name}
-            </Text>
-            <Text className="text-[10px] text-stone-500 dark:text-zinc-400">
-              ★ {selectedPin.rating} · From EGP {selectedPin.price}
-            </Text>
-          </View>
-          <Pressable onPress={() => router.push(`/venue/${selectedPin.id}`)} className="rounded-lg bg-stone-900 px-2.5 py-2">
-            <Text className="text-[10px] font-semibold text-white">View Shop</Text>
+      {establishments.map((item, index) => {
+        const selected = selectedId === item.id
+        return (
+          <Pressable
+            key={item.id}
+            onPress={() => onSelectPin?.(item)}
+            accessibilityLabel={`Select ${item.name}, rated ${item.rating}`}
+            className={`absolute flex-row items-center gap-1 rounded-full border px-2 py-1 shadow-sm ${
+              selected ? 'border-blue-600 bg-blue-600' : 'border-stone-200 bg-white'
+            }`}
+            style={{ left: `${18 + ((index * 17) % 65)}%`, top: `${15 + ((index * 23) % 40)}%` }}
+          >
+            <Star size={11} color={selected ? '#ffffff' : '#fbbf24'} fill={selected ? '#ffffff' : '#fbbf24'} />
+            <Text className={`text-[11px] font-semibold ${selected ? 'text-white' : 'text-stone-900'}`}>{item.rating}</Text>
           </Pressable>
-        </View>
-      )}
+        )
+      })}
     </View>
   )
 }
