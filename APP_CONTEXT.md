@@ -2,7 +2,7 @@
 
 > Single source of truth for what this app is, how it's built, where it stands, and what should change next. Keep it updated as the app evolves.
 
-_Last updated: 2026-09-12 (auth redesign, Explore rebuild, new support screens, venue detail polish)_
+_Last updated: 2026-09-12 (menu-close navigation fix, branding pass — icon/splash/fonts, mock data normalized into Supabase-shaped types)_
 
 ---
 
@@ -34,6 +34,10 @@ Auxiliary support flow, reachable from the header menu icon or Bookings/Profile:
 2. **Expo migration (2026-09-10)** — since the real target is native iOS/Android, the project was rebuilt as an **Expo + expo-router + NativeWind** app. The v0 screens were used as a design/copy reference only; every screen was rewritten with native primitives and real navigation. The old web scaffold was deleted.
 3. **Current state** — UI-first prototype with mock data. No backend, no persistence, no payments. **The migration is not yet committed** (~50 changed files in the working tree; last commit `a84abb8` is still the v0 version).
 4. **Post-migration feature pass (2026-09-11 → 2026-09-12)** — the Expo migration and everything since (auth screen redesign with a country-code picker and a 6-box OTP input, a full Fresha-style rebuild of Explore with `@gorhom/bottom-sheet`, three new screens — Chat Support, Help, Menu — wired up from existing entry points, and a venue-detail pass adding a reviews list, avatar/photo placeholders, and light/dark contrast fixes) is now committed as `1995cc8`, `07d2d15`, and `f9157a8`. The working tree is clean.
+5. **Housekeeping + data-model pass (2026-09-12)** — committed as `a934122`, `5b510f8`, `daaf61a`, `8045eba`:
+   - Fixed Menu's My Bookings/Help/Settings rows pushing their destination screen on top of the still-mounted menu modal instead of closing it (`router.dismissTo`).
+   - Wired `react-native-svg-transformer` (infra only — `Logo` still renders the text wordmark on purpose, see §5); generated a real app icon, Android adaptive-icon layers, favicon, and light/dark splash art from a mark derived from the wordmark's scissors motif (previous files were the unmodified Expo template defaults); bundled Fraunces + Inter via `expo-font`/`@expo-google-fonts` in place of Georgia.
+   - Replaced the single `Establishment` mock type with normalized `Venue`/`Staff`/`Service`/`TimeSlot`/`Booking`/`Review`/`User` types (see §6) — availability is now computed from venue hours + existing bookings + service duration instead of a hardcoded list, and "From EGP X" / "Open now" are derived instead of stored.
 
 ---
 
@@ -45,6 +49,8 @@ Auxiliary support flow, reachable from the header menu icon or Bookings/Profile:
 | Routing | `expo-router` ~57 | File-based; Stack + Tabs; typed routes enabled |
 | Styling | NativeWind 4.2 + Tailwind CSS **3.4** | `darkMode: 'class'`; do **not** upgrade to Tailwind 4 (NativeWind 4 targets v3) |
 | Icons | `lucide-react-native` (+ `react-native-svg`) | Same icon set the v0 design used |
+| SVG components | `react-native-svg-transformer` | Wired into `metro.config.js` so `.svg` files import as components (`svg.d.ts` types them); not yet used by any screen — see §5's `Logo` note |
+| Fonts | `expo-font` + `@expo-google-fonts/fraunces` + `@expo-google-fonts/inter` | Loaded via `useFonts()` in `app/_layout.tsx`; splash screen stays up (`expo-splash-screen`) until they're ready |
 | Images | `expo-image` | Remote Unsplash / pravatar URLs for now |
 | Bottom sheets | `@gorhom/bottom-sheet` ~5.2 | Powers Explore's draggable map/list panel; peer deps (`react-native-reanimated`, `react-native-gesture-handler`) were already installed |
 | Safe areas | `react-native-safe-area-context` | Every screen wraps in `SafeAreaView` |
@@ -90,16 +96,16 @@ components/
   review-modal.tsx        Bottom-sheet star rating + always-optional text field, used by Bookings and Venue (no more requireText)
   settings-rows.tsx       SettingRow / ToggleRow, used by Profile and now Menu/Help too
   skeleton-card.tsx       Loading placeholder
-  logo.tsx                Text wordmark "cut**it**" (the SVG logo in assets/images is unused)
+  logo.tsx                Text wordmark "cut**it**" — intentionally still a placeholder; the SVG import path (`assets/images/cutit-logo.svg` via react-native-svg-transformer) is wired but unused until a final logo asset is ready
 lib/
-  data.ts                 Establishment/Staff/Service/Review types, 5 mock venues (each with a reviewList), serviceFilters, timeSlots
+  data.ts                 Venue/Staff/Service/TimeSlot/Booking/Review/User types; normalized mock tables (venues, staff, services, reviews, bookings, currentUser) plus derived helpers (getVenueStaff/Services/Reviews, getVenueStartingPrice, isVenueOpenNow, generateTimeSlots) — see §6
   app-state.tsx           React Context: hasOnboarded, isSignedIn, activeGender (+ actions)
   theme.ts                useThemeColors() → hex colours for icons (icons can't use `dark:` classes)
-assets/images/            Expo template icon/splash placeholders + cutit-logo.svg
+assets/images/            Cutit-branded icon.png / android-icon-*.png / favicon.png / splash-icon(-dark).png (derived from cutit-mark.svg, a crop of the wordmark's scissors motif) + the full cutit-logo.svg wordmark
 global.css                Tailwind directives (imported once in app/_layout.tsx)
-tailwind.config.js        NativeWind preset; fontFamily.serif = Georgia
-babel.config.js / metro.config.js   NativeWind wiring
-scripts/reset-project.js  Leftover from the Expo template (targets src/); safe to delete
+tailwind.config.js        NativeWind preset; fontFamily.serif = Fraunces_600SemiBold, fontFamily.sans = Inter_400Regular
+babel.config.js / metro.config.js   NativeWind wiring + react-native-svg-transformer (.svg → component)
+svg.d.ts                  Types `*.svg` imports as React components
 ```
 
 ~2,200 lines of app code.
@@ -131,15 +137,17 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - 🟡 "Venues"/"Professionals" toggle, "Anytime" dropdown, and the sliders/list-filter icon buttons are all visual only; map is still the CSS-pattern placeholder, not a real map
 
 ### Venue detail / booking (`/venue/[id]`)
-- ✅ Stylist picker (with a placeholder avatar icon when a staff member has no photo), service multi-select with search, 7-day date strip, time slots grouped by period, live total, Confirm gated on ≥1 service + a time
-- ✅ Venue cover photo falls back to a bordered placeholder block (camera/image icon) if `establishment.image` is ever missing
-- ✅ Written reviews list below the aggregate rating (initials avatar, star rating, text) sourced from `establishment.reviewList`; Write a Review modal (rating + always-optional text)
-- 🟡 Confirm shows a native `Alert` then jumps to Bookings — nothing is saved; heart/save; submitting a review doesn't append to the reviews list; slots aren't availability-aware
+- ✅ Stylist picker (with a placeholder avatar icon when a staff member has no photo), service multi-select with search, 7-day date strip, live total, Confirm gated on ≥1 service + a time
+- ✅ Time slots are now availability-aware: `generateTimeSlots()` derives them from the venue's opening hours, the selected staff member's existing bookings, and the selected services' combined duration — a slot overlapping a booking (or landing in the standing lunch-break rule) renders disabled rather than always showing a fixed list
+- ✅ Venue cover photo falls back to a bordered placeholder block (camera/image icon) if `venue.coverImageUrl` is ever null
+- ✅ Written reviews list below the aggregate rating (initials avatar, star rating, text) sourced from `getVenueReviews(venue.id)`; Write a Review modal (rating + always-optional text)
+- 🟡 Confirm shows a native `Alert` then jumps to Bookings — nothing is saved as a real `Booking` record; heart/save; submitting a review doesn't append to the reviews table
 
 ### Bookings
-- ✅ Upcoming (countdown banner, confirmed card, stylist, Call Venue / Get Directions) / Past (completed + cancelled cards), Leave a Review modal, Rebook → Explore
+- ✅ Upcoming (live countdown banner computed from the booking's real `startTime`, confirmed card, stylist, Call Venue / Get Directions) / Past (completed + cancelled cards), Leave a Review modal, Rebook → Explore
+- ✅ Sourced from `lib/data.ts`'s `bookings` mock table joined against `venues`/`staff`/`services` by id (one confirmed, one completed, one cancelled) instead of ad-hoc local objects
 - ✅ "Need Help with this Booking?" now navigates to `/help`
-- 🟡 Everything is hardcoded (two bookings); Call / Directions have no handlers; no cancel or reschedule from this screen itself (WhatsApp Support button was removed — that entry point now lives in Help instead)
+- 🟡 Still mock data, not persisted or interactive; Call / Directions have no handlers; no cancel or reschedule from this screen itself (WhatsApp Support button was removed — that entry point now lives in Help instead)
 
 ### Profile
 - ✅ Dark-mode toggle (NativeWind `useColorScheme`), gender toggle (shared context), language toggle, reminder/offers toggles, Log Out (→ onboarding)
@@ -162,21 +170,34 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 
 ## 6. State & data model
 
-- **Server state**: none. `lib/data.ts` exports a static `establishments` array. Screens filter it with `useMemo`.
+- **Server state**: none — `lib/data.ts` exports static, normalized mock tables. Screens read them through `useMemo` filters or the derived-data helpers below, not by reaching into nested objects.
 - **App state** (`lib/app-state.tsx`): `hasOnboarded`, `isSignedIn`, `activeGender` in a React Context. **Resets on every app launch/reload** — nothing is persisted.
 - **Theme**: NativeWind's built-in colour scheme (`useColorScheme()` from `nativewind`); follows the system by default, toggled from the header or Profile. Also not persisted.
 - **Booking selection** lives in local `useState` inside `venue/[id].tsx` and is discarded on confirm.
 
+`lib/data.ts` types (deliberately shaped to match what a real Supabase backend would return — normalized tables keyed by `venueId`/`staffId`/etc., not deeply nested object literals):
+
 ```ts
-type Establishment = {
-  id; name; district; category: 'Barbershop' | 'Beauty Salon'
-  gender: 'Men' | 'Women' | 'Unisex'; isOpen; rating; reviews; price
-  services: string[]; image: string
-  staff: { id; name; role; photo? }[]
-  serviceList: { name; price; duration }[]
-  reviewList: { id; author; rating; text }[]   // added for the venue-detail written reviews list
+type Venue = {
+  id; name; coverImageUrl: string | null; address; area; city; latitude; longitude
+  rating; reviewCount; category: 'Barbershop' | 'Beauty Salon'
+  gender: 'Men' | 'Women' | 'Unisex'        // drives the For Her/For Him filter — not in the original spec, kept because Home/Explore depend on it
+  servicesOffered: string[]                  // loose marketing tags (badges/search), separate from the Service catalog below
+  description; openingHours: Record<DayOfWeek, { open; close } | null>
 }
+type Staff = { id; venueId; name; role; photoUrl: string | null; rating? }
+type Service = { id; venueId; name; durationMinutes; priceEGP; category }
+type TimeSlot = { id; venueId; staffId; serviceId; startTime; endTime; status: 'available' | 'booked' | 'blocked' }
+type Booking = { id; userId; venueId; staffId; serviceId; startTime; endTime; status: 'confirmed' | 'completed' | 'cancelled'; priceEGP; createdAt; locationType: 'in-salon' | 'at-home' }
+type Review = { id; bookingId; venueId; userId; rating; text: string | null; authorName; createdAt }
+type User = { id; fullName; email; phone; avatarUrl: string | null; gender; addresses: Address[]; walletBalance }
 ```
+
+Mock tables: `venues`, `staff`, `services`, `reviews`, `bookings`, `currentUser`, plus `serviceFilters` (unchanged). Derived-data helpers stand in for what would be backend queries/RPCs:
+- `getVenueStaff/Services/Reviews(venueId)` — the join a real `select('*, staff(*), services(*)')` query would do.
+- `getVenueStartingPrice(venueId)` — cheapest service, not a stored/guessed number (card prices dropped when this landed — they used to just show the first-listed service's price).
+- `isVenueOpenNow(openingHours)` — live-computed "Open"/"Closed" badge instead of a static boolean (Maven Studio's hours are `null` every day to preserve its old always-closed demo state).
+- `generateTimeSlots({ venueId, staffId, serviceId, date, durationMinutes? })` — availability from venue hours + existing `bookings` + service duration (a hardcoded lunch-break rule at hour 13 stands in for a real per-staff schedule exceptions table, which doesn't exist yet).
 
 Screen-local state that isn't in a shared context (each resets on unmount/reload, same as everything else): `chat-support.tsx`'s message list, `help.tsx`'s placeholder actions, `menu.tsx`'s row taps, `auth.tsx`'s selected country/OTP digits.
 
@@ -185,7 +206,7 @@ Screen-local state that isn't in a shared context (each resets on unmount/reload
 ## 7. Design system & conventions
 
 - **Palette** (Tailwind defaults): background `#f7f5f1` (light) / `zinc-950` (dark); surfaces `white` / `zinc-900`; text `stone-900` / `white`; muted `stone-500` / `zinc-400`; borders `stone-200` / `zinc-800`; primary actions `stone-900` (light) → `blue-600` (dark, and for CTAs like Confirm/Continue); accents `amber-400` (stars), `emerald` (confirmed/completed status badges), `blue-50/100` (info tints), `red-500` (destructive).
-- **Typography**: headings use `font-serif` (Georgia on iOS; falls back to the system serif/Roboto on Android). Section eyebrows: `text-[11px] uppercase tracking-[3px]`.
+- **Typography**: headings use `font-serif` (Fraunces_600SemiBold, via `@expo-google-fonts/fraunces`), body/`font-sans` uses Inter_400Regular — both bundled with `expo-font` so they render identically on iOS and Android, replacing the old Georgia/system-font fallback. Section eyebrows: `text-[11px] uppercase tracking-[3px]`.
 - **Shape**: cards `rounded-2xl`, inputs/buttons `rounded-xl`, chips `rounded-full`, consistent `px-5` page gutters.
 - **Dark mode**: always pair light + `dark:` classes on `View`/`Text`. For icon colours use `useThemeColors()` (`lib/theme.ts`) because SVG props can't take classNames.
 - **Components**: `Pressable` (not `TouchableOpacity`), `expo-image`'s `Image`, `SafeAreaView` with explicit `edges`, `ScrollView` with `contentContainerClassName`. Horizontal lists are `ScrollView horizontal` + `flex-row gap-*`.
@@ -200,9 +221,8 @@ Screen-local state that isn't in a shared context (each resets on unmount/reload
 ## 8. Known limitations & gotchas
 
 - State and theme reset on reload (no AsyncStorage/MMKV yet).
-- Georgia isn't on Android → headings look different per platform.
 - Map, location, calls, directions, notifications are all placeholders (the WhatsApp Support button was removed from Bookings this session — that entry point now lives in Help/Chat Support instead).
-- App icon, splash, and adaptive icon are Expo template defaults, not Cutit branding.
+- App icon/splash/adaptive-icon are real Cutit branding now, but it's a quick mark derived from the wordmark's scissors motif, not final polished brand design — worth a real design pass later. `Logo` itself is still the text placeholder on purpose (the real wordmark SVG caused a native crash — "Element type is invalid" — most likely because the dev client needed a restart to pick up the new `metro.config.js` transformer; re-wire it via `assets/images/cutit-logo.svg` once that's confirmed fixed on-device).
 - Images are hot-linked from Unsplash / pravatar — fine for demos, not for production.
 - No ESLint/Prettier config (`expo lint` will prompt to create one), no tests, no CI.
 - `expo-env.d.ts` is generated and gitignored; TypeScript needs it for `*.css` imports — it's created on first `expo start`.
@@ -223,18 +243,13 @@ Nothing here is in git yet. Commit the Expo migration as one baseline commit bef
 
 | Placeholder today | Recommended replacement | Why |
 |---|---|---|
-| `lib/data.ts` mock array | **Supabase** (Postgres + Row-Level Security + Storage + phone OTP auth via Twilio/Vonage) accessed through **TanStack Query** | Fastest path to a real backend for a small team; phone OTP fits the existing auth UI; RLS keeps the customer app safe without a custom API layer. Firebase is the alternative if you prefer NoSQL + FCM. |
+| `lib/data.ts` mock tables (now Supabase-shaped, still in-memory) | **Supabase** (Postgres + Row-Level Security + Storage + phone OTP auth via Twilio/Vonage) accessed through **TanStack Query** | The types/normalization are already shaped for this (see §6) — the remaining work is a real Postgres schema + swapping the mock arrays for queries. Phone OTP fits the existing auth UI; RLS keeps the customer app safe without a custom API layer. Firebase is the alternative if you prefer NoSQL + FCM. |
 | In-memory `AppStateProvider` | Persist with **react-native-mmkv** (or AsyncStorage): onboarding done, session, gender, theme, language | Users shouldn't re-onboard on every launch. |
 | Fake OTP flow in `auth.tsx` | Supabase Auth phone sign-in (or Firebase Auth) with a real resend timer | Currently anyone can "log in". |
-| `Alert` on Confirm Booking | A real **booking record** + a confirmation screen (summary, add-to-calendar, "View in Bookings") | The core action currently saves nothing. |
-| `ExploreMap` pattern | **`react-native-maps`** (Google on Android, Apple on iOS) + **`expo-location`** for "near you" and "Search this area" | Location-based discovery is central to the product. |
-| Hardcoded `Amira Nabil` user, stats, addresses, wallet | Profile / addresses / wallet tables in the backend; make `SettingRow`s navigate to edit screens | Everything in Profile is inert today. |
-| Text wordmark `Logo` | The real `assets/images/cutit-logo.svg` via `react-native-svg-transformer` | Brand asset exists but isn't used. |
-| Expo template icon/splash | Proper Cutit app icon, adaptive icon, splash (`app.json` already points at the right paths) | Store-readiness and first impression. |
-| Georgia `font-serif` | Bundle a serif + sans pair with **`expo-font`** (e.g. Fraunces/Playfair Display + Inter) and wire into `tailwind.config.js` | Consistent typography across iOS and Android. |
+| `Alert` on Confirm Booking | Actually insert into the `bookings` table + a confirmation screen (summary, add-to-calendar, "View in Bookings") | The core action currently saves nothing — `generateTimeSlots()` already reads from `bookings`, so a real insert would immediately start affecting availability. |
+| `ExploreMap` pattern | **`react-native-maps`** (Google on Android, Apple on iOS) + **`expo-location`** for "near you" and "Search this area" | Location-based discovery is central to the product; `Venue` already carries `latitude`/`longitude`. |
+| Hardcoded `Amira Nabil` user, stats, addresses, wallet | Wire Profile to the new `currentUser`/`Address` types in `lib/data.ts`, then back those with real backend tables | `User`/`Address` types and a matching mock `currentUser` now exist (§6) but `profile.tsx` doesn't consume them yet — everything in Profile is still inert/hardcoded inline. |
 | Unsplash / pravatar images | Supabase Storage (or Cloudinary) with `expo-image` caching | Hot-linked images break and are unreliable. |
-| Hardcoded time slots | Availability computed from staff schedules + existing bookings + service duration | Slots must reflect real capacity. |
-| `scripts/reset-project.js` | Delete it (and the `reset-project` npm script) | Leftover from the template; targets `src/`, doesn't apply. |
 
 ### 9.3 Add — product
 
@@ -267,7 +282,16 @@ The baseline is now committed (see §2.4), which resolves 9.1. These are new obs
 - **Explore's search bar regressed to non-functional.** The old free-text `TextInput` was replaced with a static "All treatments / Current location" pressable to match Fresha's pattern (tap → open a dedicated search screen), but that search screen was never built, so Explore currently has no text search at all, only the gender filter. Building that search screen is now a real gap, not just a nice-to-have.
 - **Chat Support and Help are UI shells with no logic behind them.** Chat Support has no messaging backend (Supabase Realtime, Intercom, or similar) and no persistence — messages vanish on reload. Help's Reschedule/Cancel Booking buttons have nothing to act on since bookings aren't real records yet (depends on 9.2's "Alert on Confirm Booking → real booking record" item). Sequence these after real bookings exist.
 - **Favorites now has a real entry point (Menu) but no screen or state.** Worth prioritizing now that it's one tap away instead of a theoretical heart icon — needs a `favorites: Set<id>` (or backend table) shared via `lib/app-state.tsx` or a new context, plus the actual screen.
-- **Review submission still doesn't persist anywhere**, and this is more visible now that Venue detail shows a real written-reviews list pulled from `reviewList` — a submitted review won't appear in it. Once there's a backend, wire `ReviewModal`'s `onSubmit` to actually insert into that list.
-- **"Professionals" browsing mode (Explore) has no data model behind it.** If booking a specific professional across venues (not just per-venue staff) is a real product goal, `lib/data.ts` needs a top-level `Professional` entity independent of `Establishment.staff`.
+- **Review submission still doesn't persist anywhere**, and this is more visible now that Venue detail shows a real written-reviews list pulled from `getVenueReviews()`. Once there's a backend, wire `ReviewModal`'s `onSubmit` to actually insert into the `reviews` table.
+- **"Professionals" browsing mode (Explore) has no data model behind it.** If booking a specific professional across venues (not just per-venue staff) is a real product goal, `lib/data.ts` needs a top-level `Professional` entity independent of per-venue `Staff`.
 - **`country-code-picker.tsx`'s list is a hand-maintained array of ~11 countries.** Fine for an Egypt-first MVP; if international expansion becomes real, swap for a maintained dataset (e.g. `react-native-country-codes-picker`) rather than growing the array by hand.
 - **The OTP flow now looks fully production-ready** (polished 6-box auto-advance UI) **but still accepts any 6 digits.** The more convincing the UI, the higher the risk of shipping it unverified by accident — bump real OTP verification up in priority alongside phone auth in 9.2.
+
+### 9.7 New since the last update (2026-09-12, session 2)
+
+- **The real logo swap-in hit a native crash and was reverted on purpose.** Wiring `Logo` to import `cutit-logo.svg` via `react-native-svg-transformer` threw "Element type is invalid" on-device — almost certainly because a running dev client/Metro server needs a full restart to pick up a `metro.config.js` change (Metro only reads it at startup) rather than a real incompatibility. `Logo` currently renders the old text placeholder again; retry the swap after confirming a clean restart, and keep in mind a **real** logo asset was never provided this session — `cutit-logo.svg` is a placeholder wordmark, not final brand art.
+- **The app icon/splash mark is programmatically derived, not designed.** It's a crop of the wordmark's scissors motif, picked and positioned by trial-render rather than by a designer — good enough to replace the Expo template defaults, but due for a real design pass before store submission.
+- **"From EGP X" card prices changed** (e.g. The Grooming Society: 250 → 120) now that they're genuinely the cheapest service (`getVenueStartingPrice`) instead of an arbitrary stored number that happened to equal the first-listed service's price. Not a bug, but a visible number change worth knowing about if it comes up.
+- **"Open"/"Closed" badges are now real-time**, computed from `openingHours` against the device clock via `isVenueOpenNow`, instead of a fixed boolean. This means a venue's badge can now legitimately flip closed outside its configured hours — expected, but different from before where it never changed within a session.
+- **A `pnpm`/`npm` mismatch nearly shipped a stray lockfile.** New dependencies were installed with `npm` before realizing the project standardizes on `pnpm` (`.npmrc`'s `node-linker=hoisted`); this left a stray `package-lock.json` and an out-of-date `pnpm-lock.yaml`. Fixed by removing the former and running `pnpm install` to resync the latter — but a reminder to always check for `pnpm-lock.yaml`/`.npmrc` before running `npm install` in this repo.
+- **`generateTimeSlots`' lunch-break rule and per-staff schedule are simplifications**, not modeled data: there's no `staff_schedules`/`schedule_exceptions` table, so every staff member effectively shares their venue's opening hours, and "lunch break" is a hardcoded "block whatever slot starts at hour 13" rule rather than a real per-day exception. Fine for a demo; a real schedule model is needed before this is trustworthy for actual staff availability.
