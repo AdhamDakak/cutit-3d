@@ -34,9 +34,9 @@ export default function MenuScreen() {
       <View className="gap-3 px-5 py-6">
         <View className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
           <SettingRow icon={Heart} label="Favorites" onPress={() => console.log('Favorites pressed')} />
-          <SettingRow icon={Clock3} label="My Bookings" onPress={() => router.push('/(tabs)/bookings')} />
-          <SettingRow icon={HelpCircle} label="Help" onPress={() => router.push('/help')} />
-          <SettingRow icon={Settings} label="Settings" onPress={() => router.push('/(tabs)/profile')} />
+          <SettingRow icon={Clock3} label="My Bookings" onPress={() => router.dismissTo('/(tabs)/bookings')} />
+          <SettingRow icon={HelpCircle} label="Help" onPress={() => router.dismissTo('/help')} />
+          <SettingRow icon={Settings} label="Settings" onPress={() => router.dismissTo('/(tabs)/profile')} />
         </View>
 
         <Pressable
