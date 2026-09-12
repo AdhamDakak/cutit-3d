@@ -6,7 +6,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['Georgia', 'ui-serif', 'serif'],
+        serif: ['Fraunces_600SemiBold', 'ui-serif', 'serif'],
+        sans: ['Inter_400Regular', 'ui-sans-serif', 'sans-serif'],
       },
     },
   },
