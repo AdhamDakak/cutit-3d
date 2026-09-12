@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native'
 import { Star } from 'lucide-react-native'
 
-import type { Establishment } from '@/lib/data'
+import type { Venue } from '@/lib/data'
 
 const PATTERN_LINES = Array.from({ length: 5 }, (_, i) => i)
 
@@ -31,9 +31,9 @@ export function ExploreMap({
   selectedId,
   onSelectPin,
 }: {
-  establishments: Establishment[]
-  selectedId?: number | null
-  onSelectPin?: (item: Establishment) => void
+  establishments: Venue[]
+  selectedId?: string | null
+  onSelectPin?: (item: Venue) => void
 }) {
   return (
     <View className="absolute inset-0 overflow-hidden bg-[#dce5df] dark:bg-[#202728]">

@@ -8,7 +8,7 @@ import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet'
 import { EstablishmentCard } from '@/components/establishment-card'
 import { ExploreMap } from '@/components/explore-map'
 import { useAppState } from '@/lib/app-state'
-import { establishments, type Establishment } from '@/lib/data'
+import { venues, type Venue } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 const SNAP_POINTS = ['14%', '50%', '92%']
@@ -30,19 +30,19 @@ export default function ExploreScreen() {
   const { activeGender } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mode, setMode] = useState<'Venues' | 'Professionals'>('Venues')
   const [selectedDay, setSelectedDay] = useState(0)
 
   const filtered = useMemo(() => {
-    return establishments.filter((item) => {
+    return venues.filter((item) => {
       const genderKey = activeGender === 'For Her' ? 'Women' : 'Men'
       return item.gender === genderKey || item.gender === 'Unisex'
     })
   }, [activeGender])
 
   const renderItem = useCallback(
-    ({ item }: { item: Establishment }) => (
+    ({ item }: { item: Venue }) => (
       <View className="px-5 pb-3">
         <EstablishmentCard establishment={item} onPress={() => router.push(`/venue/${item.id}`)} />
       </View>

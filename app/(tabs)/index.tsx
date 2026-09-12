@@ -10,7 +10,7 @@ import { RecommendationFeed } from '@/components/recommendation-feed'
 import { ServiceShortcuts } from '@/components/service-shortcuts'
 import { SkeletonCard } from '@/components/skeleton-card'
 import { useAppState, type Gender } from '@/lib/app-state'
-import { establishments, serviceFilters } from '@/lib/data'
+import { serviceFilters, venues } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 export default function HomeScreen() {
@@ -22,11 +22,11 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false)
 
   const filtered = useMemo(() => {
-    return establishments.filter((item) => {
+    return venues.filter((item) => {
       const genderKey = activeGender === 'For Her' ? 'Women' : 'Men'
       const genderMatch = item.gender === genderKey || item.gender === 'Unisex'
-      const serviceMatch = service === 'All services' || item.services.includes(service)
-      const search = `${item.name} ${item.district} ${item.category} ${item.services.join(' ')}`.toLowerCase()
+      const serviceMatch = service === 'All services' || item.servicesOffered.includes(service)
+      const search = `${item.name} ${item.area} ${item.category} ${item.servicesOffered.join(' ')}`.toLowerCase()
       return genderMatch && serviceMatch && search.includes(query.toLowerCase())
     })
   }, [activeGender, query, service])
@@ -47,7 +47,7 @@ export default function HomeScreen() {
       <AppHeader />
       <ScrollView className="flex-1" contentContainerClassName="pb-8">
         <ServiceShortcuts />
-        <RecommendationFeed establishments={establishments} signedIn={isSignedIn} gender={activeGender} />
+        <RecommendationFeed establishments={venues} signedIn={isSignedIn} gender={activeGender} />
 
         <View className="px-5 pt-7">
           <Text className="text-sm font-medium text-stone-500 dark:text-zinc-400">Good afternoon, Amira</Text>

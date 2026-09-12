@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { Star } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 
-import type { Establishment } from '@/lib/data'
+import { getVenueStartingPrice, type Venue } from '@/lib/data'
 import type { Gender } from '@/lib/app-state'
 import { useThemeColors } from '@/lib/theme'
 
@@ -12,7 +12,7 @@ export function RecommendationFeed({
   signedIn,
   gender,
 }: {
-  establishments: Establishment[]
+  establishments: Venue[]
   signedIn: boolean
   gender: Gender
 }) {
@@ -39,7 +39,7 @@ export function RecommendationFeed({
               onPress={() => router.push(`/venue/${item.id}`)}
               className="w-56 overflow-hidden rounded-2xl border border-stone-200 bg-white active:opacity-90 dark:border-zinc-800 dark:bg-zinc-900"
             >
-              <Image source={{ uri: item.image }} className="h-28 w-full" contentFit="cover" />
+              <Image source={{ uri: item.coverImageUrl ?? undefined }} className="h-28 w-full" contentFit="cover" />
               <View className="p-3">
                 <View className="flex-row items-start justify-between gap-2">
                   <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-stone-900 dark:text-white">
@@ -51,11 +51,11 @@ export function RecommendationFeed({
                   </View>
                 </View>
                 <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">
-                  {item.district} · From EGP {item.price}
+                  {item.area} · From EGP {getVenueStartingPrice(item.id)}
                 </Text>
                 <View className="mt-2 flex-row items-center gap-1">
                   <View className="rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
-                    <Text className="text-[10px] text-stone-600 dark:text-zinc-300">{item.services[0]}</Text>
+                    <Text className="text-[10px] text-stone-600 dark:text-zinc-300">{item.servicesOffered[0]}</Text>
                   </View>
                   <Pressable
                     onPress={() => router.push(`/venue/${item.id}`)}

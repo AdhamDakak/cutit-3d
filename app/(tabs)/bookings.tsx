@@ -14,26 +14,47 @@ import {
 } from 'lucide-react-native'
 
 import { ReviewModal } from '@/components/review-modal'
-import { establishments } from '@/lib/data'
+import { bookings, currentUser, services, staff, venues, type Booking } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
 
-const upcoming = {
-  name: 'The Grooming Society',
-  district: 'New Cairo',
-  image: establishments[0].image,
-  stylist: 'Kareem',
-  service: 'Haircut & Beard',
-  total: 350,
+function getBookingDetails(booking: Booking) {
+  const venue = venues.find((item) => item.id === booking.venueId)
+  const bookingStaff = staff.find((item) => item.id === booking.staffId)
+  const service = services.find((item) => item.id === booking.serviceId)
+  const startDate = new Date(booking.startTime)
+  return {
+    venue,
+    staff: bookingStaff,
+    service,
+    startDate,
+    priceEGP: booking.priceEGP,
+    locationType: booking.locationType,
+    dateLabel: startDate.toLocaleDateString([], { month: 'long', day: '2-digit', year: 'numeric' }),
+    timeLabel: startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+  }
 }
-const past = { name: 'Luma Beauty House', district: 'Zamalek', image: establishments[1].image, date: 'June 14, 2024', total: 650 }
+
+const myBookings = bookings.filter((booking) => booking.userId === currentUser.id)
+const upcomingBooking = myBookings.find((booking) => booking.status === 'confirmed')
+const pastBooking = myBookings.find((booking) => booking.status === 'completed')
+const cancelledBooking = myBookings.find((booking) => booking.status === 'cancelled')
 
 export default function BookingsScreen() {
   const [tab, setTab] = useState<Tab>('Upcoming')
   const [reviewOpen, setReviewOpen] = useState(false)
   const colors = useThemeColors()
   const router = useRouter()
+
+  // Guaranteed present in mock data — one booking per status.
+  const upcoming = getBookingDetails(upcomingBooking!)
+  const past = getBookingDetails(pastBooking!)
+  const cancelled = getBookingDetails(cancelledBooking!)
+
+  const minutesUntil = Math.max(0, Math.round((upcoming.startDate.getTime() - Date.now()) / 60000))
+  const hoursUntil = Math.floor(minutesUntil / 60)
+  const remainderMinutes = minutesUntil % 60
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
@@ -65,20 +86,22 @@ export default function BookingsScreen() {
                 <Clock3 size={20} color="#ffffff" />
               </View>
               <View className="flex-1">
-                <Text className="text-sm font-semibold text-blue-900 dark:text-blue-100">Your appointment is in 1 hour and 45 minutes</Text>
-                <Text className="mt-1 text-xs text-blue-900/70 dark:text-blue-100/70">Today, 4:30 PM · Please arrive 10 minutes early</Text>
+                <Text className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                  Your appointment is in {hoursUntil} hour{hoursUntil === 1 ? '' : 's'} and {remainderMinutes} minutes
+                </Text>
+                <Text className="mt-1 text-xs text-blue-900/70 dark:text-blue-100/70">Today, {upcoming.timeLabel} · Please arrive 10 minutes early</Text>
               </View>
             </View>
 
             <View className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
               <View className="flex-row gap-3 p-4">
-                <Image source={{ uri: upcoming.image }} className="size-16 rounded-xl" contentFit="cover" />
+                <Image source={{ uri: upcoming.venue?.coverImageUrl ?? undefined }} className="size-16 rounded-xl" contentFit="cover" />
                 <View className="min-w-0 flex-1">
                   <View className="flex-row items-start justify-between gap-2">
                     <View>
-                      <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{upcoming.name}</Text>
+                      <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{upcoming.venue?.name}</Text>
                       <View className="mt-1 self-start rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
-                        <Text className="text-[10px] text-stone-600 dark:text-zinc-300">{upcoming.district}</Text>
+                        <Text className="text-[10px] text-stone-600 dark:text-zinc-300">{upcoming.venue?.area}</Text>
                       </View>
                     </View>
                     <View className="rounded-full bg-emerald-100 px-2 py-1">
@@ -93,20 +116,20 @@ export default function BookingsScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-medium text-stone-900 dark:text-white">
-                    {upcoming.stylist} <Text className="text-stone-500 dark:text-zinc-400">(Master Barber)</Text>
+                    {upcoming.staff?.name} <Text className="text-stone-500 dark:text-zinc-400">({upcoming.staff?.role})</Text>
                   </Text>
                   <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">
-                    {upcoming.service} · EGP {upcoming.total}
+                    {upcoming.service?.name} · EGP {upcoming.priceEGP}
                   </Text>
                 </View>
               </View>
               <View className="flex-row items-center justify-between px-4 py-3">
                 <View className="flex-row items-center gap-1.5">
                   <CalendarDays size={14} color={colors.foreground} />
-                  <Text className="text-xs font-medium text-stone-900 dark:text-white">Today, 4:30 PM</Text>
+                  <Text className="text-xs font-medium text-stone-900 dark:text-white">Today, {upcoming.timeLabel}</Text>
                 </View>
                 <View className="rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
-                  <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">In-Salon</Text>
+                  <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">{upcoming.locationType === 'in-salon' ? 'In-Salon' : 'At-Home'}</Text>
                 </View>
               </View>
               <View className="gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
@@ -131,18 +154,18 @@ export default function BookingsScreen() {
           <>
             <View className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
               <View className="flex-row gap-3 p-4">
-                <Image source={{ uri: past.image }} className="size-16 rounded-xl" contentFit="cover" />
+                <Image source={{ uri: past.venue?.coverImageUrl ?? undefined }} className="size-16 rounded-xl" contentFit="cover" />
                 <View className="min-w-0 flex-1">
                   <View className="flex-row items-start justify-between gap-2">
                     <View>
-                      <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{past.name}</Text>
-                      <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{past.district} · {past.date}</Text>
+                      <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{past.venue?.name}</Text>
+                      <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{past.venue?.area} · {past.dateLabel}</Text>
                     </View>
                     <View className="rounded-full bg-emerald-100 px-2 py-1">
                       <Text className="text-[10px] font-semibold text-emerald-700">Completed</Text>
                     </View>
                   </View>
-                  <Text className="mt-3 text-sm font-semibold text-stone-900 dark:text-white">Total paid · EGP {past.total}</Text>
+                  <Text className="mt-3 text-sm font-semibold text-stone-900 dark:text-white">Total paid · EGP {past.priceEGP}</Text>
                 </View>
               </View>
               <View className="flex-row gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
@@ -160,8 +183,8 @@ export default function BookingsScreen() {
                 <CalendarX2 size={24} color={colors.muted} />
               </View>
               <View>
-                <Text className="text-sm font-semibold text-stone-900 dark:text-white">Maven Studio</Text>
-                <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">Maadi · May 02, 2024</Text>
+                <Text className="text-sm font-semibold text-stone-900 dark:text-white">{cancelled.venue?.name}</Text>
+                <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{cancelled.venue?.area} · {cancelled.dateLabel}</Text>
                 <View className="mt-3 self-start rounded-full bg-stone-200 px-2 py-1">
                   <Text className="text-[10px] font-semibold text-stone-600">Cancelled</Text>
                 </View>
@@ -174,7 +197,7 @@ export default function BookingsScreen() {
       <ReviewModal
         visible={reviewOpen}
         title="How was your visit?"
-        subtitle={past.name}
+        subtitle={past.venue?.name}
         onClose={() => setReviewOpen(false)}
         onSubmit={() => {}}
       />

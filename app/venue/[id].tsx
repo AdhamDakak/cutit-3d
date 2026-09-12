@@ -6,7 +6,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound } from 'lucide-react-native'
 
 import { ReviewModal } from '@/components/review-modal'
-import { establishments, timeSlots } from '@/lib/data'
+import { generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 function getInitials(name: string) {
@@ -18,14 +18,21 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
+function getSlotPeriod(startTime: string): 'Morning' | 'Afternoon' | 'Evening' {
+  const hour = new Date(startTime).getHours()
+  if (hour < 12) return 'Morning'
+  if (hour < 17) return 'Afternoon'
+  return 'Evening'
+}
+
 export default function VenueScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const establishment = establishments.find((item) => item.id === Number(id))
+  const establishment = venues.find((item) => item.id === id)
   const router = useRouter()
   const colors = useThemeColors()
 
-  const [selectedStaff, setSelectedStaff] = useState<number | null>(null)
-  const [selectedServices, setSelectedServices] = useState<Set<number>>(new Set())
+  const [selectedStaff, setSelectedStaff] = useState<string | null>(null)
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set())
   const [selectedDate, setSelectedDate] = useState(0)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [serviceQuery, setServiceQuery] = useState('')
@@ -43,12 +50,37 @@ export default function VenueScreen() {
 
   if (!establishment) return <Redirect href="/(tabs)" />
 
-  const totalPrice = Array.from(selectedServices).reduce((sum, idx) => sum + (establishment.serviceList[idx]?.price ?? 0), 0)
-  const filteredServices = establishment.serviceList.filter((service) => service.name.toLowerCase().includes(serviceQuery.toLowerCase()))
+  const venueStaff = getVenueStaff(establishment.id)
+  const venueServices = getVenueServices(establishment.id)
+  const venueReviews = getVenueReviews(establishment.id)
+
+  const totalPrice = Array.from(selectedServices).reduce((sum, serviceId) => {
+    const service = venueServices.find((item) => item.id === serviceId)
+    return sum + (service?.priceEGP ?? 0)
+  }, 0)
+  const filteredServices = venueServices.filter((service) => service.name.toLowerCase().includes(serviceQuery.toLowerCase()))
   const canConfirm = selectedServices.size > 0 && !!selectedTime
 
+  const selectedDurationMinutes =
+    Array.from(selectedServices).reduce((sum, serviceId) => {
+      const service = venueServices.find((item) => item.id === serviceId)
+      return sum + (service?.durationMinutes ?? 0)
+    }, 0) || 30
+  const effectiveStaffId = selectedStaff ?? `${establishment.id}-any`
+  const representativeServiceId = Array.from(selectedServices)[0] ?? venueServices[0]?.id ?? ''
+  const daySlots = representativeServiceId
+    ? generateTimeSlots({
+        venueId: establishment.id,
+        staffId: effectiveStaffId,
+        serviceId: representativeServiceId,
+        date: dates[selectedDate],
+        durationMinutes: selectedDurationMinutes,
+      })
+    : []
+
   const confirmBooking = () => {
-    Alert.alert('Booking confirmed', `${establishment.name} · ${dayNames[dates[selectedDate].getDay()]} at ${selectedTime}`, [
+    const timeLabel = selectedTime ? new Date(selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+    Alert.alert('Booking confirmed', `${establishment.name} · ${dayNames[dates[selectedDate].getDay()]} at ${timeLabel}`, [
       { text: 'OK', onPress: () => router.replace('/(tabs)/bookings') },
     ])
   }
@@ -68,8 +100,8 @@ export default function VenueScreen() {
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="pb-28">
-        {establishment.image ? (
-          <Image source={{ uri: establishment.image }} className="h-64 w-full" contentFit="cover" />
+        {establishment.coverImageUrl ? (
+          <Image source={{ uri: establishment.coverImageUrl }} className="h-64 w-full" contentFit="cover" />
         ) : (
           <View className="h-64 w-full items-center justify-center border border-stone-200 bg-stone-100 dark:border-zinc-800 dark:bg-zinc-900">
             <ImageIcon size={32} color={colors.muted} />
@@ -83,12 +115,12 @@ export default function VenueScreen() {
               <Text className="font-serif text-2xl font-semibold text-stone-900 dark:text-white">{establishment.name}</Text>
               <View className="mt-2 flex-row items-center gap-1.5">
                 <MapPin size={16} color={colors.muted} />
-                <Text className="text-stone-500 dark:text-zinc-400">{establishment.district}</Text>
+                <Text className="text-stone-500 dark:text-zinc-400">{establishment.area}</Text>
               </View>
               <View className="mt-3 flex-row items-center gap-1">
                 <Star size={16} color={colors.amber} fill={colors.amber} />
                 <Text className="font-semibold text-stone-900 dark:text-white">{establishment.rating}</Text>
-                <Text className="text-stone-500 dark:text-zinc-400">({establishment.reviews} reviews)</Text>
+                <Text className="text-stone-500 dark:text-zinc-400">({establishment.reviewCount} reviews)</Text>
               </View>
             </View>
           </View>
@@ -97,7 +129,7 @@ export default function VenueScreen() {
             <Text className="mb-4 font-semibold text-stone-900 dark:text-white">Select a Stylist</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-3">
-                {establishment.staff.map((person) => {
+                {venueStaff.map((person) => {
                   const active = selectedStaff === person.id
                   return (
                     <Pressable
@@ -105,8 +137,8 @@ export default function VenueScreen() {
                       onPress={() => setSelectedStaff(person.id)}
                       className={`items-center gap-2 rounded-lg px-3 py-2 ${active ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
                     >
-                      {person.photo ? (
-                        <Image source={{ uri: person.photo }} className="size-10 rounded-full" />
+                      {person.photoUrl ? (
+                        <Image source={{ uri: person.photoUrl }} className="size-10 rounded-full" />
                       ) : (
                         <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
                           <UserRound size={18} color={colors.mutedStrong} />
@@ -126,7 +158,7 @@ export default function VenueScreen() {
           <View className="mt-8">
             <View className="mb-4 flex-row items-center justify-between gap-3">
               <Text className="font-semibold text-stone-900 dark:text-white">Select Services</Text>
-              <Text className="text-xs text-stone-500 dark:text-zinc-400">{establishment.serviceList.length} options</Text>
+              <Text className="text-xs text-stone-500 dark:text-zinc-400">{venueServices.length} options</Text>
             </View>
             <View className="mb-3 flex-row items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900">
               <Search size={16} color={colors.muted} />
@@ -140,15 +172,14 @@ export default function VenueScreen() {
             </View>
             <View className="gap-3">
               {filteredServices.map((service) => {
-                const idx = establishment.serviceList.indexOf(service)
-                const selected = selectedServices.has(idx)
+                const selected = selectedServices.has(service.id)
                 return (
                   <Pressable
-                    key={service.name}
+                    key={service.id}
                     onPress={() => {
                       const next = new Set(selectedServices)
-                      if (next.has(idx)) next.delete(idx)
-                      else next.add(idx)
+                      if (next.has(service.id)) next.delete(service.id)
+                      else next.add(service.id)
                       setSelectedServices(next)
                     }}
                     className={`flex-row items-start gap-3 rounded-lg border p-3 ${
@@ -164,9 +195,9 @@ export default function VenueScreen() {
                     </View>
                     <View className="flex-1">
                       <Text className="font-medium text-stone-900 dark:text-white">{service.name}</Text>
-                      <Text className="text-sm text-stone-500 dark:text-zinc-400">{service.duration} min</Text>
+                      <Text className="text-sm text-stone-500 dark:text-zinc-400">{service.durationMinutes} min</Text>
                     </View>
-                    <Text className="shrink-0 font-semibold text-stone-900 dark:text-white">EGP {service.price}</Text>
+                    <Text className="shrink-0 font-semibold text-stone-900 dark:text-white">EGP {service.priceEGP}</Text>
                   </Pressable>
                 )
               })}
@@ -196,29 +227,39 @@ export default function VenueScreen() {
 
           <View className="mt-8 gap-4">
             <Text className="font-semibold text-stone-900 dark:text-white">Select Time</Text>
-            {(['Morning', 'Afternoon', 'Evening'] as const).map((period) => (
-              <View key={period}>
-                <Text className="mb-2 text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-zinc-400">{period}</Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {timeSlots
-                    .filter((slot) => slot.period === period)
-                    .map((slot) => {
-                      const active = selectedTime === slot.time
+            {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">No availability this day.</Text>}
+            {(['Morning', 'Afternoon', 'Evening'] as const).map((period) => {
+              const periodSlots = daySlots.filter((slot) => getSlotPeriod(slot.startTime) === period)
+              if (periodSlots.length === 0) return null
+              return (
+                <View key={period}>
+                  <Text className="mb-2 text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-zinc-400">{period}</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {periodSlots.map((slot) => {
+                      const active = selectedTime === slot.startTime
+                      const disabled = slot.status !== 'available'
+                      const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                       return (
                         <Pressable
-                          key={slot.time}
-                          onPress={() => setSelectedTime(slot.time)}
+                          key={slot.id}
+                          disabled={disabled}
+                          onPress={() => setSelectedTime(slot.startTime)}
                           className={`min-w-[70px] items-center rounded-lg border py-2 ${
-                            active ? 'border-transparent bg-stone-900 dark:bg-blue-600' : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
+                            active
+                              ? 'border-transparent bg-stone-900 dark:bg-blue-600'
+                              : disabled
+                                ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
+                                : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
                           }`}
                         >
-                          <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{slot.time}</Text>
+                          <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
                         </Pressable>
                       )
                     })}
+                  </View>
                 </View>
-              </View>
-            ))}
+              )
+            })}
           </View>
 
           <View className="mt-10 border-t border-stone-200/70 pt-6 dark:border-zinc-800">
@@ -235,19 +276,19 @@ export default function VenueScreen() {
               <View className="flex-row items-center gap-2">
                 <Star size={16} color={colors.amber} fill={colors.amber} />
                 <Text className="font-semibold text-stone-900 dark:text-white">{establishment.rating}</Text>
-                <Text className="text-xs text-stone-500 dark:text-zinc-400">from {establishment.reviews} reviews</Text>
+                <Text className="text-xs text-stone-500 dark:text-zinc-400">from {establishment.reviewCount} reviews</Text>
               </View>
             </View>
 
             <View className="mt-4 gap-3">
-              {establishment.reviewList.map((review) => (
+              {venueReviews.map((review) => (
                 <View key={review.id} className="rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2">
                       <View className="size-8 items-center justify-center rounded-full bg-stone-200 dark:bg-zinc-700">
-                        <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{getInitials(review.author)}</Text>
+                        <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{getInitials(review.authorName)}</Text>
                       </View>
-                      <Text className="text-sm font-medium text-stone-900 dark:text-white">{review.author}</Text>
+                      <Text className="text-sm font-medium text-stone-900 dark:text-white">{review.authorName}</Text>
                     </View>
                     <View className="flex-row items-center gap-1">
                       <Star size={12} color={colors.amber} fill={colors.amber} />
