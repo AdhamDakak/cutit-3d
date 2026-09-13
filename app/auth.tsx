@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
 import { CountryCodePicker, COUNTRY_CODES, type CountryCode } from '@/components/country-code-picker'
 import { Logo } from '@/components/logo'
@@ -10,6 +11,7 @@ import { useAppState } from '@/lib/app-state'
 type Step = 'phone' | 'otp' | 'profile'
 
 export default function AuthScreen() {
+  const { t } = useTranslation()
   const [country, setCountry] = useState<CountryCode>(COUNTRY_CODES[0])
   const [phone, setPhone] = useState('')
   const [step, setStep] = useState<Step>('phone')
@@ -66,15 +68,16 @@ export default function AuthScreen() {
 
         {step === 'phone' && (
           <View className="mt-16">
-            <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">Welcome to Cutit</Text>
-            <Text className="mt-3 text-sm text-stone-500 dark:text-zinc-400">Sign in with your mobile number.</Text>
+            <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">{t('auth.welcomeTitle')}</Text>
+            <Text className="mt-3 text-sm text-stone-500 dark:text-zinc-400">{t('auth.welcomeSubtitle')}</Text>
             <View className="mt-8 flex-row items-center gap-2">
               <CountryCodePicker value={country} onChange={setCountry} />
               <TextInput
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
-                placeholder="10 1234 5678"
+                placeholder={t('auth.phonePlaceholder')}
+                style={{ writingDirection: 'ltr', textAlign: 'left' }}
                 className="flex-1 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
               />
             </View>
@@ -83,16 +86,16 @@ export default function AuthScreen() {
               disabled={phone.replace(/\D/g, '').length < 10}
               className="mt-4 w-full items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-40"
             >
-              <Text className="text-sm font-semibold text-white">Send OTP</Text>
+              <Text className="text-sm font-semibold text-white">{t('auth.sendOtp')}</Text>
             </Pressable>
           </View>
         )}
 
         {step === 'otp' && (
           <View className="mt-16">
-            <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">Verify your number</Text>
+            <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">{t('auth.verifyTitle')}</Text>
             <Text className="mt-3 text-sm text-stone-500 dark:text-zinc-400">
-              Enter the code sent to {country.code} {phone}
+              {t('auth.codeSentTo', { code: country.code, phone })}
             </Text>
             <View className="mt-8 flex-row justify-between gap-2">
               {otpDigits.map((digit, index) => (
@@ -111,29 +114,29 @@ export default function AuthScreen() {
                 />
               ))}
             </View>
-            <Text className="mt-3 text-center text-xs text-stone-500 dark:text-zinc-400">Resend code in 30s</Text>
+            <Text className="mt-3 text-center text-xs text-stone-500 dark:text-zinc-400">{t('auth.resendCode')}</Text>
             <Pressable
               onPress={() => setStep('profile')}
               disabled={otpDigits.some((d) => !d)}
               className="mt-6 w-full items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-40"
             >
-              <Text className="text-sm font-semibold text-white">Verify & Continue</Text>
+              <Text className="text-sm font-semibold text-white">{t('auth.verifyContinue')}</Text>
             </Pressable>
           </View>
         )}
 
         {step === 'profile' && (
           <View className="mt-16">
-            <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">Create your profile</Text>
+            <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">{t('auth.createProfileTitle')}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Full name"
+              placeholder={t('auth.fullNamePlaceholder')}
               style={centeredTextStyle}
               className={inputClass}
             />
             <TextInput
-              placeholder="Email address (optional)"
+              placeholder={t('auth.emailPlaceholder')}
               style={centeredTextStyle}
               className={`${inputClass} mt-3`}
             />
@@ -142,7 +145,7 @@ export default function AuthScreen() {
               disabled={!name.trim()}
               className="mt-6 w-full items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-40"
             >
-              <Text className="text-sm font-semibold text-white">Continue</Text>
+              <Text className="text-sm font-semibold text-white">{t('common.continue')}</Text>
             </Pressable>
           </View>
         )}
@@ -150,7 +153,7 @@ export default function AuthScreen() {
 
       {step !== 'profile' && (
         <Pressable onPress={finish} className="absolute inset-x-5 bottom-10 items-center py-4">
-          <Text className="text-sm font-semibold text-stone-700 underline dark:text-zinc-300">Continue as Guest</Text>
+          <Text className="text-sm font-semibold text-stone-700 underline dark:text-zinc-300">{t('common.continueAsGuest')}</Text>
         </Pressable>
       )}
     </SafeAreaView>

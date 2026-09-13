@@ -1,12 +1,19 @@
 import { Image } from 'expo-image'
 import { Pressable, Text, View } from 'react-native'
 import { Heart, Home, MapPin, Star } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
+import { useAppState } from '@/lib/app-state'
 import { getVenueStartingPrice, isVenueOpenNow, type Venue } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
+const FAVORITE_RED = '#ef4444'
+
 export function EstablishmentCard({ establishment, onPress }: { establishment: Venue; onPress: () => void }) {
+  const { t } = useTranslation()
   const colors = useThemeColors()
+  const { isFavorite, toggleFavorite } = useAppState()
+  const favorited = isFavorite(establishment.id)
   const visibleServices = establishment.servicesOffered.slice(0, 2)
   const remainingCount = establishment.servicesOffered.length - 2
   const isOpen = isVenueOpenNow(establishment.openingHours)
@@ -30,10 +37,11 @@ export function EstablishmentCard({ establishment, onPress }: { establishment: V
           </View>
         </View>
         <Pressable
-          accessibilityLabel={`Save ${establishment.name}`}
-          className="absolute bottom-2 right-2 size-8 items-center justify-center rounded-full bg-white/90"
+          onPress={() => toggleFavorite(establishment.id)}
+          accessibilityLabel={t(favorited ? 'common.removeFromFavorites' : 'common.addToFavorites', { name: establishment.name })}
+          className="absolute bottom-2 end-2 size-8 items-center justify-center rounded-full bg-white/90"
         >
-          <Heart size={14} color={colors.mutedStrong} />
+          <Heart size={14} color={favorited ? FAVORITE_RED : colors.mutedStrong} fill={favorited ? FAVORITE_RED : 'transparent'} />
         </Pressable>
       </View>
 

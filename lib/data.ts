@@ -98,6 +98,13 @@ export type Address = {
   line: string
 }
 
+export type Favorite = {
+  id: string
+  userId: string
+  venueId: string
+  createdAt: string
+}
+
 export type User = {
   id: string
   fullName: string
@@ -329,6 +336,11 @@ export const bookings: Booking[] = [
     createdAt: '2024-04-28T09:00:00',
     locationType: 'in-salon',
   },
+]
+
+export const favorites: Favorite[] = [
+  { id: 'fav1', userId: currentUser.id, venueId: 'v1', createdAt: '2024-05-10T09:00:00' },
+  { id: 'fav2', userId: currentUser.id, venueId: 'v5', createdAt: '2024-05-18T09:00:00' },
 ]
 
 export const serviceFilters = ['All services', 'Haircut', 'Beard trim', 'Hair color', 'Manicure', 'Facials']

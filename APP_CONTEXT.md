@@ -256,7 +256,7 @@ Nothing here is in git yet. Commit the Expo migration as one baseline commit bef
 1. **At-home and Events & Bridal booking flows.** These are two of the three pillars of the product and currently only exist as chips. They need: service type selection, address picker (Profile already models Home/Work addresses), travel-fee logic, and different provider types (mobile barbers, makeup artists).
 2. **Booking lifecycle**: cancel, reschedule, no-show/late policies, status timeline (pending → confirmed → completed).
 3. **Payments**: **Paymob** and/or **Fawry** for Egypt (cards, wallets, cash-on-service), plus Apple Pay/Google Pay; connect the existing wallet UI to real balance/top-ups.
-4. **Arabic + RTL**: `i18next` + `expo-localization`, `I18nManager.forceRTL`, and RTL-aware layouts. The language toggle already exists — it must actually work for the Egyptian market.
+4. **Arabic + RTL** — in progress: `i18next` + `expo-localization` infrastructure is built, the language toggle is wired to `i18n.changeLanguage()` and persists via AsyncStorage (survives restarts), and roughly **70–80% of the app's strings are translated** (all of `app/` is done; the `components/` group is not yet). **RTL layout mirroring itself is unverified** — `I18nManager.forceRTL` doesn't visually mirror the layout even after a full app restart in Expo Go, matching a currently unresolved upstream Expo/RN issue reported across iOS/Android/web ([expo/expo#39752](https://github.com/expo/expo/issues/39752)). Testing in a real dev-client/production build (to rule out an Expo-Go-only quirk) is blocked on not having an Apple Developer account for an iOS ad-hoc build; an Android EAS build remains a lower-friction untested alternative. Parked until build access is available, or until the decision is made to stop relying on automatic `flexDirection` mirroring and make direction explicit everywhere instead.
 5. **Notifications**: `expo-notifications` for appointment reminders (the toggle exists) and booking status changes; deep links via the `cutit://` scheme already set in `app.json`.
 6. **Favourites** (all the heart buttons), **full reviews list** with photos, **real search & filters** (price range, rating, distance, open now, gender).
 7. **Venue/partner side** (later): a separate dashboard or app for salons to manage calendar, staff, services, and confirm bookings. Without it, bookings have no one to fulfil them.
@@ -295,3 +295,12 @@ The baseline is now committed (see §2.4), which resolves 9.1. These are new obs
 - **"Open"/"Closed" badges are now real-time**, computed from `openingHours` against the device clock via `isVenueOpenNow`, instead of a fixed boolean. This means a venue's badge can now legitimately flip closed outside its configured hours — expected, but different from before where it never changed within a session.
 - **A `pnpm`/`npm` mismatch nearly shipped a stray lockfile.** New dependencies were installed with `npm` before realizing the project standardizes on `pnpm` (`.npmrc`'s `node-linker=hoisted`); this left a stray `package-lock.json` and an out-of-date `pnpm-lock.yaml`. Fixed by removing the former and running `pnpm install` to resync the latter — but a reminder to always check for `pnpm-lock.yaml`/`.npmrc` before running `npm install` in this repo.
 - **`generateTimeSlots`' lunch-break rule and per-staff schedule are simplifications**, not modeled data: there's no `staff_schedules`/`schedule_exceptions` table, so every staff member effectively shares their venue's opening hours, and "lunch break" is a hardcoded "block whatever slot starts at hour 13" rule rather than a real per-day exception. Fine for a demo; a real schedule model is needed before this is trustworthy for actual staff availability.
+
+### 9.8 left for later
+
+So concretely, right now, your queue is:
+✅ Housekeeping — done
+✅ Entity shapes — done
+⏸ MMKV/persistence — deferred (revisit at dev-client migration)
+🔄 Maps — decision made (fake map now, real map later), no action needed today, just keep finishing Explore UI against the fake pattern
+⏸ Backend — parked

@@ -1,4 +1,5 @@
 import '../global.css'
+import '@/lib/i18n'
 
 import { Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces'
 import { Inter_400Regular } from '@expo-google-fonts/inter'
@@ -9,9 +10,29 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 
-import { AppStateProvider } from '@/lib/app-state'
+import { AppStateProvider, useAppState } from '@/lib/app-state'
 
 SplashScreen.preventAutoHideAsync()
+
+/**
+ * Renders nothing — just watches both readiness signals (fonts + the
+ * persisted-language hydration read in AppStateProvider) and hides the
+ * native splash once both are ready. Kept as a sibling of <Stack> rather
+ * than gating the tree's mount on either signal, since deferring <Stack>'s
+ * mount races index.tsx's <Redirect> against React Navigation's own mount
+ * handshake (the exact bug fixed earlier when the fonts gate was removed).
+ */
+function SplashGate({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { isHydrated } = useAppState()
+
+  useEffect(() => {
+    if (fontsLoaded && isHydrated) {
+      SplashScreen.hideAsync()
+    }
+  }, [fontsLoaded, isHydrated])
+
+  return null
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -19,16 +40,11 @@ export default function RootLayout() {
     Inter_400Regular,
   })
 
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync()
-    }
-  }, [fontsLoaded])
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AppStateProvider>
+          <SplashGate fontsLoaded={fontsLoaded} />
           <StatusBar style="auto" />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
@@ -39,6 +55,7 @@ export default function RootLayout() {
             <Stack.Screen name="chat-support" options={{ presentation: 'modal' }} />
             <Stack.Screen name="help" options={{ presentation: 'modal' }} />
             <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="favorites" options={{ presentation: 'modal' }} />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>

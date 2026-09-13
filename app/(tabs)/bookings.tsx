@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Image } from 'expo-image'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { I18nManager, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import {
@@ -12,6 +12,7 @@ import {
   MapPin,
   PhoneCall,
 } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 import { ReviewModal } from '@/components/review-modal'
 import { bookings, currentUser, services, staff, venues, type Booking } from '@/lib/data'
@@ -42,6 +43,7 @@ const pastBooking = myBookings.find((booking) => booking.status === 'completed')
 const cancelledBooking = myBookings.find((booking) => booking.status === 'cancelled')
 
 export default function BookingsScreen() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('Upcoming')
   const [reviewOpen, setReviewOpen] = useState(false)
   const colors = useThemeColors()
@@ -61,18 +63,20 @@ export default function BookingsScreen() {
       <View className="border-b border-stone-200 px-5 py-4 dark:border-zinc-800">
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">Your visits</Text>
-            <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">My Bookings</Text>
+            <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('bookings.yourVisits')}</Text>
+            <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('bookings.title')}</Text>
           </View>
-          <Pressable accessibilityLabel="Notifications" className="relative size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+          <Pressable accessibilityLabel={t('bookings.notifications')} className="relative size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
             <Bell size={16} color={colors.foreground} />
-            <View className="absolute right-2 top-2 size-1.5 rounded-full bg-blue-600" />
+            <View className="absolute end-2 top-2 size-1.5 rounded-full bg-blue-600" />
           </Pressable>
         </View>
         <View className="mt-5 flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-900">
           {(['Upcoming', 'Past History'] as Tab[]).map((item) => (
             <Pressable key={item} onPress={() => setTab(item)} className={`flex-1 items-center rounded-lg py-2.5 ${tab === item ? 'bg-white dark:bg-zinc-800' : ''}`}>
-              <Text className={`text-sm font-semibold ${tab === item ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>{item}</Text>
+              <Text className={`text-sm font-semibold ${tab === item ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
+                {item === 'Upcoming' ? t('bookings.tabUpcoming') : t('bookings.tabPastHistory')}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -87,9 +91,9 @@ export default function BookingsScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                  Your appointment is in {hoursUntil} hour{hoursUntil === 1 ? '' : 's'} and {remainderMinutes} minutes
+                  {t('bookings.appointmentIn', { count: hoursUntil, minutes: remainderMinutes })}
                 </Text>
-                <Text className="mt-1 text-xs text-blue-900/70 dark:text-blue-100/70">Today, {upcoming.timeLabel} · Please arrive 10 minutes early</Text>
+                <Text className="mt-1 text-xs text-blue-900/70 dark:text-blue-100/70">{t('bookings.todayAt', { time: upcoming.timeLabel })}</Text>
               </View>
             </View>
 
@@ -100,12 +104,12 @@ export default function BookingsScreen() {
                   <View className="flex-row items-start justify-between gap-2">
                     <View>
                       <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{upcoming.venue?.name}</Text>
-                      <View className="mt-1 self-start rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
+                      <View className={`mt-1 rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800 ${I18nManager.isRTL ? 'self-end' : 'self-start'}`}>
                         <Text className="text-[10px] text-stone-600 dark:text-zinc-300">{upcoming.venue?.area}</Text>
                       </View>
                     </View>
                     <View className="rounded-full bg-emerald-100 px-2 py-1">
-                      <Text className="text-[10px] font-semibold text-emerald-700">Confirmed</Text>
+                      <Text className="text-[10px] font-semibold text-emerald-700">{t('bookings.confirmed')}</Text>
                     </View>
                   </View>
                 </View>
@@ -126,26 +130,28 @@ export default function BookingsScreen() {
               <View className="flex-row items-center justify-between px-4 py-3">
                 <View className="flex-row items-center gap-1.5">
                   <CalendarDays size={14} color={colors.foreground} />
-                  <Text className="text-xs font-medium text-stone-900 dark:text-white">Today, {upcoming.timeLabel}</Text>
+                  <Text className="text-xs font-medium text-stone-900 dark:text-white">{t('bookings.todayAtShort', { time: upcoming.timeLabel })}</Text>
                 </View>
                 <View className="rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
-                  <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">{upcoming.locationType === 'in-salon' ? 'In-Salon' : 'At-Home'}</Text>
+                  <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">
+                    {upcoming.locationType === 'in-salon' ? t('bookings.inSalon') : t('bookings.atHome')}
+                  </Text>
                 </View>
               </View>
               <View className="gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
                 <View className="flex-row gap-2">
                   <Pressable className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
                     <PhoneCall size={14} color={colors.mutedStrong} />
-                    <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">Call Venue</Text>
+                    <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.callVenue')}</Text>
                   </Pressable>
                   <Pressable className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
                     <MapPin size={14} color={colors.mutedStrong} />
-                    <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">Get Directions</Text>
+                    <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.getDirections')}</Text>
                   </Pressable>
                 </View>
                 <Pressable onPress={() => router.push('/help')} className="flex-row items-center justify-center gap-1.5 py-1">
                   <HelpCircle size={14} color={colors.accent} />
-                  <Text className="text-xs font-semibold text-blue-600 dark:text-blue-400">Need Help with this Booking?</Text>
+                  <Text className="text-xs font-semibold text-blue-600 dark:text-blue-400">{t('bookings.needHelp')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -162,18 +168,18 @@ export default function BookingsScreen() {
                       <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{past.venue?.area} · {past.dateLabel}</Text>
                     </View>
                     <View className="rounded-full bg-emerald-100 px-2 py-1">
-                      <Text className="text-[10px] font-semibold text-emerald-700">Completed</Text>
+                      <Text className="text-[10px] font-semibold text-emerald-700">{t('bookings.completed')}</Text>
                     </View>
                   </View>
-                  <Text className="mt-3 text-sm font-semibold text-stone-900 dark:text-white">Total paid · EGP {past.priceEGP}</Text>
+                  <Text className="mt-3 text-sm font-semibold text-stone-900 dark:text-white">{t('bookings.totalPaid', { price: past.priceEGP })}</Text>
                 </View>
               </View>
               <View className="flex-row gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
                 <Pressable onPress={() => router.push('/(tabs)/explore')} className="flex-1 items-center rounded-xl bg-stone-900 py-2.5 dark:bg-blue-600">
-                  <Text className="text-xs font-semibold text-white">Rebook in 1-Tap</Text>
+                  <Text className="text-xs font-semibold text-white">{t('bookings.rebook')}</Text>
                 </Pressable>
                 <Pressable onPress={() => setReviewOpen(true)} className="flex-1 items-center rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
-                  <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">Leave a Review</Text>
+                  <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.leaveReview')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -185,8 +191,8 @@ export default function BookingsScreen() {
               <View>
                 <Text className="text-sm font-semibold text-stone-900 dark:text-white">{cancelled.venue?.name}</Text>
                 <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{cancelled.venue?.area} · {cancelled.dateLabel}</Text>
-                <View className="mt-3 self-start rounded-full bg-stone-200 px-2 py-1">
-                  <Text className="text-[10px] font-semibold text-stone-600">Cancelled</Text>
+                <View className={`mt-3 rounded-full bg-stone-200 px-2 py-1 ${I18nManager.isRTL ? 'self-end' : 'self-start'}`}>
+                  <Text className="text-[10px] font-semibold text-stone-600">{t('bookings.cancelled')}</Text>
                 </View>
               </View>
             </View>
@@ -196,7 +202,7 @@ export default function BookingsScreen() {
 
       <ReviewModal
         visible={reviewOpen}
-        title="How was your visit?"
+        title={t('bookings.howWasVisit')}
         subtitle={past.venue?.name}
         onClose={() => setReviewOpen(false)}
         onSubmit={() => {}}

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { I18nManager, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { CalendarDays, ChevronRight, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react-native'
+import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 import { AppHeader } from '@/components/app-header'
 import { EstablishmentCard } from '@/components/establishment-card'
@@ -13,7 +14,10 @@ import { useAppState, type Gender } from '@/lib/app-state'
 import { serviceFilters, venues } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
+const ForwardChevron = I18nManager.isRTL ? ChevronLeft : ChevronRight
+
 export default function HomeScreen() {
+  const { t } = useTranslation()
   const { activeGender, setActiveGender, isSignedIn } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
@@ -50,9 +54,9 @@ export default function HomeScreen() {
         <RecommendationFeed establishments={venues} signedIn={isSignedIn} gender={activeGender} />
 
         <View className="px-5 pt-7">
-          <Text className="text-sm font-medium text-stone-500 dark:text-zinc-400">Good afternoon, Amira</Text>
+          <Text className="text-sm font-medium text-stone-500 dark:text-zinc-400">{t('home.greeting', { name: 'Amira' })}</Text>
           <Text className="mt-1 font-serif text-3xl font-semibold leading-tight tracking-tight text-stone-900 dark:text-white">
-            Find your next <Text className="font-normal text-stone-500 dark:text-zinc-400">signature look.</Text>
+            {t('home.headlinePrefix')} <Text className="font-normal text-stone-500 dark:text-zinc-400">{t('home.headlineSuffix')}</Text>
           </Text>
         </View>
 
@@ -65,7 +69,7 @@ export default function HomeScreen() {
                 className={`flex-1 items-center rounded-lg py-2.5 ${activeGender === type ? 'bg-white dark:bg-zinc-900' : ''}`}
               >
                 <Text className={`text-sm font-medium ${activeGender === type ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
-                  {type}
+                  {t(`gender.${type}`)}
                 </Text>
               </Pressable>
             ))}
@@ -78,12 +82,12 @@ export default function HomeScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search salons, services..."
+              placeholder={t('home.searchPlaceholder')}
               placeholderTextColor={colors.muted}
               className="min-w-0 flex-1 text-sm text-stone-900 dark:text-white"
             />
             {query.length > 0 && (
-              <Pressable accessibilityLabel="Clear search" onPress={() => setQuery('')}>
+              <Pressable accessibilityLabel={t('home.clearSearch')} onPress={() => setQuery('')}>
                 <X size={16} color={colors.muted} />
               </Pressable>
             )}
@@ -100,10 +104,12 @@ export default function HomeScreen() {
                   service === item ? 'border-stone-900 bg-stone-900 dark:border-blue-500 dark:bg-blue-600' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
                 }`}
               >
-                <Text className={`text-xs font-medium ${service === item ? 'text-white' : 'text-stone-600 dark:text-zinc-400'}`}>{item}</Text>
+                <Text className={`text-xs font-medium ${service === item ? 'text-white' : 'text-stone-600 dark:text-zinc-400'}`}>
+                  {t(`serviceFilterLabels.${item}`)}
+                </Text>
               </Pressable>
             ))}
-            <Pressable accessibilityLabel="Open filters" className="size-8 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+            <Pressable accessibilityLabel={t('home.openFilters')} className="size-8 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
               <SlidersHorizontal size={14} color={colors.muted} />
             </Pressable>
           </View>
@@ -115,26 +121,26 @@ export default function HomeScreen() {
               <CalendarDays size={16} color={colors.mutedStrong} />
             </View>
             <View>
-              <Text className="text-xs font-semibold text-stone-800 dark:text-white">Ready for a refresh?</Text>
-              <Text className="mt-0.5 text-[11px] text-stone-600 dark:text-zinc-400">Rebook your last appointment</Text>
+              <Text className="text-xs font-semibold text-stone-800 dark:text-white">{t('home.refreshBannerTitle')}</Text>
+              <Text className="mt-0.5 text-[11px] text-stone-600 dark:text-zinc-400">{t('home.refreshBannerSubtitle')}</Text>
             </View>
           </View>
           <Pressable className="size-8 items-center justify-center rounded-full bg-stone-900 dark:bg-zinc-900">
-            <ChevronRight size={16} color="#ffffff" />
+            <ForwardChevron size={16} color="#ffffff" />
           </Pressable>
         </View>
 
         <View className="px-5 pt-7">
           <View className="mb-4 flex-row items-end justify-between">
             <View>
-              <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">Curated for you</Text>
+              <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('home.curatedForYou')}</Text>
               <Text className="mt-1 font-serif text-2xl font-semibold tracking-tight text-stone-900 dark:text-white">
-                Near you <Text className="font-sans text-sm font-normal text-stone-500 dark:text-zinc-400">({filtered.length})</Text>
+                {t('home.nearYou')} <Text className="font-sans text-sm font-normal text-stone-500 dark:text-zinc-400">({filtered.length})</Text>
               </Text>
             </View>
             <Pressable onPress={refresh} className="flex-row items-center gap-1">
               <RotateCcw size={14} color={colors.mutedStrong} />
-              <Text className="text-xs font-semibold text-stone-500 dark:text-zinc-400">Refresh</Text>
+              <Text className="text-xs font-semibold text-stone-500 dark:text-zinc-400">{t('home.refresh')}</Text>
             </Pressable>
           </View>
 
@@ -154,12 +160,12 @@ export default function HomeScreen() {
               <View className="size-14 items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800">
                 <Search size={24} color={colors.muted} />
               </View>
-              <Text className="mt-5 font-serif text-xl font-semibold text-stone-900 dark:text-white">Nothing found in Cairo</Text>
+              <Text className="mt-5 font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('home.emptyTitle')}</Text>
               <Text className="mt-2 max-w-xs text-center text-sm leading-6 text-stone-500 dark:text-zinc-400">
-                No salons or barbershops found matching your search in Cairo.
+                {t('home.emptyBody')}
               </Text>
               <Pressable onPress={resetFilters} className="mt-5 rounded-xl bg-stone-900 px-5 py-3 dark:bg-blue-600">
-                <Text className="text-sm font-semibold text-white">Reset filters</Text>
+                <Text className="text-sm font-semibold text-white">{t('home.resetFilters')}</Text>
               </Pressable>
             </View>
           )}

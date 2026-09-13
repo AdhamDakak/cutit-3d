@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { ChevronDown, ListFilter, Search, SlidersHorizontal } from 'lucide-react-native'
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet'
+import { useTranslation } from 'react-i18next'
 
 import { EstablishmentCard } from '@/components/establishment-card'
 import { ExploreMap } from '@/components/explore-map'
@@ -13,23 +14,25 @@ import { useThemeColors } from '@/lib/theme'
 
 const SNAP_POINTS = ['14%', '50%', '92%']
 
-function buildDayPills() {
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+function buildDayPills(locale: string) {
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric' })
   const today = new Date()
-  const upcoming = Array.from({ length: 5 }, (_, i) => {
+  return Array.from({ length: 5 }, (_, i) => {
     const date = new Date(today)
     date.setDate(date.getDate() + 2 + i)
-    return `${dayNames[date.getDay()]} ${date.getDate()}`
+    return formatter.format(date)
   })
-  return ['Any day', 'Today', 'Tomorrow', ...upcoming]
 }
 
-const DAY_PILLS = buildDayPills()
-
 export default function ExploreScreen() {
+  const { t, i18n } = useTranslation()
   const { activeGender } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
+  const dayPills = useMemo(
+    () => [t('explore.dayAnyDay'), t('explore.dayToday'), t('explore.dayTomorrow'), ...buildDayPills(i18n.language)],
+    [t, i18n.language],
+  )
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mode, setMode] = useState<'Venues' | 'Professionals'>('Venues')
   const [selectedDay, setSelectedDay] = useState(0)
@@ -70,17 +73,17 @@ export default function ExploreScreen() {
         <View className="gap-3 px-5 pb-3 pt-3">
           <View className="flex-row items-center gap-2">
             <Pressable
-              accessibilityLabel="Search treatments"
+              accessibilityLabel={t('explore.searchTreatments')}
               className="flex-1 flex-row items-center gap-3 rounded-full border border-stone-200 bg-white px-4 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"
             >
               <Search size={18} color={colors.muted} />
               <View>
-                <Text className="text-sm font-semibold text-stone-900 dark:text-white">All treatments</Text>
-                <Text className="text-xs text-stone-500 dark:text-zinc-400">Current location</Text>
+                <Text className="text-sm font-semibold text-stone-900 dark:text-white">{t('explore.allTreatments')}</Text>
+                <Text className="text-xs text-stone-500 dark:text-zinc-400">{t('explore.currentLocation')}</Text>
               </View>
             </Pressable>
             <Pressable
-              accessibilityLabel="View filters"
+              accessibilityLabel={t('explore.viewFilters')}
               className="size-11 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
             >
               <ListFilter size={18} color={colors.mutedStrong} />
@@ -91,15 +94,15 @@ export default function ExploreScreen() {
             <View className="flex-row items-center gap-2">
               {(['Venues', 'Professionals'] as const).map((item) => (
                 <Pressable key={item} onPress={() => setMode(item)} className={pillClass(mode === item)}>
-                  <Text className={pillTextClass(mode === item)}>{item}</Text>
+                  <Text className={pillTextClass(mode === item)}>{item === 'Venues' ? t('explore.modeVenues') : t('explore.modeProfessionals')}</Text>
                 </Pressable>
               ))}
               <Pressable className="flex-row items-center gap-1 rounded-full border border-stone-200 bg-white px-3.5 py-2 dark:border-zinc-700 dark:bg-zinc-900">
-                <Text className="text-xs font-medium text-stone-600 dark:text-zinc-300">Anytime</Text>
+                <Text className="text-xs font-medium text-stone-600 dark:text-zinc-300">{t('explore.anytime')}</Text>
                 <ChevronDown size={12} color={colors.muted} />
               </Pressable>
               <Pressable
-                accessibilityLabel="More filters"
+                accessibilityLabel={t('explore.moreFilters')}
                 className="size-8 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
               >
                 <SlidersHorizontal size={14} color={colors.mutedStrong} />
@@ -109,7 +112,7 @@ export default function ExploreScreen() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row items-center gap-2">
-              {DAY_PILLS.map((label, index) => (
+              {dayPills.map((label, index) => (
                 <Pressable key={label} onPress={() => setSelectedDay(index)} className={pillClass(selectedDay === index)}>
                   <Text className={pillTextClass(selectedDay === index)}>{label}</Text>
                 </Pressable>
@@ -127,7 +130,7 @@ export default function ExploreScreen() {
         handleIndicatorStyle={{ backgroundColor: colors.border }}
       >
         <View className="px-5 pb-3">
-          <Text className="font-serif text-lg font-semibold text-stone-900 dark:text-white">{filtered.length} venues in map area</Text>
+          <Text className="font-serif text-lg font-semibold text-stone-900 dark:text-white">{t('explore.venuesInMapArea', { count: filtered.length })}</Text>
         </View>
         <BottomSheetFlatList
           data={filtered}
