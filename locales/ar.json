@@ -61,8 +61,26 @@
   "tabs": {
     "home": "الرئيسية",
     "explore": "استكشف",
+    "cutitGo": "Cutit Go",
     "bookings": "الحجوزات",
     "profile": "الملف الشخصي"
+  },
+  "cutitGo": {
+    "title": "كيف تفضل الحجز؟",
+    "subtitle": "اختر خدمة متنقلة أو لمناسبة خاصة.",
+    "atHomeTitle": "في المنزل",
+    "atHomeDescription": "يأتي إليك الحلاق أو المصفف",
+    "eventsTitle": "المناسبات والعرائس",
+    "eventsDescription": "إطلالة احترافية ليومك المميز",
+    "noStylists": "لا يوجد مصففون متاحون لهذا الاختيار حالياً."
+  },
+  "atHome": {
+    "title": "في المنزل",
+    "subtitle": "لمن هذا الحجز؟"
+  },
+  "eventsBridal": {
+    "title": "المناسبات والعرائس",
+    "subtitle": "لمن هذا الحجز؟"
   },
   "gender": {
     "For Her": "لها",

@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next'
 import { AppHeader } from '@/components/app-header'
 import { EstablishmentCard } from '@/components/establishment-card'
 import { RecommendationFeed } from '@/components/recommendation-feed'
-import { ServiceShortcuts } from '@/components/service-shortcuts'
 import { SkeletonCard } from '@/components/skeleton-card'
 import { useAppState, type Gender } from '@/lib/app-state'
 import { serviceFilters, venues } from '@/lib/data'
@@ -50,7 +49,6 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
       <AppHeader />
       <ScrollView className="flex-1" contentContainerClassName="pb-8">
-        <ServiceShortcuts />
         <RecommendationFeed establishments={venues} signedIn={isSignedIn} gender={activeGender} />
 
         <View className="px-5 pt-7">

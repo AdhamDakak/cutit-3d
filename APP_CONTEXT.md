@@ -2,7 +2,7 @@
 
 > Single source of truth for what this app is, how it's built, where it stands, and what should change next. Keep it updated as the app evolves.
 
-_Last updated: 2026-09-12 (menu-close navigation fix, branding pass — icon/splash/fonts, mock data normalized into Supabase-shaped types)_
+_Last updated: 2026-09-14 (Favorites screen added and wired end-to-end; Arabic/RTL translation pass ~70–80% through `app/`)_
 
 ---
 
@@ -38,6 +38,8 @@ Auxiliary support flow, reachable from the header menu icon or Bookings/Profile:
    - Fixed Menu's My Bookings/Help/Settings rows pushing their destination screen on top of the still-mounted menu modal instead of closing it (`router.dismissTo`).
    - Wired `react-native-svg-transformer` (infra only — `Logo` still renders the text wordmark on purpose, see §5); generated a real app icon, Android adaptive-icon layers, favicon, and light/dark splash art from a mark derived from the wordmark's scissors motif (previous files were the unmodified Expo template defaults); bundled Fraunces + Inter via `expo-font`/`@expo-google-fonts` in place of Georgia.
    - Replaced the single `Establishment` mock type with normalized `Venue`/`Staff`/`Service`/`TimeSlot`/`Booking`/`Review`/`User` types (see §6) — availability is now computed from venue hours + existing bookings + service duration instead of a hardcoded list, and "From EGP X" / "Open now" are derived instead of stored.
+6. **Arabic + RTL pass (2026-09-13 → 2026-09-14, uncommitted)** — `i18next` + `react-i18next` + `expo-localization` wired via `lib/i18n.ts`, with `locales/en.json`/`ar.json` as the two resource files. Translated every screen under `app/` (root screens, all four tabs, venue detail) — roughly 70–80% of the app's strings; the `components/` group is not yet done. The language toggle in Profile is wired to `i18n.changeLanguage()` and persists via `AsyncStorage` (`lib/app-state.tsx`), correctly re-applying on the next launch via a hydration `useEffect` gated behind a `SplashGate` sibling component in `app/_layout.tsx` (deliberately *not* gating `<Stack>`'s own mount, to avoid re-triggering a mount-race warning fixed earlier in the session). **RTL layout mirroring itself remains unverified** — see §9.3 item 4 for the full status and the blocking issue.
+7. **Favorites screen (2026-09-14, uncommitted)** — new `app/favorites.tsx` (modal, same header pattern as `help.tsx`), added a `Favorite` join type to `lib/data.ts` (matching the `Booking`/`Review` normalized-entity pattern rather than an `isFavorite` field on `Venue`), and shared `favoriteVenueIds`/`isFavorite`/`toggleFavorite` state in `lib/app-state.tsx`. Wired the previously-inert heart icons in `establishment-card.tsx` and `venue/[id].tsx` to this shared state, and Menu's Favorites row now navigates there via `dismissTo`. Fully translated (en/ar). See §9.9 for what's still incidental/pending from this pass.
 
 ---
 
@@ -53,6 +55,9 @@ Auxiliary support flow, reachable from the header menu icon or Bookings/Profile:
 | Fonts | `expo-font` + `@expo-google-fonts/fraunces` + `@expo-google-fonts/inter` | Loaded via `useFonts()` in `app/_layout.tsx`; splash screen stays up (`expo-splash-screen`) until they're ready |
 | Images | `expo-image` | Remote Unsplash / pravatar URLs for now |
 | Bottom sheets | `@gorhom/bottom-sheet` ~5.2 | Powers Explore's draggable map/list panel; peer deps (`react-native-reanimated`, `react-native-gesture-handler`) were already installed |
+| i18n | `i18next` + `react-i18next` + `expo-localization` | `lib/i18n.ts`; resources in `locales/en.json`/`ar.json`; see §2.6 |
+| Persistence | `@react-native-async-storage/async-storage` | Only the language preference is persisted so far (`lib/app-state.tsx`) — **must be installed via `npx expo install`, not plain `pnpm add`**: a plain install once pulled an npm-latest version whose native module didn't match what Expo Go SDK 57 bundles, causing "Native module is null" crashes on-device (web was unaffected since AsyncStorage's web adapter has no native module) |
+| Dev builds | `expo-dev-client` + `eas.json` (`development` profile) | For testing outside Expo Go (e.g. verifying real `I18nManager.forceRTL` behavior) — no build has been run yet; blocked on Apple Developer account access for iOS, Android EAS build untried |
 | Safe areas | `react-native-safe-area-context` | Every screen wraps in `SafeAreaView` |
 | Language | TypeScript 6 (strict) | `pnpm typecheck` |
 | Package manager | pnpm 10 with **`node-linker=hoisted`** (`.npmrc`) | Required: Metro can't resolve `react-native-css-interop` under pnpm's strict layout |
@@ -78,7 +83,8 @@ app/                      expo-router routes
   auth.tsx                Country code picker + phone → 6-box auto-advancing OTP → profile (all client-side, no real OTP)
   chat-support.tsx        Modal: local-state chat UI (seeded support greeting, send appends to a list, no backend)
   help.tsx                Modal: Reschedule/Cancel Booking (placeholder actions) + a Chat Support row
-  menu.tsx                Modal: Favorites (placeholder) / My Bookings / Help / Settings / Sign Out, opened from the header ≡ icon
+  favorites.tsx           Modal: favorited venues (via EstablishmentCard) or an empty state with a "Browse venues" CTA
+  menu.tsx                Modal: Favorites (→ /favorites) / My Bookings / Help / Settings / Sign Out, opened from the header ≡ icon
   (tabs)/
     _layout.tsx           Bottom tabs: Home / Explore / Bookings / Profile (lucide icons, theme-aware)
     index.tsx             Home
@@ -89,8 +95,8 @@ app/                      expo-router routes
 components/
   app-header.tsx          Logo, dark-mode toggle, bell, menu (→ /menu), "Discover in Cairo", guest/user avatar toggle
   country-code-picker.tsx Pressable segment + modal list of ~11 country dial codes, used by auth.tsx
-  establishment-card.tsx  Venue card (cover, open/closed, rating, services, price, Book)
-  recommendation-feed.tsx Horizontal "Recommended for You" (gender-filtered when signed in)
+  establishment-card.tsx  Venue card (cover, open/closed, rating, services, price, Book, wired favorite heart)
+  recommendation-feed.tsx Horizontal "Recommended for You" (gender-filtered when signed in) — its own bespoke card, does NOT use EstablishmentCard, so it has no heart/favorite button at all
   service-shortcuts.tsx   At Home / Events & Bridal / Hair & Barbering / Beauty & Care chips (no handlers)
   explore-map.tsx         Pure background layer now: diagonal-line pattern + pins rendered as star+rating badges (no popup card)
   review-modal.tsx        Bottom-sheet star rating + always-optional text field, used by Bookings and Venue (no more requireText)
@@ -98,14 +104,18 @@ components/
   skeleton-card.tsx       Loading placeholder
   logo.tsx                Text wordmark "cut**it**" — intentionally still a placeholder; the SVG import path (`assets/images/cutit-logo.svg` via react-native-svg-transformer) is wired but unused until a final logo asset is ready
 lib/
-  data.ts                 Venue/Staff/Service/TimeSlot/Booking/Review/User types; normalized mock tables (venues, staff, services, reviews, bookings, currentUser) plus derived helpers (getVenueStaff/Services/Reviews, getVenueStartingPrice, isVenueOpenNow, generateTimeSlots) — see §6
-  app-state.tsx           React Context: hasOnboarded, isSignedIn, activeGender (+ actions)
+  data.ts                 Venue/Staff/Service/TimeSlot/Booking/Review/User/Favorite types; normalized mock tables (venues, staff, services, reviews, bookings, favorites, currentUser) plus derived helpers (getVenueStaff/Services/Reviews, getVenueStartingPrice, isVenueOpenNow, generateTimeSlots) — see §6
+  app-state.tsx           React Context: hasOnboarded, isSignedIn, activeGender, language (persisted), favoriteVenueIds (+ actions); see §2.6/§2.7
+  i18n.ts                 i18next + react-i18next init, loads locales/en.json and locales/ar.json as resources
   theme.ts                useThemeColors() → hex colours for icons (icons can't use `dark:` classes)
+locales/
+  en.json / ar.json       i18next translation resources — nested by screen (onboarding, auth, menu, help, chatSupport, tabs, home, explore, bookings, profile, venue, favorites) plus a shared "common" namespace
 assets/images/            Cutit-branded icon.png / android-icon-*.png / favicon.png / splash-icon(-dark).png (derived from cutit-mark.svg, a crop of the wordmark's scissors motif) + the full cutit-logo.svg wordmark
 global.css                Tailwind directives (imported once in app/_layout.tsx)
 tailwind.config.js        NativeWind preset; fontFamily.serif = Fraunces_600SemiBold, fontFamily.sans = Inter_400Regular
 babel.config.js / metro.config.js   NativeWind wiring + react-native-svg-transformer (.svg → component)
 svg.d.ts                  Types `*.svg` imports as React components
+eas.json                  `development` build profile (developmentClient + internal distribution) for testing outside Expo Go — no build run yet
 ```
 
 ~2,200 lines of app code.
@@ -127,7 +137,8 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - ✅ Header (dark-mode toggle, guest/user avatar toggle that flips `isSignedIn`, menu icon → `/menu`)
 - ✅ Gender toggle, search, service filter chips, "Near you" list with skeleton + empty state + Refresh
 - ✅ Recommended for You feed (gender-aware when signed in)
-- 🟡 Service shortcuts (At Home, Events & Bridal, …), bell, "Cairo, Egypt" picker, filters button, rebook banner, heart/save
+- ✅ "Near you" list cards' heart icon now toggles real shared favorite state (see §6) — the Recommended for You feed above it has no heart at all (bespoke card, doesn't use `EstablishmentCard`)
+- 🟡 Service shortcuts (At Home, Events & Bridal, …), bell, "Cairo, Egypt" picker, filters button, rebook banner
 
 ### Explore
 - ✅ Full-bleed map background with a draggable `@gorhom/bottom-sheet` list on top (peeks at ~22%, drags down to ~14% to reveal the map, up to ~92% to cover the screen — scrolling the list also expands it via the sheet's built-in gesture handoff)
@@ -141,7 +152,8 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - ✅ Time slots are now availability-aware: `generateTimeSlots()` derives them from the venue's opening hours, the selected staff member's existing bookings, and the selected services' combined duration — a slot overlapping a booking (or landing in the standing lunch-break rule) renders disabled rather than always showing a fixed list
 - ✅ Venue cover photo falls back to a bordered placeholder block (camera/image icon) if `venue.coverImageUrl` is ever null
 - ✅ Written reviews list below the aggregate rating (initials avatar, star rating, text) sourced from `getVenueReviews(venue.id)`; Write a Review modal (rating + always-optional text)
-- 🟡 Confirm shows a native `Alert` then jumps to Bookings — nothing is saved as a real `Booking` record; heart/save; submitting a review doesn't append to the reviews table
+- ✅ Header heart icon toggles real shared favorite state (fills red when favorited)
+- 🟡 Confirm shows a native `Alert` then jumps to Bookings — nothing is saved as a real `Booking` record; submitting a review doesn't append to the reviews table
 
 ### Bookings
 - ✅ Upcoming (live countdown banner computed from the booking's real `startTime`, confirmed card, stylist, Call Venue / Get Directions) / Past (completed + cancelled cards), Leave a Review modal, Rebook → Explore
@@ -163,15 +175,19 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - 🟡 Reschedule/Cancel just `console.log` a placeholder — no booking to act on yet, no real mutation
 
 ### Menu (`/menu`, modal)
-- ✅ Opened from the header ≡ icon; Favorites / My Bookings (→ Bookings tab) / Help (→ `/help`) / Settings (→ Profile tab) / Sign Out (same pattern as Profile's Log Out)
-- 🟡 Favorites just `console.log`s — no Favorites screen or persisted favorite state exists yet
+- ✅ Opened from the header ≡ icon; Favorites (→ `/favorites`) / My Bookings (→ Bookings tab) / Help (→ `/help`) / Settings (→ Profile tab) / Sign Out (same pattern as Profile's Log Out)
+
+### Favorites (`/favorites`, modal)
+- ✅ Lists favorited venues via the reused `EstablishmentCard`; empty state (heart icon + message + "Browse venues" → Explore) when there are none
+- ✅ Un-favoriting a card here (or anywhere else) updates this list immediately — all favorite state is shared through `lib/app-state.tsx`
+- 🟡 Favorite state resets on reload — not persisted (same as most of `AppStateProvider`; only `language` is persisted so far)
 
 ---
 
 ## 6. State & data model
 
 - **Server state**: none — `lib/data.ts` exports static, normalized mock tables. Screens read them through `useMemo` filters or the derived-data helpers below, not by reaching into nested objects.
-- **App state** (`lib/app-state.tsx`): `hasOnboarded`, `isSignedIn`, `activeGender` in a React Context. **Resets on every app launch/reload** — nothing is persisted.
+- **App state** (`lib/app-state.tsx`): `hasOnboarded`, `isSignedIn`, `activeGender`, `favoriteVenueIds` (a `Set<string>`) in a React Context. **Resets on every app launch/reload** — nothing is persisted, *except* `language`, which is written to `AsyncStorage` on change and re-applied via a hydration `useEffect` on startup (see §2.6).
 - **Theme**: NativeWind's built-in colour scheme (`useColorScheme()` from `nativewind`); follows the system by default, toggled from the header or Profile. Also not persisted.
 - **Booking selection** lives in local `useState` inside `venue/[id].tsx` and is discarded on confirm.
 
@@ -191,9 +207,10 @@ type TimeSlot = { id; venueId; staffId; serviceId; startTime; endTime; status: '
 type Booking = { id; userId; venueId; staffId; serviceId; startTime; endTime; status: 'confirmed' | 'completed' | 'cancelled'; priceEGP; createdAt; locationType: 'in-salon' | 'at-home' }
 type Review = { id; bookingId; venueId; userId; rating; text: string | null; authorName; createdAt }
 type User = { id; fullName; email; phone; avatarUrl: string | null; gender; addresses: Address[]; walletBalance }
+type Favorite = { id; userId; venueId; createdAt }   // a user↔venue join, not an isFavorite field on Venue — matches the Booking/Review pattern
 ```
 
-Mock tables: `venues`, `staff`, `services`, `reviews`, `bookings`, `currentUser`, plus `serviceFilters` (unchanged). Derived-data helpers stand in for what would be backend queries/RPCs:
+Mock tables: `venues`, `staff`, `services`, `reviews`, `bookings`, `favorites`, `currentUser`, plus `serviceFilters` (unchanged). `AppStateProvider` hydrates its live `favoriteVenueIds` Set from `favorites` once on mount, filtered to `currentUser.id`; `toggleFavorite(venueId)` then owns it from there (the `favorites` array itself isn't mutated). Derived-data helpers stand in for what would be backend queries/RPCs:
 - `getVenueStaff/Services/Reviews(venueId)` — the join a real `select('*, staff(*), services(*)')` query would do.
 - `getVenueStartingPrice(venueId)` — cheapest service, not a stored/guessed number (card prices dropped when this landed — they used to just show the first-listed service's price).
 - `isVenueOpenNow(openingHours)` — live-computed "Open"/"Closed" badge instead of a static boolean (Maven Studio's hours are `null` every day to preserve its old always-closed demo state).
@@ -244,7 +261,7 @@ Nothing here is in git yet. Commit the Expo migration as one baseline commit bef
 | Placeholder today | Recommended replacement | Why |
 |---|---|---|
 | `lib/data.ts` mock tables (now Supabase-shaped, still in-memory) | **Supabase** (Postgres + Row-Level Security + Storage + phone OTP auth via Twilio/Vonage) accessed through **TanStack Query** | The types/normalization are already shaped for this (see §6) — the remaining work is a real Postgres schema + swapping the mock arrays for queries. Phone OTP fits the existing auth UI; RLS keeps the customer app safe without a custom API layer. Firebase is the alternative if you prefer NoSQL + FCM. |
-| In-memory `AppStateProvider` | Persist with **react-native-mmkv** (or AsyncStorage): onboarding done, session, gender, theme, language | Users shouldn't re-onboard on every launch. |
+| In-memory `AppStateProvider` (language now persisted, see §2.6) | Persist the rest with **react-native-mmkv** (or AsyncStorage, already a dependency): onboarding done, session, gender, favorites, theme | Users shouldn't re-onboard on every launch, and favorites/gender/theme resetting is an easy near-term win now that AsyncStorage is already wired for language. |
 | Fake OTP flow in `auth.tsx` | Supabase Auth phone sign-in (or Firebase Auth) with a real resend timer | Currently anyone can "log in". |
 | `Alert` on Confirm Booking | Actually insert into the `bookings` table + a confirmation screen (summary, add-to-calendar, "View in Bookings") | The core action currently saves nothing — `generateTimeSlots()` already reads from `bookings`, so a real insert would immediately start affecting availability. |
 | `ExploreMap` pattern | **`react-native-maps`** (Google on Android, Apple on iOS) + **`expo-location`** for "near you" and "Search this area" | Location-based discovery is central to the product; `Venue` already carries `latitude`/`longitude`. |
@@ -258,7 +275,7 @@ Nothing here is in git yet. Commit the Expo migration as one baseline commit bef
 3. **Payments**: **Paymob** and/or **Fawry** for Egypt (cards, wallets, cash-on-service), plus Apple Pay/Google Pay; connect the existing wallet UI to real balance/top-ups.
 4. **Arabic + RTL** — in progress: `i18next` + `expo-localization` infrastructure is built, the language toggle is wired to `i18n.changeLanguage()` and persists via AsyncStorage (survives restarts), and roughly **70–80% of the app's strings are translated** (all of `app/` is done; the `components/` group is not yet). **RTL layout mirroring itself is unverified** — `I18nManager.forceRTL` doesn't visually mirror the layout even after a full app restart in Expo Go, matching a currently unresolved upstream Expo/RN issue reported across iOS/Android/web ([expo/expo#39752](https://github.com/expo/expo/issues/39752)). Testing in a real dev-client/production build (to rule out an Expo-Go-only quirk) is blocked on not having an Apple Developer account for an iOS ad-hoc build; an Android EAS build remains a lower-friction untested alternative. Parked until build access is available, or until the decision is made to stop relying on automatic `flexDirection` mirroring and make direction explicit everywhere instead.
 5. **Notifications**: `expo-notifications` for appointment reminders (the toggle exists) and booking status changes; deep links via the `cutit://` scheme already set in `app.json`.
-6. **Favourites** (all the heart buttons), **full reviews list** with photos, **real search & filters** (price range, rating, distance, open now, gender).
+6. ~~Favourites~~ **done** (§2.7) — still needed: persist `favoriteVenueIds` (currently resets on reload, like most of `AppStateProvider`) and add a heart to `recommendation-feed.tsx`'s bespoke card if that feed should support favoriting too. **Full reviews list** with photos, **real search & filters** (price range, rating, distance, open now, gender) remain open.
 7. **Venue/partner side** (later): a separate dashboard or app for salons to manage calendar, staff, services, and confirm bookings. Without it, bookings have no one to fulfil them.
 8. **Guest → account upgrade**: let a guest book by providing a phone number at checkout, then convert to a full account.
 
@@ -281,7 +298,7 @@ The baseline is now committed (see §2.4), which resolves 9.1. These are new obs
 
 - **Explore's search bar regressed to non-functional.** The old free-text `TextInput` was replaced with a static "All treatments / Current location" pressable to match Fresha's pattern (tap → open a dedicated search screen), but that search screen was never built, so Explore currently has no text search at all, only the gender filter. Building that search screen is now a real gap, not just a nice-to-have.
 - **Chat Support and Help are UI shells with no logic behind them.** Chat Support has no messaging backend (Supabase Realtime, Intercom, or similar) and no persistence — messages vanish on reload. Help's Reschedule/Cancel Booking buttons have nothing to act on since bookings aren't real records yet (depends on 9.2's "Alert on Confirm Booking → real booking record" item). Sequence these after real bookings exist.
-- **Favorites now has a real entry point (Menu) but no screen or state.** Worth prioritizing now that it's one tap away instead of a theoretical heart icon — needs a `favorites: Set<id>` (or backend table) shared via `lib/app-state.tsx` or a new context, plus the actual screen.
+- ~~Favorites now has a real entry point (Menu) but no screen or state.~~ **Done (§2.7)** — screen, shared state, and wired heart icons all landed.
 - **Review submission still doesn't persist anywhere**, and this is more visible now that Venue detail shows a real written-reviews list pulled from `getVenueReviews()`. Once there's a backend, wire `ReviewModal`'s `onSubmit` to actually insert into the `reviews` table.
 - **"Professionals" browsing mode (Explore) has no data model behind it.** If booking a specific professional across venues (not just per-venue staff) is a real product goal, `lib/data.ts` needs a top-level `Professional` entity independent of per-venue `Staff`.
 - **`country-code-picker.tsx`'s list is a hand-maintained array of ~11 countries.** Fine for an Egypt-first MVP; if international expansion becomes real, swap for a maintained dataset (e.g. `react-native-country-codes-picker`) rather than growing the array by hand.
@@ -304,3 +321,11 @@ So concretely, right now, your queue is:
 ⏸ MMKV/persistence — deferred (revisit at dev-client migration)
 🔄 Maps — decision made (fake map now, real map later), no action needed today, just keep finishing Explore UI against the fake pattern
 ⏸ Backend — parked
+
+### 9.9 New since the last update (2026-09-13 → 2026-09-14, Arabic/RTL + Favorites)
+
+- **RTL layout mirroring is unverified, and I initially misreported it as working.** A web test after switching to Arabic appeared to show mirrored rows, but re-inspecting it showed that was just Arabic text right-aligning within its own text box (normal Unicode bidi behavior) — the actual row layouts (icon/chevron positions) never moved. `I18nManager.isRTL` reads `true` and translations are correct, but `flexDirection: 'row'` auto-mirroring hasn't been confirmed working on web *or* on-device in Expo Go, even after a full restart. This matches an open, unresolved upstream issue ([expo/expo#39752](https://github.com/expo/expo/issues/39752)). Don't trust a screenshot showing right-aligned Arabic text as proof of mirroring — check whether icon/button *positions* actually swapped sides.
+- **Testing a real dev-client build is blocked, not abandoned.** `expo-dev-client` and `eas.json` are in place; the blocker is Apple Developer account access for an iOS ad-hoc build. An Android EAS build (no paid account needed) is the untried lower-friction path if this needs unblocking before an Apple account is available.
+- **`@react-native-async-storage/async-storage` must go through `npx expo install`, not `pnpm add`/`npm install` directly.** Learned this the hard way — a plain install grabbed the latest npm version, whose native module didn't match what's bundled in Expo Go for SDK 57, crashing with "Native module is null" on-device (invisible on web, which has no native module for it). Applies to any future native-module dependency in this repo.
+- **Favorites doesn't persist across reloads.** Same rule as everything else in `AppStateProvider` except `language` — expected given the current state architecture, but worth fixing alongside the broader persistence work in §9.2 since `AsyncStorage` is already a dependency now.
+- **`recommendation-feed.tsx` has no heart/favorite button at all** — it was listed as a place to wire favorites, but it uses a bespoke card layout, not `EstablishmentCard`. Add one there if favoriting from the home feed (not just Explore/Home list/venue detail) is wanted.

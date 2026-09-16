@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router'
 import { useColorScheme } from 'react-native'
-import { Clock3, Compass, Home, UserRound } from 'lucide-react-native'
+import { Clock3, Compass, Home, Scissors, UserRound } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 export default function TabsLayout() {
@@ -23,6 +23,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: ({ color, size }) => <Home color={color} size={size ?? 20} /> }} />
       <Tabs.Screen name="explore" options={{ title: t('tabs.explore'), tabBarIcon: ({ color, size }) => <Compass color={color} size={size ?? 20} /> }} />
+      <Tabs.Screen name="cutit-go" options={{ title: t('tabs.cutitGo'), tabBarIcon: ({ color, size }) => <Scissors color={color} size={size ?? 20} /> }} />
       <Tabs.Screen name="bookings" options={{ title: t('tabs.bookings'), tabBarIcon: ({ color, size }) => <Clock3 color={color} size={size ?? 20} /> }} />
       <Tabs.Screen name="profile" options={{ title: t('tabs.profile'), tabBarIcon: ({ color, size }) => <UserRound color={color} size={size ?? 20} /> }} />
     </Tabs>

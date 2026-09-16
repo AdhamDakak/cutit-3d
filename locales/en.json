@@ -61,8 +61,26 @@
   "tabs": {
     "home": "Home",
     "explore": "Explore",
+    "cutitGo": "Cutit Go",
     "bookings": "Bookings",
     "profile": "Profile"
+  },
+  "cutitGo": {
+    "title": "How would you like to book?",
+    "subtitle": "Choose a mobile or event service.",
+    "atHomeTitle": "At Home",
+    "atHomeDescription": "A barber or stylist comes to you",
+    "eventsTitle": "Events & Bridal",
+    "eventsDescription": "Professional glam for your big day",
+    "noStylists": "No stylists available for this selection yet."
+  },
+  "atHome": {
+    "title": "At Home",
+    "subtitle": "Who is this booking for?"
+  },
+  "eventsBridal": {
+    "title": "Events & Bridal",
+    "subtitle": "Who is this booking for?"
   },
   "gender": {
     "For Her": "For Her",
