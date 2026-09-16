@@ -5,7 +5,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Image as ImageIcon, Star } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { getStylistReviews, stylists, venues } from '@/lib/data'
+import { getStylistReviews, stylists, venues, type StylistServiceType } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 function getInitials(name: string) {
@@ -19,7 +19,7 @@ function getInitials(name: string) {
 
 export default function StylistScreen() {
   const { t } = useTranslation()
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, type } = useLocalSearchParams<{ id: string; type?: StylistServiceType }>()
   const stylist = stylists.find((item) => item.id === id)
   const router = useRouter()
   const colors = useThemeColors()
@@ -31,9 +31,10 @@ export default function StylistScreen() {
   const stylistReviews = getStylistReviews(stylist.id)
 
   const bookStylist = () => {
-    // The rest of the booking flow (address picker, date/time, travel fee,
-    // payment) isn't built yet — this is a stub, flagged as such.
-    console.log('Book pressed for stylist:', stylist.id)
+    router.push({
+      pathname: '/go-booking/services',
+      params: { stylistId: stylist.id, type: type ?? stylist.serviceTypes[0] },
+    })
   }
 
   return (

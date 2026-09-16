@@ -54,6 +54,31 @@
     "emptyBody": "Save venues you love by tapping the heart icon, and they'll show up here.",
     "browseVenues": "Browse venues"
   },
+  "goBooking": {
+    "stepIndicator": "Step {{current}} of {{total}}",
+    "subtotal": "Subtotal",
+    "addressStepTitle": "Select Address",
+    "savedAddresses": "Saved Addresses",
+    "addNewAddress": "Add New Address",
+    "addressLabelPlaceholder": "Label (e.g. Home, Work)",
+    "addressAreaPlaceholder": "Area / neighborhood",
+    "addressDetailsPlaceholder": "Street, building, floor...",
+    "saveAddress": "Save Address",
+    "eventDateLabel": "Event date (optional)",
+    "eventDatePlaceholder": "e.g. 25 Dec 2026",
+    "eventNotesLabel": "Event notes (optional)",
+    "eventNotesPlaceholder": "Venue name, number of guests...",
+    "reviewStepTitle": "Review & Confirm",
+    "travelFee": "Travel Fee",
+    "noAddressYet": "Select or add an address to continue."
+  },
+  "bookingConfirmation": {
+    "title": "Booking Confirmed",
+    "subtitle": "You're all set — we'll see you soon.",
+    "addToCalendar": "Add to Calendar",
+    "viewInBookings": "View in Bookings",
+    "notFound": "This booking couldn't be found."
+  },
   "chatSupport": {
     "title": "Chat Support",
     "greeting": "Hi! I'm here to help with bookings, payments, or anything else. What's up?",

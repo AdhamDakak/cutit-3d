@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Alert, I18nManager, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { I18nManager, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ReviewModal } from '@/components/review-modal'
 import { useAppState } from '@/lib/app-state'
-import { generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues } from '@/lib/data'
+import { currentUser, generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues, type Booking } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'
@@ -37,7 +37,7 @@ export default function VenueScreen() {
   const establishment = venues.find((item) => item.id === id)
   const router = useRouter()
   const colors = useThemeColors()
-  const { isFavorite, toggleFavorite } = useAppState()
+  const { isFavorite, toggleFavorite, addBooking } = useAppState()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
   const periodLabels: Record<Period, string> = {
     Morning: t('venue.periodMorning'),
@@ -94,12 +94,25 @@ export default function VenueScreen() {
     : []
 
   const confirmBooking = () => {
-    const timeLabel = selectedTime ? new Date(selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-    Alert.alert(
-      t('venue.bookingConfirmedTitle'),
-      t('venue.bookingConfirmedMessage', { venue: establishment.name, day: dayFormatter.format(dates[selectedDate]), time: timeLabel }),
-      [{ text: t('common.ok'), onPress: () => router.replace('/(tabs)/bookings') }],
-    )
+    if (!selectedTime) return
+    const endTime = new Date(new Date(selectedTime).getTime() + selectedDurationMinutes * 60_000).toISOString()
+    const booking: Booking = {
+      id: `bk-salon-${Date.now()}`,
+      userId: currentUser.id,
+      bookingType: 'salon',
+      venueId: establishment.id,
+      staffId: selectedStaff,
+      stylistId: null,
+      addressId: null,
+      serviceIds: Array.from(selectedServices),
+      startTime: selectedTime,
+      endTime,
+      status: 'confirmed',
+      priceEGP: totalPrice,
+      createdAt: new Date().toISOString(),
+    }
+    addBooking(booking)
+    router.replace(`/booking-confirmation?bookingId=${booking.id}`)
   }
 
   return (

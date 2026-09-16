@@ -74,7 +74,11 @@ export default function BookingFlowScreen() {
           <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('bookingFlow.noStylists')}</Text>
         ) : (
           matchingStylists.map((stylist) => (
-            <StylistCard key={stylist.id} stylist={stylist} onPress={() => router.push(`/stylist/${stylist.id}`)} />
+            <StylistCard
+              key={stylist.id}
+              stylist={stylist}
+              onPress={() => router.push({ pathname: '/stylist/[id]', params: { id: stylist.id, type } })}
+            />
           ))
         )}
       </ScrollView>

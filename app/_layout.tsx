@@ -56,8 +56,12 @@ export default function RootLayout() {
             <Stack.Screen name="help" options={{ presentation: 'modal' }} />
             <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
             <Stack.Screen name="favorites" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="booking-flow" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="stylist/[id]" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="booking-flow" />
+            <Stack.Screen name="stylist/[id]" />
+            {/* go-booking is a nested <Stack> (see its own _layout.tsx) — the
+                whole 4-step flow opens as one modal, steps push inside it. */}
+            <Stack.Screen name="go-booking" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="booking-confirmation" options={{ presentation: 'modal' }} />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>

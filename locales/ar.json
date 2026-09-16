@@ -54,6 +54,31 @@
     "emptyBody": "احفظ الصالونات التي تعجبك بالضغط على أيقونة القلب، وستظهر هنا.",
     "browseVenues": "تصفح الصالونات"
   },
+  "goBooking": {
+    "stepIndicator": "الخطوة {{current}} من {{total}}",
+    "subtotal": "المجموع الفرعي",
+    "addressStepTitle": "اختر العنوان",
+    "savedAddresses": "العناوين المحفوظة",
+    "addNewAddress": "إضافة عنوان جديد",
+    "addressLabelPlaceholder": "التسمية (مثال: المنزل، العمل)",
+    "addressAreaPlaceholder": "المنطقة / الحي",
+    "addressDetailsPlaceholder": "الشارع، المبنى، الطابق...",
+    "saveAddress": "حفظ العنوان",
+    "eventDateLabel": "تاريخ المناسبة (اختياري)",
+    "eventDatePlaceholder": "مثال: 25 ديسمبر 2026",
+    "eventNotesLabel": "ملاحظات المناسبة (اختياري)",
+    "eventNotesPlaceholder": "اسم المكان، عدد الضيوف...",
+    "reviewStepTitle": "المراجعة والتأكيد",
+    "travelFee": "رسوم التنقل",
+    "noAddressYet": "اختر أو أضف عنواناً للمتابعة."
+  },
+  "bookingConfirmation": {
+    "title": "تم تأكيد الحجز",
+    "subtitle": "كل شيء جاهز — نراك قريباً.",
+    "addToCalendar": "إضافة إلى التقويم",
+    "viewInBookings": "عرض في الحجوزات",
+    "notFound": "تعذر العثور على هذا الحجز."
+  },
   "chatSupport": {
     "title": "الدردشة مع الدعم",
     "greeting": "مرحبا! أنا هنا للمساعدة في الحجوزات أو المدفوعات أو أي شيء آخر. كيف يمكنني مساعدتك؟",
