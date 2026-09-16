@@ -18,14 +18,14 @@ export default function CutitGoScreen() {
       icon: DoorOpen,
       title: t('cutitGo.atHomeTitle'),
       description: t('cutitGo.atHomeDescription'),
-      onPress: () => router.push('/at-home'),
+      onPress: () => router.push('/booking-flow?type=at-home'),
     },
     {
       key: 'events-bridal',
       icon: Sparkles,
       title: t('cutitGo.eventsTitle'),
       description: t('cutitGo.eventsDescription'),
-      onPress: () => router.push('/events-bridal'),
+      onPress: () => router.push('/booking-flow?type=events-bridal'),
     },
   ] as const
 

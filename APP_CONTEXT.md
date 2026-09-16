@@ -2,7 +2,7 @@
 
 > Single source of truth for what this app is, how it's built, where it stands, and what should change next. Keep it updated as the app evolves.
 
-_Last updated: 2026-09-14 (Favorites screen added and wired end-to-end; Arabic/RTL translation pass ~70–80% through `app/`)_
+_Last updated: 2026-09-16 (new "Cutit Go" tab + At-Home/Events & Bridal entry screens with a For Her/For Him stylist picker; old service-shortcuts chips removed)_
 
 ---
 
@@ -13,8 +13,8 @@ _Last updated: 2026-09-14 (Favorites screen added and wired end-to-end; Arabic/R
 | Mode | Description | Status in app |
 |---|---|---|
 | **In-salon** | Book a slot at a venue (barbershop / beauty salon) | UI built end-to-end (mock data) |
-| **At-home** | A barber / stylist / coiffeur comes to the customer | Shortcut chip only — no flow |
-| **Events & Bridal** | Makeup artists, bridal packages, event styling | Shortcut chip only — no flow |
+| **At-home** | A barber / stylist / coiffeur comes to the customer | Entry flow built (Cutit Go tab → gender toggle → stylist list); actual booking flow (service, address, payment) not built — see §5/§9.3 |
+| **Events & Bridal** | Makeup artists, bridal packages, event styling | Entry flow built (same pattern as At-Home); actual booking flow not built |
 
 Key product traits:
 - **Market**: Egypt. Prices in **EGP**, Cairo districts (New Cairo, Zamalek, Maadi, Heliopolis, Sheikh Zayed), phone-number auth (`+20`), English + Arabic (العربية) language toggle.
@@ -40,6 +40,7 @@ Auxiliary support flow, reachable from the header menu icon or Bookings/Profile:
    - Replaced the single `Establishment` mock type with normalized `Venue`/`Staff`/`Service`/`TimeSlot`/`Booking`/`Review`/`User` types (see §6) — availability is now computed from venue hours + existing bookings + service duration instead of a hardcoded list, and "From EGP X" / "Open now" are derived instead of stored.
 6. **Arabic + RTL pass (2026-09-13 → 2026-09-14, uncommitted)** — `i18next` + `react-i18next` + `expo-localization` wired via `lib/i18n.ts`, with `locales/en.json`/`ar.json` as the two resource files. Translated every screen under `app/` (root screens, all four tabs, venue detail) — roughly 70–80% of the app's strings; the `components/` group is not yet done. The language toggle in Profile is wired to `i18n.changeLanguage()` and persists via `AsyncStorage` (`lib/app-state.tsx`), correctly re-applying on the next launch via a hydration `useEffect` gated behind a `SplashGate` sibling component in `app/_layout.tsx` (deliberately *not* gating `<Stack>`'s own mount, to avoid re-triggering a mount-race warning fixed earlier in the session). **RTL layout mirroring itself remains unverified** — see §9.3 item 4 for the full status and the blocking issue.
 7. **Favorites screen (2026-09-14, uncommitted)** — new `app/favorites.tsx` (modal, same header pattern as `help.tsx`), added a `Favorite` join type to `lib/data.ts` (matching the `Booking`/`Review` normalized-entity pattern rather than an `isFavorite` field on `Venue`), and shared `favoriteVenueIds`/`isFavorite`/`toggleFavorite` state in `lib/app-state.tsx`. Wired the previously-inert heart icons in `establishment-card.tsx` and `venue/[id].tsx` to this shared state, and Menu's Favorites row now navigates there via `dismissTo`. Fully translated (en/ar). See §9.9 for what's still incidental/pending from this pass.
+8. **"Cutit Go" tab + At-Home/Events & Bridal entry screens (2026-09-16, uncommitted)** — added a 5th tab (`app/(tabs)/cutit-go.tsx`, `Scissors` icon, between Explore and Bookings) presenting "At Home" and "Events & Bridal" as two cards. Each pushes to a new modal screen (`app/at-home.tsx`, `app/events-bridal.tsx`) built around a new shared `components/gender-stylist-picker.tsx`: a "For Her"/"For Him" toggle with a filtered stylist list below it that updates immediately on toggle. There's no dedicated mobile-provider dataset yet, so the list reuses the existing venue-scoped `staff` table filtered by venue gender — a placeholder, not real mobile-provider data. Selecting a stylist still stubs to `/booking-flow?type=...&gender=...&staffId=...`, which **does not exist yet** (confirmed it correctly hits expo-router's "Unmatched Route" screen). The old `components/service-shortcuts.tsx` chip row (At Home / Events & Bridal / Hair & Barbering / Beauty & Care) was removed from Home entirely and the file deleted — once the first two chips moved to this tab, the remaining two were also removed per instruction, leaving nothing in that component to render. Fully translated (en/ar), RTL conventions applied. See §9.10.
 
 ---
 
@@ -84,11 +85,14 @@ app/                      expo-router routes
   chat-support.tsx        Modal: local-state chat UI (seeded support greeting, send appends to a list, no backend)
   help.tsx                Modal: Reschedule/Cancel Booking (placeholder actions) + a Chat Support row
   favorites.tsx           Modal: favorited venues (via EstablishmentCard) or an empty state with a "Browse venues" CTA
+  at-home.tsx             Modal: For Her/For Him toggle + filtered stylist list (via GenderStylistPicker); tapping a stylist stubs to /booking-flow (not built)
+  events-bridal.tsx       Modal: same pattern as at-home.tsx, different copy
   menu.tsx                Modal: Favorites (→ /favorites) / My Bookings / Help / Settings / Sign Out, opened from the header ≡ icon
   (tabs)/
-    _layout.tsx           Bottom tabs: Home / Explore / Bookings / Profile (lucide icons, theme-aware)
+    _layout.tsx           Bottom tabs: Home / Explore / Cutit Go / Bookings / Profile (lucide icons, theme-aware)
     index.tsx             Home
     explore.tsx           Fresha-style rebuild: full-bleed map background + draggable `@gorhom/bottom-sheet` list (3 snap points), fixed search bar / Venues-Professionals-Anytime filter row / day-picker row on top
+    cutit-go.tsx           "At Home" / "Events & Bridal" selection cards → /at-home or /events-bridal
     bookings.tsx          Upcoming / Past History
     profile.tsx           Profile & settings
   venue/[id].tsx          Venue detail + booking flow (modal): stylist/service/date/time picker, written reviews list
@@ -97,7 +101,7 @@ components/
   country-code-picker.tsx Pressable segment + modal list of ~11 country dial codes, used by auth.tsx
   establishment-card.tsx  Venue card (cover, open/closed, rating, services, price, Book, wired favorite heart)
   recommendation-feed.tsx Horizontal "Recommended for You" (gender-filtered when signed in) — its own bespoke card, does NOT use EstablishmentCard, so it has no heart/favorite button at all
-  service-shortcuts.tsx   At Home / Events & Bridal / Hair & Barbering / Beauty & Care chips (no handlers)
+  gender-stylist-picker.tsx  For Her/For Him toggle + filtered stylist list, shared by at-home.tsx and events-bridal.tsx; reuses the venue-scoped `staff` table (see §2.8) as a placeholder for a real mobile-provider dataset
   explore-map.tsx         Pure background layer now: diagonal-line pattern + pins rendered as star+rating badges (no popup card)
   review-modal.tsx        Bottom-sheet star rating + always-optional text field, used by Bookings and Venue (no more requireText)
   settings-rows.tsx       SettingRow / ToggleRow, used by Profile and now Menu/Help too
@@ -109,7 +113,7 @@ lib/
   i18n.ts                 i18next + react-i18next init, loads locales/en.json and locales/ar.json as resources
   theme.ts                useThemeColors() → hex colours for icons (icons can't use `dark:` classes)
 locales/
-  en.json / ar.json       i18next translation resources — nested by screen (onboarding, auth, menu, help, chatSupport, tabs, home, explore, bookings, profile, venue, favorites) plus a shared "common" namespace
+  en.json / ar.json       i18next translation resources — nested by screen (onboarding, auth, menu, help, chatSupport, tabs, home, explore, bookings, profile, venue, favorites, cutitGo, atHome, eventsBridal) plus a shared "common" namespace
 assets/images/            Cutit-branded icon.png / android-icon-*.png / favicon.png / splash-icon(-dark).png (derived from cutit-mark.svg, a crop of the wordmark's scissors motif) + the full cutit-logo.svg wordmark
 global.css                Tailwind directives (imported once in app/_layout.tsx)
 tailwind.config.js        NativeWind preset; fontFamily.serif = Fraunces_600SemiBold, fontFamily.sans = Inter_400Regular
@@ -138,7 +142,8 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - ✅ Gender toggle, search, service filter chips, "Near you" list with skeleton + empty state + Refresh
 - ✅ Recommended for You feed (gender-aware when signed in)
 - ✅ "Near you" list cards' heart icon now toggles real shared favorite state (see §6) — the Recommended for You feed above it has no heart at all (bespoke card, doesn't use `EstablishmentCard`)
-- 🟡 Service shortcuts (At Home, Events & Bridal, …), bell, "Cairo, Egypt" picker, filters button, rebook banner
+- 🟡 Bell, "Cairo, Egypt" picker, filters button, rebook banner
+- The service-shortcuts chip row (At Home / Events & Bridal / Hair & Barbering / Beauty & Care) that used to sit here is gone — At Home/Events & Bridal moved to the new Cutit Go tab below, and the remaining two chips were removed with it (no replacement filter chips on Home currently)
 
 ### Explore
 - ✅ Full-bleed map background with a draggable `@gorhom/bottom-sheet` list on top (peeks at ~22%, drags down to ~14% to reveal the map, up to ~92% to cover the screen — scrolling the list also expands it via the sheet's built-in gesture handoff)
@@ -146,6 +151,12 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - ✅ Map pins render as star + rating badges; tapping one highlights it (blue)
 - 🟡 The top search bar is now a static "All treatments / Current location" pressable (no handler) — Explore lost free-text filtering when the old TextInput-based search bar was replaced; gender filter (from context) is the only thing still actually filtering the list
 - 🟡 "Venues"/"Professionals" toggle, "Anytime" dropdown, and the sliders/list-filter icon buttons are all visual only; map is still the CSS-pattern placeholder, not a real map
+
+### Cutit Go (`/(tabs)/cutit-go`, tab) + At Home / Events & Bridal (`/at-home`, `/events-bridal`, modals)
+- ✅ Cutit Go tab shows two cards ("At Home", "Events & Bridal") that each push into a dedicated modal
+- ✅ Both modals share `GenderStylistPicker`: a For Her/For Him toggle with a stylist list below that updates immediately on toggle — verified both directions show different, correct stylists, and the two screens keep independent toggle state
+- 🟡 The stylist list is placeholder data (reused salon `staff`, filtered by venue gender) — there's no real mobile-provider/event-specialist dataset yet
+- ❌ Tapping a stylist stubs to `/booking-flow?type=...&gender=...&staffId=...`, which doesn't exist — confirmed it correctly hits expo-router's "Unmatched Route" screen rather than silently failing. Building this flow (service selection, address, time, payment) is the real remaining work for both booking modes
 
 ### Venue detail / booking (`/venue/[id]`)
 - ✅ Stylist picker (with a placeholder avatar icon when a staff member has no photo), service multi-select with search, 7-day date strip, live total, Confirm gated on ≥1 service + a time
@@ -270,7 +281,7 @@ Nothing here is in git yet. Commit the Expo migration as one baseline commit bef
 
 ### 9.3 Add — product
 
-1. **At-home and Events & Bridal booking flows.** These are two of the three pillars of the product and currently only exist as chips. They need: service type selection, address picker (Profile already models Home/Work addresses), travel-fee logic, and different provider types (mobile barbers, makeup artists).
+1. **At-home and Events & Bridal booking flows.** Entry screens now exist (Cutit Go tab → gender toggle → stylist list, see §2.8/§5), but the actual booking flow past picking a stylist is still missing: service type selection, address picker (Profile already models Home/Work addresses), travel-fee logic, date/time, payment, and confirmation — this is the `/booking-flow` route referenced but not built. Also still needed: a real mobile-provider/event-specialist dataset (currently reusing salon `staff`, filtered by venue gender, as a placeholder).
 2. **Booking lifecycle**: cancel, reschedule, no-show/late policies, status timeline (pending → confirmed → completed).
 3. **Payments**: **Paymob** and/or **Fawry** for Egypt (cards, wallets, cash-on-service), plus Apple Pay/Google Pay; connect the existing wallet UI to real balance/top-ups.
 4. **Arabic + RTL** — in progress: `i18next` + `expo-localization` infrastructure is built, the language toggle is wired to `i18n.changeLanguage()` and persists via AsyncStorage (survives restarts), and roughly **70–80% of the app's strings are translated** (all of `app/` is done; the `components/` group is not yet). **RTL layout mirroring itself is unverified** — `I18nManager.forceRTL` doesn't visually mirror the layout even after a full app restart in Expo Go, matching a currently unresolved upstream Expo/RN issue reported across iOS/Android/web ([expo/expo#39752](https://github.com/expo/expo/issues/39752)). Testing in a real dev-client/production build (to rule out an Expo-Go-only quirk) is blocked on not having an Apple Developer account for an iOS ad-hoc build; an Android EAS build remains a lower-friction untested alternative. Parked until build access is available, or until the decision is made to stop relying on automatic `flexDirection` mirroring and make direction explicit everywhere instead.
@@ -329,3 +340,10 @@ So concretely, right now, your queue is:
 - **`@react-native-async-storage/async-storage` must go through `npx expo install`, not `pnpm add`/`npm install` directly.** Learned this the hard way — a plain install grabbed the latest npm version, whose native module didn't match what's bundled in Expo Go for SDK 57, crashing with "Native module is null" on-device (invisible on web, which has no native module for it). Applies to any future native-module dependency in this repo.
 - **Favorites doesn't persist across reloads.** Same rule as everything else in `AppStateProvider` except `language` — expected given the current state architecture, but worth fixing alongside the broader persistence work in §9.2 since `AsyncStorage` is already a dependency now.
 - **`recommendation-feed.tsx` has no heart/favorite button at all** — it was listed as a place to wire favorites, but it uses a bespoke card layout, not `EstablishmentCard`. Add one there if favoriting from the home feed (not just Explore/Home list/venue detail) is wanted.
+
+### 9.10 New since the last update (2026-09-16, Cutit Go)
+
+- **`/booking-flow` is now referenced from four places** (`cutit-go.tsx`'s two cards originally, now `at-home.tsx` and `events-bridal.tsx`'s stylist rows) **and still doesn't exist.** This is the single biggest concrete gap blocking the At-Home/Events & Bridal pillars from being real — worth prioritizing the actual flow screen next given how many entry points now funnel into it.
+- **The stylist list under the For Her/For Him toggle is borrowed salon data, not real mobile providers.** `GenderStylistPicker` filters the existing venue-scoped `staff` table by venue gender and excludes the "Any Stylist" placeholder rows. This works for demo purposes (Kareem/Omar/Ahmed for Him, Noor/Layla for Her) but conflates "works at a salon" with "available for at-home/event bookings" — a real implementation needs its own provider entity (service-area, mobile fee, event specialties) independent of per-venue `Staff`.
+- **`components/service-shortcuts.tsx` is gone.** All four of its original chips (At Home, Events & Bridal, Hair & Barbering, Beauty & Care) are now removed — the first two moved to the Cutit Go tab, the remaining two were dropped with no replacement. Home currently has no service-type filter chips at all; if that filtering capability is still wanted, it needs a new home.
+- **Each of `at-home.tsx`/`events-bridal.tsx` keeps its own local toggle state** (defaults to "For Her" on every visit) rather than sharing `activeGender` from `lib/app-state.tsx`. Deliberate for now since the task didn't specify, but worth reconsidering — using the shared context would make the toggle remember the user's preference across screens, consistent with how Home/Profile's gender toggle already behaves.

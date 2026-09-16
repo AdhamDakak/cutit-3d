@@ -7,7 +7,9 @@
     "back": "رجوع",
     "ok": "موافق",
     "addToFavorites": "إضافة {{name}} إلى المفضلة",
-    "removeFromFavorites": "إزالة {{name}} من المفضلة"
+    "removeFromFavorites": "إزالة {{name}} من المفضلة",
+    "him": "له",
+    "her": "لها"
   },
   "onboarding": {
     "slides": [
@@ -76,11 +78,27 @@
   },
   "atHome": {
     "title": "في المنزل",
-    "subtitle": "لمن هذا الحجز؟"
+    "subtitle": "اختر مصففاً للمتابعة."
   },
   "eventsBridal": {
     "title": "المناسبات والعرائس",
-    "subtitle": "لمن هذا الحجز؟"
+    "subtitle": "اختر مصففاً للمتابعة."
+  },
+  "bookingFlow": {
+    "noStylists": "لا يوجد مصففون متاحون لهذه الفئة حالياً."
+  },
+  "stylist": {
+    "noPhotoYet": "لا توجد صورة بعد",
+    "freelancer": "مستقل",
+    "worksAt": "يعمل في {{venue}}",
+    "about": "نبذة",
+    "yearsExperience": "{{count}} سنوات خبرة",
+    "startingFrom": "يبدأ من {{price}} جنيه",
+    "availableFor": "متاح لـ",
+    "portfolio": "معرض الأعمال",
+    "noPortfolioYet": "لا توجد صور أعمال بعد",
+    "reviewsSubtitle": "ماذا يقول العملاء",
+    "bookButton": "احجز مع {{name}}"
   },
   "gender": {
     "For Her": "لها",
@@ -139,6 +157,7 @@
     "cancelled": "ملغى",
     "inSalon": "في الصالون",
     "atHome": "في المنزل",
+    "eventsBridal": "المناسبات والعرائس",
     "callVenue": "اتصل بالصالون",
     "getDirections": "الحصول على الاتجاهات",
     "needHelp": "تحتاج مساعدة بخصوص هذا الحجز؟",

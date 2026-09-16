@@ -15,7 +15,8 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { ReviewModal } from '@/components/review-modal'
-import { bookings, currentUser, services, staff, venues, type Booking } from '@/lib/data'
+import { useAppState } from '@/lib/app-state'
+import { currentUser, services, staff, venues, type Booking } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
@@ -23,7 +24,10 @@ type Tab = 'Upcoming' | 'Past History'
 function getBookingDetails(booking: Booking) {
   const venue = venues.find((item) => item.id === booking.venueId)
   const bookingStaff = staff.find((item) => item.id === booking.staffId)
-  const service = services.find((item) => item.id === booking.serviceId)
+  // First matching service only — the existing UI shows a single
+  // service name; showing all of a multi-service Cutit Go booking is a
+  // later polish pass, not part of this data-model change.
+  const service = services.find((item) => booking.serviceIds.includes(item.id))
   const startDate = new Date(booking.startTime)
   return {
     venue,
@@ -31,16 +35,11 @@ function getBookingDetails(booking: Booking) {
     service,
     startDate,
     priceEGP: booking.priceEGP,
-    locationType: booking.locationType,
+    bookingType: booking.bookingType,
     dateLabel: startDate.toLocaleDateString([], { month: 'long', day: '2-digit', year: 'numeric' }),
     timeLabel: startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
   }
 }
-
-const myBookings = bookings.filter((booking) => booking.userId === currentUser.id)
-const upcomingBooking = myBookings.find((booking) => booking.status === 'confirmed')
-const pastBooking = myBookings.find((booking) => booking.status === 'completed')
-const cancelledBooking = myBookings.find((booking) => booking.status === 'cancelled')
 
 export default function BookingsScreen() {
   const { t } = useTranslation()
@@ -48,6 +47,15 @@ export default function BookingsScreen() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const colors = useThemeColors()
   const router = useRouter()
+  const { bookings } = useAppState()
+
+  const myBookings = bookings.filter((booking) => booking.userId === currentUser.id)
+  // .find() picks the first match, same as before this was switched from a
+  // static mock array to the live app-state list — showing the *soonest*
+  // upcoming booking once multiple can exist is a later polish item.
+  const upcomingBooking = myBookings.find((booking) => booking.status === 'confirmed')
+  const pastBooking = myBookings.find((booking) => booking.status === 'completed')
+  const cancelledBooking = myBookings.find((booking) => booking.status === 'cancelled')
 
   // Guaranteed present in mock data — one booking per status.
   const upcoming = getBookingDetails(upcomingBooking!)
@@ -134,7 +142,11 @@ export default function BookingsScreen() {
                 </View>
                 <View className="rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
                   <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">
-                    {upcoming.locationType === 'in-salon' ? t('bookings.inSalon') : t('bookings.atHome')}
+                    {upcoming.bookingType === 'salon'
+                      ? t('bookings.inSalon')
+                      : upcoming.bookingType === 'events-bridal'
+                        ? t('bookings.eventsBridal')
+                        : t('bookings.atHome')}
                   </Text>
                 </View>
               </View>

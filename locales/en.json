@@ -7,7 +7,9 @@
     "back": "Back",
     "ok": "OK",
     "addToFavorites": "Add {{name}} to favorites",
-    "removeFromFavorites": "Remove {{name}} from favorites"
+    "removeFromFavorites": "Remove {{name}} from favorites",
+    "him": "Him",
+    "her": "Her"
   },
   "onboarding": {
     "slides": [
@@ -76,11 +78,27 @@
   },
   "atHome": {
     "title": "At Home",
-    "subtitle": "Who is this booking for?"
+    "subtitle": "Pick a stylist to continue."
   },
   "eventsBridal": {
     "title": "Events & Bridal",
-    "subtitle": "Who is this booking for?"
+    "subtitle": "Pick a stylist to continue."
+  },
+  "bookingFlow": {
+    "noStylists": "No stylists available for this category yet."
+  },
+  "stylist": {
+    "noPhotoYet": "No photo yet",
+    "freelancer": "Freelancer",
+    "worksAt": "Works at {{venue}}",
+    "about": "About",
+    "yearsExperience": "{{count}} years of experience",
+    "startingFrom": "Starting from EGP {{price}}",
+    "availableFor": "Available for",
+    "portfolio": "Portfolio",
+    "noPortfolioYet": "No portfolio photos yet",
+    "reviewsSubtitle": "What clients say",
+    "bookButton": "Book {{name}}"
   },
   "gender": {
     "For Her": "For Her",
@@ -139,6 +157,7 @@
     "cancelled": "Cancelled",
     "inSalon": "In-Salon",
     "atHome": "At-Home",
+    "eventsBridal": "Events & Bridal",
     "callVenue": "Call Venue",
     "getDirections": "Get Directions",
     "needHelp": "Need Help with this Booking?",

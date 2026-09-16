@@ -43,9 +43,42 @@ export type Staff = {
   rating?: number
 }
 
+export type StylistServiceType = 'at-home' | 'events-bridal'
+
+/**
+ * A Cutit Go mobile/event provider — distinct from venue-scoped `Staff`
+ * since most of these fields (bio, portfolio, serviceTypes) don't apply
+ * to salon booking staff. Some stylists are also venue Staff members
+ * (e.g. a salon barber who also takes at-home bookings) — that's a
+ * coincidence of shared mock names, not a modeled relationship; `venueId`
+ * here is Stylist's own field, not a join to the Staff row.
+ */
+export type Stylist = {
+  id: string
+  name: string
+  isFreelancer: boolean
+  venueId: string | null
+  serviceTypes: StylistServiceType[]
+  /** Which clients this stylist serves — a barber might be ['male'], a bridal makeup artist ['female'], a unisex coiffeur both. */
+  servesGender: ('male' | 'female')[]
+  specialties: string[]
+  rating: number
+  reviewCount: number
+  bio: string
+  photoUrl: string | null
+  portfolioPhotos: string[]
+  priceFrom: number
+  yearsExperience?: number
+  /** Simplified per-stylist availability, same shape as Venue.openingHours (no per-day-exception model yet). */
+  availability: OpeningHours
+}
+
 export type Service = {
   id: string
-  venueId: string
+  /** Null for a freelance Stylist's own service rather than a Venue's. */
+  venueId: string | null
+  /** Set when this is a Cutit Go Stylist's own service rather than a Venue's. */
+  stylistId?: string
   name: string
   durationMinutes: number
   priceEGP: number
@@ -65,26 +98,39 @@ export type TimeSlot = {
 }
 
 export type BookingStatus = 'confirmed' | 'completed' | 'cancelled'
-export type BookingLocationType = 'in-salon' | 'at-home'
+export type BookingType = 'salon' | 'at-home' | 'events-bridal'
 
 export type Booking = {
   id: string
   userId: string
-  venueId: string
-  staffId: string
-  serviceId: string
+  bookingType: BookingType
+  // Salon bookings:
+  venueId: string | null
+  staffId: string | null
+  // Cutit Go bookings:
+  stylistId: string | null
+  addressId: string | null
+  travelFeeEGP?: number
+  /** events-bridal only. */
+  eventDate?: string
+  /** events-bridal only — venue name, guest count, etc., freeform for now. */
+  eventNotes?: string
+  // Shared:
+  serviceIds: string[]
   startTime: string
   endTime: string
   status: BookingStatus
   priceEGP: number
   createdAt: string
-  locationType: BookingLocationType
 }
 
 export type Review = {
   id: string
   bookingId: string
-  venueId: string
+  /** Null for a review of a freelance Stylist rather than a Venue. */
+  venueId: string | null
+  /** Set when this review is of a Cutit Go Stylist rather than a Venue. */
+  stylistId?: string
   userId: string
   rating: number
   text: string | null
@@ -94,8 +140,12 @@ export type Review = {
 
 export type Address = {
   id: string
+  /** 'Home' | 'Work' | a custom label the user typed. */
   label: string
-  line: string
+  area: string
+  details: string
+  latitude?: number
+  longitude?: number
 }
 
 export type Favorite = {
@@ -240,6 +290,128 @@ export const staff: Staff[] = [
   { id: 'v5-layla', venueId: 'v5', name: 'Layla', role: 'Master Colorist', photoUrl: 'https://i.pravatar.cc/80?img=51', rating: 4.9 },
 ]
 
+export const stylists: Stylist[] = [
+  {
+    id: 'st-tarek',
+    name: 'Tarek Selim',
+    isFreelancer: true,
+    venueId: null,
+    serviceTypes: ['at-home'],
+    servesGender: ['male'],
+    specialties: ['Barbering', 'Beard Grooming'],
+    rating: 4.8,
+    reviewCount: 62,
+    bio: 'Mobile barber covering Cairo and Giza. Precision fades and traditional straight-razor shaves, at your door.',
+    photoUrl: 'https://i.pravatar.cc/160?img=20',
+    portfolioPhotos: [],
+    priceFrom: 200,
+    yearsExperience: 6,
+    availability: dailyHours('09:00', '19:00'),
+  },
+  {
+    id: 'st-rania',
+    name: 'Rania Hossam',
+    isFreelancer: true,
+    venueId: null,
+    serviceTypes: ['events-bridal'],
+    servesGender: ['female'],
+    specialties: ['Bridal Makeup', 'Hairstyling'],
+    rating: 4.9,
+    reviewCount: 88,
+    bio: 'Bridal makeup artist and hairstylist with 9 years in the industry. Known for soft, long-wear looks that photograph beautifully.',
+    photoUrl: 'https://i.pravatar.cc/160?img=21',
+    portfolioPhotos: [],
+    priceFrom: 1500,
+    yearsExperience: 9,
+    availability: dailyHours('10:00', '22:00'),
+  },
+  {
+    id: 'st-kareem-mobile',
+    name: 'Kareem',
+    isFreelancer: false,
+    venueId: 'v1',
+    serviceTypes: ['at-home'],
+    servesGender: ['male'],
+    specialties: ['Barbering', 'Beard Grooming'],
+    rating: 4.9,
+    reviewCount: 21,
+    bio: 'The Grooming Society’s master barber also takes at-home bookings around New Cairo.',
+    photoUrl: 'https://i.pravatar.cc/160?img=10',
+    portfolioPhotos: [],
+    priceFrom: 300,
+    yearsExperience: 7,
+    availability: dailyHours('17:00', '21:00'),
+  },
+  {
+    id: 'st-noor-mobile',
+    name: 'Noor',
+    isFreelancer: false,
+    venueId: 'v2',
+    serviceTypes: ['events-bridal'],
+    servesGender: ['female'],
+    specialties: ['Bridal Hair', 'Blow Dry'],
+    rating: 4.8,
+    reviewCount: 34,
+    bio: 'Luma Beauty House’s lead stylist, available for bridal parties and event hair on location.',
+    photoUrl: 'https://i.pravatar.cc/160?img=50',
+    portfolioPhotos: [],
+    priceFrom: 900,
+    yearsExperience: 8,
+    availability: dailyHours('16:00', '22:00'),
+  },
+  {
+    id: 'st-salma',
+    name: 'Salma Ezz',
+    isFreelancer: true,
+    venueId: null,
+    serviceTypes: ['at-home', 'events-bridal'],
+    servesGender: ['male', 'female'],
+    specialties: ['Hair Styling', 'Makeup'],
+    rating: 4.7,
+    reviewCount: 45,
+    bio: 'Freelance hair and makeup artist for everyday at-home appointments and special events alike.',
+    photoUrl: 'https://i.pravatar.cc/160?img=22',
+    portfolioPhotos: [],
+    priceFrom: 500,
+    yearsExperience: 5,
+    availability: dailyHours('09:00', '20:00'),
+  },
+  {
+    id: 'st-adham',
+    name: 'Adham Farouk',
+    isFreelancer: true,
+    venueId: null,
+    serviceTypes: ['events-bridal'],
+    servesGender: ['male'],
+    specialties: ['Groom Grooming', 'Barbering'],
+    rating: 4.6,
+    reviewCount: 19,
+    bio: 'Grooming for grooms and their party — sharp fades and beard styling before the big day.',
+    photoUrl: 'https://i.pravatar.cc/160?img=23',
+    portfolioPhotos: [],
+    priceFrom: 600,
+    yearsExperience: 4,
+    availability: dailyHours('10:00', '20:00'),
+  },
+  {
+    id: 'st-dina',
+    name: 'Dina Sabry',
+    isFreelancer: true,
+    venueId: null,
+    serviceTypes: ['at-home'],
+    servesGender: ['female'],
+    specialties: ['Hair Styling', 'Blow Dry'],
+    rating: 4.9,
+    reviewCount: 51,
+    bio: 'At-home blow dry and styling specialist across Cairo, Giza, and Sheikh Zayed.',
+    photoUrl: 'https://i.pravatar.cc/160?img=24',
+    portfolioPhotos: [],
+    priceFrom: 350,
+    yearsExperience: 5,
+    availability: dailyHours('09:00', '18:00'),
+  },
+]
+
 export const services: Service[] = [
   { id: 'v1-svc-1', venueId: 'v1', name: 'Haircut & Beard', durationMinutes: 40, priceEGP: 250, category: 'Hair' },
   { id: 'v1-svc-2', venueId: 'v1', name: 'Haircut only', durationMinutes: 25, priceEGP: 150, category: 'Hair' },
@@ -260,6 +432,29 @@ export const services: Service[] = [
   { id: 'v5-svc-1', venueId: 'v5', name: 'Hair Color', durationMinutes: 120, priceEGP: 600, category: 'Color' },
   { id: 'v5-svc-2', venueId: 'v5', name: 'Balayage', durationMinutes: 150, priceEGP: 800, category: 'Color' },
   { id: 'v5-svc-3', venueId: 'v5', name: 'Bridal Package', durationMinutes: 180, priceEGP: 1200, category: 'Bridal' },
+
+  { id: 'st-tarek-svc-1', venueId: null, stylistId: 'st-tarek', name: 'Haircut (Mobile)', durationMinutes: 30, priceEGP: 200, category: 'Hair' },
+  { id: 'st-tarek-svc-2', venueId: null, stylistId: 'st-tarek', name: 'Beard Trim (Mobile)', durationMinutes: 15, priceEGP: 100, category: 'Beard' },
+
+  { id: 'st-rania-svc-1', venueId: null, stylistId: 'st-rania', name: 'Bridal Makeup', durationMinutes: 90, priceEGP: 1500, category: 'Makeup' },
+  { id: 'st-rania-svc-2', venueId: null, stylistId: 'st-rania', name: 'Trial Makeup', durationMinutes: 60, priceEGP: 800, category: 'Makeup' },
+  { id: 'st-rania-svc-3', venueId: null, stylistId: 'st-rania', name: 'Bridal Hairstyling', durationMinutes: 60, priceEGP: 600, category: 'Hair' },
+
+  { id: 'st-kareem-mobile-svc-1', venueId: null, stylistId: 'st-kareem-mobile', name: 'Haircut & Beard (At Home)', durationMinutes: 40, priceEGP: 300, category: 'Hair' },
+  { id: 'st-kareem-mobile-svc-2', venueId: null, stylistId: 'st-kareem-mobile', name: 'Haircut Only (At Home)', durationMinutes: 25, priceEGP: 200, category: 'Hair' },
+
+  { id: 'st-noor-mobile-svc-1', venueId: null, stylistId: 'st-noor-mobile', name: 'Bridal Hair', durationMinutes: 90, priceEGP: 900, category: 'Hair' },
+  { id: 'st-noor-mobile-svc-2', venueId: null, stylistId: 'st-noor-mobile', name: 'Event Blow Dry', durationMinutes: 45, priceEGP: 400, category: 'Hair' },
+
+  { id: 'st-salma-svc-1', venueId: null, stylistId: 'st-salma', name: 'Hair Styling', durationMinutes: 60, priceEGP: 500, category: 'Hair' },
+  { id: 'st-salma-svc-2', venueId: null, stylistId: 'st-salma', name: 'Makeup', durationMinutes: 60, priceEGP: 700, category: 'Makeup' },
+  { id: 'st-salma-svc-3', venueId: null, stylistId: 'st-salma', name: 'Hair + Makeup Combo', durationMinutes: 100, priceEGP: 1100, category: 'Combo' },
+
+  { id: 'st-adham-svc-1', venueId: null, stylistId: 'st-adham', name: 'Groom Grooming Package', durationMinutes: 45, priceEGP: 600, category: 'Beard' },
+  { id: 'st-adham-svc-2', venueId: null, stylistId: 'st-adham', name: 'Beard Styling', durationMinutes: 20, priceEGP: 250, category: 'Beard' },
+
+  { id: 'st-dina-svc-1', venueId: null, stylistId: 'st-dina', name: 'Blow Dry', durationMinutes: 45, priceEGP: 350, category: 'Hair' },
+  { id: 'st-dina-svc-2', venueId: null, stylistId: 'st-dina', name: 'Hair Styling', durationMinutes: 60, priceEGP: 450, category: 'Hair' },
 ]
 
 export const reviews: Review[] = [
@@ -280,6 +475,14 @@ export const reviews: Review[] = [
   { id: 'v5-rv-1', bookingId: 'bk-legacy-11', venueId: 'v5', userId: 'u-guest-11', rating: 5, text: 'Layla did my bridal hair and makeup trial, absolutely stunning work.', authorName: 'Farida Osman', createdAt: '2024-05-15T10:00:00' },
   { id: 'v5-rv-2', bookingId: 'bk-legacy-12', venueId: 'v5', userId: 'u-guest-12', rating: 5, text: 'Best balayage I have had in Cairo, worth the drive to Sheikh Zayed.', authorName: 'Mariam Adly', createdAt: '2024-04-08T10:00:00' },
   { id: 'v5-rv-3', bookingId: 'bk-legacy-13', venueId: 'v5', userId: 'u-guest-13', rating: 5, text: 'Atelier feels luxurious from the moment you walk in.', authorName: 'Rana Fahmy', createdAt: '2024-03-01T10:00:00' },
+
+  { id: 'st-tarek-rv-1', bookingId: 'bk-legacy-14', venueId: null, stylistId: 'st-tarek', userId: 'u-guest-14', rating: 5, text: 'Showed up on time and gave me the best fade I have had at home.', authorName: 'Hossam Zaki', createdAt: '2024-05-08T10:00:00' },
+  { id: 'st-tarek-rv-2', bookingId: 'bk-legacy-15', venueId: null, stylistId: 'st-tarek', userId: 'u-guest-15', rating: 4, text: 'Great haircut, brought all his own tools and towels.', authorName: 'Fady Nassif', createdAt: '2024-04-01T10:00:00' },
+
+  { id: 'st-rania-rv-1', bookingId: 'bk-legacy-16', venueId: null, stylistId: 'st-rania', userId: 'u-guest-16', rating: 5, text: 'Rania did my bridal trial and the real thing lasted all night without touch-ups.', authorName: 'Nadine Samir', createdAt: '2024-05-22T10:00:00' },
+  { id: 'st-rania-rv-2', bookingId: 'bk-legacy-17', venueId: null, stylistId: 'st-rania', userId: 'u-guest-17', rating: 5, text: 'Booked her for my engagement party, everyone asked who did my makeup.', authorName: 'Yara Emad', createdAt: '2024-03-19T10:00:00' },
+
+  { id: 'st-kareem-mobile-rv-1', bookingId: 'bk-legacy-18', venueId: null, stylistId: 'st-kareem-mobile', userId: 'u-guest-18', rating: 5, text: 'Same great fade as in the shop, just at my apartment instead.', authorName: 'Ziad Moustafa', createdAt: '2024-04-25T10:00:00' },
 ]
 
 export const currentUser: User = {
@@ -290,8 +493,8 @@ export const currentUser: User = {
   avatarUrl: null,
   gender: 'For Her',
   addresses: [
-    { id: 'a1', label: 'Home', line: 'New Cairo, 5th Settlement' },
-    { id: 'a2', label: 'Work', line: 'Zamalek' },
+    { id: 'a1', label: 'Home', area: 'New Cairo', details: '5th Settlement, Building 12, Apt 4', latitude: 30.03, longitude: 31.49 },
+    { id: 'a2', label: 'Work', area: 'Zamalek', details: '26th of July Street, Floor 3', latitude: 30.0616, longitude: 31.2197 },
   ],
   walletBalance: 350,
 }
@@ -300,41 +503,47 @@ export const bookings: Booking[] = [
   {
     id: 'bk1',
     userId: currentUser.id,
+    bookingType: 'salon',
     venueId: 'v1',
     staffId: 'v1-kareem',
-    serviceId: 'v1-svc-1',
+    stylistId: null,
+    addressId: null,
+    serviceIds: ['v1-svc-1'],
     startTime: todayAt(16, 30),
     endTime: todayAt(17, 10),
     status: 'confirmed',
     priceEGP: 350,
     createdAt: '2024-06-01T09:00:00',
-    locationType: 'in-salon',
   },
   {
     id: 'bk2',
     userId: currentUser.id,
+    bookingType: 'salon',
     venueId: 'v2',
     staffId: 'v2-noor',
-    serviceId: 'v2-svc-2',
+    stylistId: null,
+    addressId: null,
+    serviceIds: ['v2-svc-2'],
     startTime: '2024-06-14T13:00:00',
     endTime: '2024-06-14T14:30:00',
     status: 'completed',
     priceEGP: 650,
     createdAt: '2024-06-10T09:00:00',
-    locationType: 'in-salon',
   },
   {
     id: 'bk3',
     userId: currentUser.id,
+    bookingType: 'salon',
     venueId: 'v3',
     staffId: 'v3-any',
-    serviceId: 'v3-svc-1',
+    stylistId: null,
+    addressId: null,
+    serviceIds: ['v3-svc-1'],
     startTime: '2024-05-02T11:00:00',
     endTime: '2024-05-02T11:50:00',
     status: 'cancelled',
     priceEGP: 320,
     createdAt: '2024-04-28T09:00:00',
-    locationType: 'in-salon',
   },
 ]
 
@@ -369,6 +578,18 @@ export function getVenueServices(venueId: string): Service[] {
 
 export function getVenueReviews(venueId: string): Review[] {
   return reviews.filter((review) => review.venueId === venueId)
+}
+
+export function getStylistReviews(stylistId: string): Review[] {
+  return reviews.filter((review) => review.stylistId === stylistId)
+}
+
+export function getStylistsByType(type: StylistServiceType): Stylist[] {
+  return stylists.filter((stylist) => stylist.serviceTypes.includes(type))
+}
+
+export function getStylistServices(stylistId: string): Service[] {
+  return services.filter((service) => service.stylistId === stylistId)
 }
 
 /** Cheapest bookable service at a venue, shown as the "From EGP X" card price. */
@@ -449,6 +670,80 @@ export function generateTimeSlots({
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       status,
+    })
+  }
+
+  return slots
+}
+
+export type StylistTimeSlot = {
+  id: string
+  stylistId: string
+  startTime: string
+  endTime: string
+  status: TimeSlotStatus
+}
+
+/**
+ * Same derivation logic as generateTimeSlots, but for a freelance/Cutit Go
+ * Stylist: availability comes from Stylist.availability instead of a
+ * Venue's opening hours, existing bookings are matched by stylistId
+ * instead of staffId, and duration is the caller-summed total of however
+ * many services were selected (there's no single "the service" to look
+ * up a duration from once multiple are selected).
+ *
+ * Accepts the bookings list to check against (defaults to the static mock
+ * table) so a caller with a live, growing list — e.g. app-state's
+ * addBooking()-updated bookings — can pass that in instead for slots that
+ * correctly account for bookings made earlier in the same session.
+ */
+export function generateStylistTimeSlots({
+  stylistId,
+  durationMinutes,
+  date,
+  bookingsList = bookings,
+}: {
+  stylistId: string
+  durationMinutes: number
+  date: Date
+  bookingsList?: Booking[]
+}): StylistTimeSlot[] {
+  const stylist = stylists.find((item) => item.id === stylistId)
+  if (!stylist || durationMinutes <= 0) return []
+
+  const dayHours = stylist.availability[DAY_KEYS[date.getDay()]]
+  if (!dayHours) return []
+
+  const [openH, openM] = dayHours.open.split(':').map(Number)
+  const [closeH, closeM] = dayHours.close.split(':').map(Number)
+
+  const dayStart = new Date(date)
+  dayStart.setHours(openH, openM, 0, 0)
+  const dayEnd = new Date(date)
+  dayEnd.setHours(closeH, closeM, 0, 0)
+
+  const stylistBookings = bookingsList.filter((booking) => booking.stylistId === stylistId && booking.status !== 'cancelled')
+
+  const slots: StylistTimeSlot[] = []
+  for (
+    let start = new Date(dayStart);
+    start.getTime() + durationMinutes * 60_000 <= dayEnd.getTime();
+    start = new Date(start.getTime() + durationMinutes * 60_000)
+  ) {
+    const end = new Date(start.getTime() + durationMinutes * 60_000)
+
+    const overlapsBooking = stylistBookings.some((booking) => {
+      const bookingStart = new Date(booking.startTime).getTime()
+      const bookingEnd = new Date(booking.endTime).getTime()
+      return start.getTime() < bookingEnd && end.getTime() > bookingStart
+    })
+
+    slots.push({
+      id: `${stylistId}-${start.toISOString()}`,
+      stylistId,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
+      status: overlapsBooking ? 'booked' : 'available',
     })
   }
 

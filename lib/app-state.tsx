@@ -3,7 +3,7 @@ import { Alert, I18nManager } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Updates from 'expo-updates'
 
-import { currentUser, favorites } from '@/lib/data'
+import { bookings as seedBookings, currentUser, favorites, type Address, type Booking } from '@/lib/data'
 import i18n, { type AppLanguage } from '@/lib/i18n'
 
 const LANGUAGE_STORAGE_KEY = 'cutit.language'
@@ -25,6 +25,11 @@ type AppState = {
   favoriteVenueIds: Set<string>
   isFavorite: (venueId: string) => boolean
   toggleFavorite: (venueId: string) => void
+  /** In-memory only — resets on reload, same as everything else here except language. */
+  bookings: Booking[]
+  addBooking: (booking: Booking) => void
+  addresses: Address[]
+  addAddress: (address: Omit<Address, 'id'>) => Address
 }
 
 const AppStateContext = createContext<AppState | null>(null)
@@ -38,6 +43,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [favoriteVenueIds, setFavoriteVenueIds] = useState<Set<string>>(
     () => new Set(favorites.filter((favorite) => favorite.userId === currentUser.id).map((favorite) => favorite.venueId)),
   )
+  const [bookings, setBookings] = useState<Booking[]>(seedBookings)
+  const [addresses, setAddresses] = useState<Address[]>(currentUser.addresses)
 
   useEffect(() => {
     let cancelled = false
@@ -93,6 +100,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const addBooking = (booking: Booking) => {
+    setBookings((prev) => [...prev, booking])
+  }
+
+  const addAddress = (address: Omit<Address, 'id'>): Address => {
+    const newAddress: Address = { ...address, id: `addr-${Date.now()}` }
+    setAddresses((prev) => [...prev, newAddress])
+    return newAddress
+  }
+
   const value = useMemo<AppState>(
     () => ({
       hasOnboarded,
@@ -111,8 +128,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       favoriteVenueIds,
       isFavorite: (venueId: string) => favoriteVenueIds.has(venueId),
       toggleFavorite,
+      bookings,
+      addBooking,
+      addresses,
+      addAddress,
     }),
-    [hasOnboarded, isSignedIn, activeGender, language, isHydrated, favoriteVenueIds],
+    [hasOnboarded, isSignedIn, activeGender, language, isHydrated, favoriteVenueIds, bookings, addresses],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

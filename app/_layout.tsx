@@ -56,8 +56,8 @@ export default function RootLayout() {
             <Stack.Screen name="help" options={{ presentation: 'modal' }} />
             <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
             <Stack.Screen name="favorites" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="at-home" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="events-bridal" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="booking-flow" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="stylist/[id]" options={{ presentation: 'modal' }} />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>
