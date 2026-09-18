@@ -1,11 +1,12 @@
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { useEffect } from 'react'
+import { BackHandler, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { CalendarCheck, CheckCircle2 } from 'lucide-react-native'
+import { CalendarCheck, CheckCircle2, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { useAppState } from '@/lib/app-state'
-import { services, staff, stylists, venues } from '@/lib/data'
+import { ANY_STAFF_ID, services, staff, stylists, venues } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 export default function BookingConfirmationScreen() {
@@ -15,12 +16,37 @@ export default function BookingConfirmationScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>()
   const { bookings, addresses } = useAppState()
 
+  // This is a terminal screen after a completed booking — swipe-to-dismiss
+  // is disabled at the route level (app/_layout.tsx), and Android's
+  // hardware back must be blocked here too so the only way out is via
+  // "View in Bookings" or "Done".
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true)
+    return () => subscription.remove()
+  }, [])
+
+  const goHome = () => {
+    router.dismissAll()
+    router.replace('/(tabs)')
+  }
+
   const booking = bookings.find((item) => item.id === bookingId)
 
   if (!booking) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#f7f5f1] px-6 dark:bg-zinc-950">
-        <Text className="text-center text-stone-600 dark:text-zinc-300">{t('bookingConfirmation.notFound')}</Text>
+      <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
+        <View className="flex-row items-center justify-end border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable
+            onPress={goHome}
+            accessibilityLabel={t('common.done')}
+            className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800"
+          >
+            <X size={18} color={colors.foreground} />
+          </Pressable>
+        </View>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-center text-stone-600 dark:text-zinc-300">{t('bookingConfirmation.notFound')}</Text>
+        </View>
       </SafeAreaView>
     )
   }
@@ -42,6 +68,16 @@ export default function BookingConfirmationScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
+      <View className="flex-row items-center justify-end border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <Pressable
+          onPress={goHome}
+          accessibilityLabel={t('common.done')}
+          className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800"
+        >
+          <X size={18} color={colors.foreground} />
+        </Pressable>
+      </View>
+
       <ScrollView className="flex-1" contentContainerClassName="items-center gap-4 px-6 pb-28 pt-12">
         <View className="size-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
           <CheckCircle2 size={36} color="#059669" />
@@ -51,7 +87,15 @@ export default function BookingConfirmationScreen() {
 
         <View className="mt-4 w-full gap-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <Text className="font-serif text-lg font-semibold text-stone-900 dark:text-white">{isSalon ? venue?.name : stylist?.name}</Text>
-          {isSalon && staffMember ? <Text className="text-sm text-stone-500 dark:text-zinc-400">{staffMember.name}</Text> : null}
+          {isSalon ? (
+            booking.staffId === ANY_STAFF_ID ? (
+              <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.anyStylist')}</Text>
+            ) : staffMember ? (
+              <Text className="text-sm text-stone-500 dark:text-zinc-400">
+                {staffMember.name} <Text className="text-stone-400 dark:text-zinc-500">({staffMember.role})</Text>
+              </Text>
+            ) : null
+          ) : null}
           {!isSalon && address ? (
             <Text className="text-sm text-stone-500 dark:text-zinc-400">
               {address.label} · {address.area}, {address.details}

@@ -61,7 +61,13 @@ export default function RootLayout() {
             {/* go-booking is a nested <Stack> (see its own _layout.tsx) — the
                 whole 4-step flow opens as one modal, steps push inside it. */}
             <Stack.Screen name="go-booking" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="booking-confirmation" options={{ presentation: 'modal' }} />
+            {/* Terminal screen after a booking — swipe-to-dismiss and Android
+                back are both disabled (see its own BackHandler) so the user
+                can only leave via its own "View in Bookings"/"Done" buttons. */}
+            <Stack.Screen
+              name="booking-confirmation"
+              options={{ presentation: 'modal', gestureEnabled: false, headerShown: false }}
+            />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>

@@ -48,7 +48,7 @@ export default function GoBookingReviewScreen() {
       serviceIds: Array.from(selectedServiceIds),
       startTime: selectedTime,
       endTime,
-      status: 'confirmed',
+      status: 'pending',
       priceEGP: total,
       createdAt: new Date().toISOString(),
     }

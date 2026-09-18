@@ -8,6 +8,14 @@ import i18n, { type AppLanguage } from '@/lib/i18n'
 
 const LANGUAGE_STORAGE_KEY = 'cutit.language'
 
+/**
+ * MOCK ONLY. Stands in for the venue/stylist actually confirming a pending
+ * booking (a real backend would flip this via a staff dashboard or webhook,
+ * not a client-side timer). Delete this whole function — and its call
+ * sites in addBooking/rescheduleBooking below — once that exists.
+ */
+const MOCK_AUTO_CONFIRM_DELAY_MS = 5000
+
 export type Gender = 'For Her' | 'For Him'
 
 type AppState = {
@@ -28,6 +36,8 @@ type AppState = {
   /** In-memory only — resets on reload, same as everything else here except language. */
   bookings: Booking[]
   addBooking: (booking: Booking) => void
+  cancelBooking: (id: string) => void
+  rescheduleBooking: (id: string, startTime: string, endTime: string) => void
   addresses: Address[]
   addAddress: (address: Omit<Address, 'id'>) => Address
 }
@@ -100,8 +110,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  // MOCK ONLY — see MOCK_AUTO_CONFIRM_DELAY_MS above.
+  const scheduleMockAutoConfirm = (bookingId: string) => {
+    setTimeout(() => {
+      setBookings((prev) => prev.map((item) => (item.id === bookingId && item.status === 'pending' ? { ...item, status: 'confirmed' } : item)))
+    }, MOCK_AUTO_CONFIRM_DELAY_MS)
+  }
+
   const addBooking = (booking: Booking) => {
     setBookings((prev) => [...prev, booking])
+    if (booking.status === 'pending') scheduleMockAutoConfirm(booking.id)
+  }
+
+  const cancelBooking = (id: string) => {
+    setBookings((prev) => prev.map((item) => (item.id === id ? { ...item, status: 'cancelled' } : item)))
+  }
+
+  const rescheduleBooking = (id: string, startTime: string, endTime: string) => {
+    setBookings((prev) => prev.map((item) => (item.id === id ? { ...item, startTime, endTime, status: 'pending' } : item)))
+    scheduleMockAutoConfirm(id)
   }
 
   const addAddress = (address: Omit<Address, 'id'>): Address => {
@@ -130,6 +157,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       toggleFavorite,
       bookings,
       addBooking,
+      cancelBooking,
+      rescheduleBooking,
       addresses,
       addAddress,
     }),

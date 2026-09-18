@@ -2,7 +2,7 @@
 
 > Single source of truth for what this app is, how it's built, where it stands, and what should change next. Keep it updated as the app evolves.
 
-_Last updated: 2026-09-16 (new "Cutit Go" tab + At-Home/Events & Bridal entry screens with a For Her/For Him stylist picker; old service-shortcuts chips removed)_
+_Last updated: 2026-09-16 (Cutit Go's At-Home/Events & Bridal pillars now have a complete booking flow — a real `Stylist` data model, a stylist detail screen, a 4-step `go-booking` wizard, and a shared `booking-confirmation` screen — and Venue detail's Confirm Booking now saves a real `Booking` record instead of showing an `Alert`)_
 
 ---
 
@@ -13,8 +13,8 @@ _Last updated: 2026-09-16 (new "Cutit Go" tab + At-Home/Events & Bridal entry sc
 | Mode | Description | Status in app |
 |---|---|---|
 | **In-salon** | Book a slot at a venue (barbershop / beauty salon) | UI built end-to-end (mock data) |
-| **At-home** | A barber / stylist / coiffeur comes to the customer | Entry flow built (Cutit Go tab → gender toggle → stylist list); actual booking flow (service, address, payment) not built — see §5/§9.3 |
-| **Events & Bridal** | Makeup artists, bridal packages, event styling | Entry flow built (same pattern as At-Home); actual booking flow not built |
+| **At-home** | A barber / stylist / coiffeur comes to the customer | UI built end-to-end (mock data) — Cutit Go tab → gender toggle → stylist list → stylist detail → 4-step `go-booking` wizard → confirmation |
+| **Events & Bridal** | Makeup artists, bridal packages, event styling | UI built end-to-end (mock data) — same flow as At-Home, plus optional event date/notes on the address step |
 
 Key product traits:
 - **Market**: Egypt. Prices in **EGP**, Cairo districts (New Cairo, Zamalek, Maadi, Heliopolis, Sheikh Zayed), phone-number auth (`+20`), English + Arabic (العربية) language toggle.
@@ -41,6 +41,8 @@ Auxiliary support flow, reachable from the header menu icon or Bookings/Profile:
 6. **Arabic + RTL pass (2026-09-13 → 2026-09-14, uncommitted)** — `i18next` + `react-i18next` + `expo-localization` wired via `lib/i18n.ts`, with `locales/en.json`/`ar.json` as the two resource files. Translated every screen under `app/` (root screens, all four tabs, venue detail) — roughly 70–80% of the app's strings; the `components/` group is not yet done. The language toggle in Profile is wired to `i18n.changeLanguage()` and persists via `AsyncStorage` (`lib/app-state.tsx`), correctly re-applying on the next launch via a hydration `useEffect` gated behind a `SplashGate` sibling component in `app/_layout.tsx` (deliberately *not* gating `<Stack>`'s own mount, to avoid re-triggering a mount-race warning fixed earlier in the session). **RTL layout mirroring itself remains unverified** — see §9.3 item 4 for the full status and the blocking issue.
 7. **Favorites screen (2026-09-14, uncommitted)** — new `app/favorites.tsx` (modal, same header pattern as `help.tsx`), added a `Favorite` join type to `lib/data.ts` (matching the `Booking`/`Review` normalized-entity pattern rather than an `isFavorite` field on `Venue`), and shared `favoriteVenueIds`/`isFavorite`/`toggleFavorite` state in `lib/app-state.tsx`. Wired the previously-inert heart icons in `establishment-card.tsx` and `venue/[id].tsx` to this shared state, and Menu's Favorites row now navigates there via `dismissTo`. Fully translated (en/ar). See §9.9 for what's still incidental/pending from this pass.
 8. **"Cutit Go" tab + At-Home/Events & Bridal entry screens (2026-09-16, uncommitted)** — added a 5th tab (`app/(tabs)/cutit-go.tsx`, `Scissors` icon, between Explore and Bookings) presenting "At Home" and "Events & Bridal" as two cards. Each pushes to a new modal screen (`app/at-home.tsx`, `app/events-bridal.tsx`) built around a new shared `components/gender-stylist-picker.tsx`: a "For Her"/"For Him" toggle with a filtered stylist list below it that updates immediately on toggle. There's no dedicated mobile-provider dataset yet, so the list reuses the existing venue-scoped `staff` table filtered by venue gender — a placeholder, not real mobile-provider data. Selecting a stylist still stubs to `/booking-flow?type=...&gender=...&staffId=...`, which **does not exist yet** (confirmed it correctly hits expo-router's "Unmatched Route" screen). The old `components/service-shortcuts.tsx` chip row (At Home / Events & Bridal / Hair & Barbering / Beauty & Care) was removed from Home entirely and the file deleted — once the first two chips moved to this tab, the remaining two were also removed per instruction, leaving nothing in that component to render. Fully translated (en/ar), RTL conventions applied. See §9.10.
+9. **Real `Stylist` data model + `booking-flow`/stylist-detail rebuild (2026-09-16, session 2, committed `88109db`)** — replaced the "reuse venue staff as a placeholder" approach from #8 with a proper `Stylist` entity in `lib/data.ts` (`isFreelancer`, `venueId: string | null`, `serviceTypes`, `servesGender`, `specialties`, `bio`, `portfolioPhotos`, `priceFrom`, `yearsExperience?`, `availability`) and 7 mock stylists spanning freelance/venue-affiliated and at-home/events-bridal. `components/gender-stylist-picker.tsx` and `app/at-home.tsx`/`app/events-bridal.tsx` were deleted and replaced by one parameterized `app/booking-flow.tsx?type=at-home|events-bridal` (its own local "For Her"/"For Him" toggle, deliberately not the shared `activeGender`) rendering the new `components/stylist-card.tsx`, which pushes to a new `app/stylist/[id].tsx` detail screen (bio, specialties, portfolio, reviews, and a "Book" button that at this point was still a `console.log` stub). This pass also laid groundwork for #10 without wiring it up yet: `Booking` gained `bookingType`/`stylistId`/`addressId` fields, a new `Address` type was added, and `lib/travel-fee.ts` (flat base fee + a per-Cairo-area surcharge table) was created but unused until the next entry.
+10. **Full Cutit Go booking flow (2026-09-16, session 3, committed `68725dc`)** — built the actual wizard that `stylist/[id].tsx`'s "Book" button now opens: a nested `app/go-booking/_layout.tsx` `<Stack>` registered as a *single* `presentation: 'modal'` group in the root layout (so all 4 steps push sideways inside one modal instead of stacking as separate modals) holding `services.tsx` (multi-select services + running subtotal) → `address.tsx` (saved addresses + an inline "add new address" form, plus optional event date/notes fields when `type === 'events-bridal'`) → `datetime.tsx` (day picker + duration-aware time-slot grid via a new `generateStylistTimeSlots()` helper that reads the stylist's own `availability`) → `review.tsx` (full summary, `calculateTravelFee()`, "Confirm Booking"). The wizard's in-progress selections (chosen services, address, date/time) live in a `GoBookingDraftContext` scoped to the `go-booking` route group — not in `AppStateProvider` — and only the finished `Booking` gets committed to shared state via `addBooking()`. Added a shared `app/booking-confirmation.tsx` (root-level modal, handles both salon and Go bookings) that this flow *and* Venue detail's "Confirm Booking" now both route to, replacing the old `Alert`-based confirmation on the venue screen. Verified end-to-end with Playwright (guest → Cutit Go → At Home → stylist → services → address → date/time → review → confirm → Bookings tab) with zero console/page errors; Playwright itself was removed afterward (dev-only, not a project dependency).
 
 ---
 
@@ -78,42 +80,50 @@ npx expo-doctor       # 21/21 checks passed as of migration; a few packages have
 
 ```
 app/                      expo-router routes
-  _layout.tsx             Root Stack + providers (GestureHandlerRootView, SafeAreaProvider, AppStateProvider, StatusBar)
+  _layout.tsx             Root Stack + providers (GestureHandlerRootView, SafeAreaProvider, AppStateProvider, StatusBar); registers go-booking and booking-confirmation as modal route groups
   index.tsx               Redirect → /onboarding or /(tabs) based on hasOnboarded
   onboarding.tsx          3-slide carousel; "Get Started" → /auth, "Continue as Guest" → /(tabs)
   auth.tsx                Country code picker + phone → 6-box auto-advancing OTP → profile (all client-side, no real OTP)
   chat-support.tsx        Modal: local-state chat UI (seeded support greeting, send appends to a list, no backend)
   help.tsx                Modal: Reschedule/Cancel Booking (placeholder actions) + a Chat Support row
   favorites.tsx           Modal: favorited venues (via EstablishmentCard) or an empty state with a "Browse venues" CTA
-  at-home.tsx             Modal: For Her/For Him toggle + filtered stylist list (via GenderStylistPicker); tapping a stylist stubs to /booking-flow (not built)
-  events-bridal.tsx       Modal: same pattern as at-home.tsx, different copy
+  booking-flow.tsx        Card push (not modal): "For Him"/"For Her" toggle (local-only) + StylistCard list filtered by type (`at-home`/`events-bridal`) and gender; forwards `type` into /stylist/[id]
+  stylist/[id].tsx        Card push: stylist detail (bio, specialties, portfolio, reviews); "Book" pushes into the go-booking modal group with stylistId+type
+  go-booking/             Nested Stack, opened as one modal group (presentation set once on the group in the root layout, not per-step)
+    _layout.tsx           Declares the 4-step <Stack> + GoBookingDraftContext (selected services, address, event date/notes, date/time) — scoped to this flow only, not AppStateProvider
+    services.tsx          Step 1: stylist's services as multi-select rows, running subtotal, Continue disabled until ≥1 selected
+    address.tsx           Step 2: saved addresses (from useAppState) as selectable cards + inline "add new address" form; optional event date/notes when type is events-bridal
+    datetime.tsx          Step 3: day picker + time-slot grid sized to the selected services' total duration, via generateStylistTimeSlots()
+    review.tsx            Step 4: full summary + calculateTravelFee(); "Confirm Booking" builds a Booking, calls addBooking(), routes to /booking-confirmation
+  booking-confirmation.tsx  Root-level modal shared by both salon and Go bookings: looks up the booking by id from useAppState().bookings, renders a status-aware summary, "Add to Calendar" (placeholder), "View in Bookings" (dismissAll + replace)
   menu.tsx                Modal: Favorites (→ /favorites) / My Bookings / Help / Settings / Sign Out, opened from the header ≡ icon
   (tabs)/
     _layout.tsx           Bottom tabs: Home / Explore / Cutit Go / Bookings / Profile (lucide icons, theme-aware)
     index.tsx             Home
     explore.tsx           Fresha-style rebuild: full-bleed map background + draggable `@gorhom/bottom-sheet` list (3 snap points), fixed search bar / Venues-Professionals-Anytime filter row / day-picker row on top
-    cutit-go.tsx           "At Home" / "Events & Bridal" selection cards → /at-home or /events-bridal
-    bookings.tsx          Upcoming / Past History
+    cutit-go.tsx           "At Home" / "Events & Bridal" selection cards → /booking-flow?type=...
+    bookings.tsx          Upcoming / Past History; reads useAppState().bookings, so a freshly-confirmed booking is included in the same session
     profile.tsx           Profile & settings
-  venue/[id].tsx          Venue detail + booking flow (modal): stylist/service/date/time picker, written reviews list
+  venue/[id].tsx          Venue detail + booking flow (modal): stylist/service/date/time picker, written reviews list; Confirm Booking now builds a real Booking via addBooking() and routes to /booking-confirmation (previously just an Alert)
 components/
   app-header.tsx          Logo, dark-mode toggle, bell, menu (→ /menu), "Discover in Cairo", guest/user avatar toggle
   country-code-picker.tsx Pressable segment + modal list of ~11 country dial codes, used by auth.tsx
   establishment-card.tsx  Venue card (cover, open/closed, rating, services, price, Book, wired favorite heart)
   recommendation-feed.tsx Horizontal "Recommended for You" (gender-filtered when signed in) — its own bespoke card, does NOT use EstablishmentCard, so it has no heart/favorite button at all
-  gender-stylist-picker.tsx  For Her/For Him toggle + filtered stylist list, shared by at-home.tsx and events-bridal.tsx; reuses the venue-scoped `staff` table (see §2.8) as a placeholder for a real mobile-provider dataset
+  stylist-card.tsx        Stylist row (photo/initials, specialties, rating, "From EGP X") used by booking-flow.tsx; replaced gender-stylist-picker.tsx (deleted, see §2.9)
   explore-map.tsx         Pure background layer now: diagonal-line pattern + pins rendered as star+rating badges (no popup card)
   review-modal.tsx        Bottom-sheet star rating + always-optional text field, used by Bookings and Venue (no more requireText)
   settings-rows.tsx       SettingRow / ToggleRow, used by Profile and now Menu/Help too
   skeleton-card.tsx       Loading placeholder
   logo.tsx                Text wordmark "cut**it**" — intentionally still a placeholder; the SVG import path (`assets/images/cutit-logo.svg` via react-native-svg-transformer) is wired but unused until a final logo asset is ready
 lib/
-  data.ts                 Venue/Staff/Service/TimeSlot/Booking/Review/User/Favorite types; normalized mock tables (venues, staff, services, reviews, bookings, favorites, currentUser) plus derived helpers (getVenueStaff/Services/Reviews, getVenueStartingPrice, isVenueOpenNow, generateTimeSlots) — see §6
-  app-state.tsx           React Context: hasOnboarded, isSignedIn, activeGender, language (persisted), favoriteVenueIds (+ actions); see §2.6/§2.7
+  data.ts                 Venue/Staff/Stylist/Service/TimeSlot/Booking/Address/Review/User/Favorite types; normalized mock tables (venues, staff, stylists, services, reviews, bookings, favorites, currentUser) plus derived helpers (getVenueStaff/Services/Reviews, getStylistServices/Reviews, getStylistsByType, getVenueStartingPrice, isVenueOpenNow, generateTimeSlots, generateStylistTimeSlots) — see §6
+  travel-fee.ts           calculateTravelFee(area) — flat base fee + a per-Cairo-area surcharge table, used by the go-booking review step
+  app-state.tsx           React Context: hasOnboarded, isSignedIn, activeGender, language (persisted), favoriteVenueIds, bookings (+ addBooking), addresses (+ addAddress); see §2.6/§2.7/§2.10
   i18n.ts                 i18next + react-i18next init, loads locales/en.json and locales/ar.json as resources
   theme.ts                useThemeColors() → hex colours for icons (icons can't use `dark:` classes)
 locales/
-  en.json / ar.json       i18next translation resources — nested by screen (onboarding, auth, menu, help, chatSupport, tabs, home, explore, bookings, profile, venue, favorites, cutitGo, atHome, eventsBridal) plus a shared "common" namespace
+  en.json / ar.json       i18next translation resources — nested by screen (onboarding, auth, menu, help, chatSupport, tabs, home, explore, bookings, profile, venue, favorites, cutitGo, bookingFlow, stylist, goBooking, bookingConfirmation) plus a shared "common"/"gender" namespace
 assets/images/            Cutit-branded icon.png / android-icon-*.png / favicon.png / splash-icon(-dark).png (derived from cutit-mark.svg, a crop of the wordmark's scissors motif) + the full cutit-logo.svg wordmark
 global.css                Tailwind directives (imported once in app/_layout.tsx)
 tailwind.config.js        NativeWind preset; fontFamily.serif = Fraunces_600SemiBold, fontFamily.sans = Inter_400Regular
@@ -122,7 +132,7 @@ svg.d.ts                  Types `*.svg` imports as React components
 eas.json                  `development` build profile (developmentClient + internal distribution) for testing outside Expo Go — no build run yet
 ```
 
-~2,200 lines of app code.
+~4,250 lines of app code.
 
 ---
 
@@ -152,11 +162,15 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - 🟡 The top search bar is now a static "All treatments / Current location" pressable (no handler) — Explore lost free-text filtering when the old TextInput-based search bar was replaced; gender filter (from context) is the only thing still actually filtering the list
 - 🟡 "Venues"/"Professionals" toggle, "Anytime" dropdown, and the sliders/list-filter icon buttons are all visual only; map is still the CSS-pattern placeholder, not a real map
 
-### Cutit Go (`/(tabs)/cutit-go`, tab) + At Home / Events & Bridal (`/at-home`, `/events-bridal`, modals)
-- ✅ Cutit Go tab shows two cards ("At Home", "Events & Bridal") that each push into a dedicated modal
-- ✅ Both modals share `GenderStylistPicker`: a For Her/For Him toggle with a stylist list below that updates immediately on toggle — verified both directions show different, correct stylists, and the two screens keep independent toggle state
-- 🟡 The stylist list is placeholder data (reused salon `staff`, filtered by venue gender) — there's no real mobile-provider/event-specialist dataset yet
-- ❌ Tapping a stylist stubs to `/booking-flow?type=...&gender=...&staffId=...`, which doesn't exist — confirmed it correctly hits expo-router's "Unmatched Route" screen rather than silently failing. Building this flow (service selection, address, time, payment) is the real remaining work for both booking modes
+### Cutit Go (`/(tabs)/cutit-go`, tab) → Booking Flow → Stylist Detail → Go Booking (4 steps) → Confirmation
+- ✅ Cutit Go tab shows two cards ("At Home", "Events & Bridal") that each push (card, not modal) into `booking-flow.tsx?type=...`
+- ✅ `booking-flow.tsx` has its own local "For Him"/"For Her" toggle (defaults from `activeGender` but never writes back to it) and lists `StylistCard`s filtered by `getStylistsByType(type)` + `servesGender` — verified both directions show different, correct stylists
+- ✅ Tapping a stylist forwards `type` into `/stylist/[id]`, a full detail screen (photo, specialties, rating, bio, years of experience, "Available for" badges, portfolio grid, written reviews) — previously this route didn't exist; now it does, with a real "Book {name}" button
+- ✅ "Book" pushes into the `go-booking` modal group (`stylistId`+`type` as route params) — a 4-step wizard: **Services** (multi-select, running subtotal) → **Address** (saved addresses + inline add-new form, optional event date/notes for `events-bridal`) → **Date & Time** (day picker + duration-aware slots via `generateStylistTimeSlots()`) → **Review** (full summary, `calculateTravelFee()`, "Confirm Booking")
+- ✅ Confirming builds a real `Booking` (`bookingType: 'at-home' | 'events-bridal'`, `stylistId`, `addressId`, `travelFeeEGP`, computed `endTime`), calls `addBooking()`, and routes to the shared `/booking-confirmation` screen
+- ✅ Verified end-to-end with Playwright — full guest → Cutit Go → stylist → all 4 steps → confirmation → Bookings tab run, zero console/page errors
+- 🟡 The `Stylist` entity (see §6) is a real, dedicated data model now (not borrowed salon `staff`), but it's still only 7 hand-written mock rows — no real mobile-provider onboarding/CRUD exists
+- 🟡 Wizard draft state (`GoBookingDraftContext`) is lost if the app reloads mid-flow — acceptable for a modal wizard, but worth knowing if deep-linking into a specific step is ever wanted
 
 ### Venue detail / booking (`/venue/[id]`)
 - ✅ Stylist picker (with a placeholder avatar icon when a staff member has no photo), service multi-select with search, 7-day date strip, live total, Confirm gated on ≥1 service + a time
@@ -164,13 +178,20 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 - ✅ Venue cover photo falls back to a bordered placeholder block (camera/image icon) if `venue.coverImageUrl` is ever null
 - ✅ Written reviews list below the aggregate rating (initials avatar, star rating, text) sourced from `getVenueReviews(venue.id)`; Write a Review modal (rating + always-optional text)
 - ✅ Header heart icon toggles real shared favorite state (fills red when favorited)
-- 🟡 Confirm shows a native `Alert` then jumps to Bookings — nothing is saved as a real `Booking` record; submitting a review doesn't append to the reviews table
+- ✅ Confirm now builds a real `bookingType: 'salon'` `Booking`, calls `addBooking()`, and routes to the shared `/booking-confirmation` screen — previously just showed a native `Alert` and saved nothing
+- 🟡 Submitting a review still doesn't append to the reviews table
+
+### Booking Confirmation (`/booking-confirmation`, modal)
+- ✅ Shared by both salon bookings (venue detail) and Go bookings (the go-booking wizard); looks the booking up by `bookingId` from `useAppState().bookings` and renders a status icon, a summary card (venue+staff for salon, stylist+address+travel fee for Go), date/time, and total
+- ✅ "View in Bookings" does `router.dismissAll()` then `replace('/(tabs)/bookings')`, correctly clearing the whole booking-flow/venue stack rather than leaving it underneath
+- 🟡 "Add to Calendar" is a placeholder (no `expo-calendar` integration yet)
 
 ### Bookings
 - ✅ Upcoming (live countdown banner computed from the booking's real `startTime`, confirmed card, stylist, Call Venue / Get Directions) / Past (completed + cancelled cards), Leave a Review modal, Rebook → Explore
-- ✅ Sourced from `lib/data.ts`'s `bookings` mock table joined against `venues`/`staff`/`services` by id (one confirmed, one completed, one cancelled) instead of ad-hoc local objects
+- ✅ Sourced from `useAppState().bookings` (seeded from `lib/data.ts`'s mock table, but now a real stateful array that `addBooking()` appends to) joined against `venues`/`staff`/`stylists`/`services`/`addresses` by id
 - ✅ "Need Help with this Booking?" now navigates to `/help`
-- 🟡 Still mock data, not persisted or interactive; Call / Directions have no handlers; no cancel or reschedule from this screen itself (WhatsApp Support button was removed — that entry point now lives in Help instead)
+- 🟡 The Upcoming tab shows a single representative booking via `.find(b => b.status === 'confirmed')`, not a list — a freshly-confirmed second booking is correctly added to `bookings` (confirmed with Playwright) but won't visibly appear here unless it's the *first* confirmed one found. This is a pre-existing simplification of this screen, not something the new booking flow changed; worth revisiting if multiple simultaneous upcoming bookings becomes a real scenario.
+- 🟡 Still not persisted across reloads; Call / Directions have no handlers; no cancel or reschedule from this screen itself (WhatsApp Support button was removed — that entry point now lives in Help instead)
 
 ### Profile
 - ✅ Dark-mode toggle (NativeWind `useColorScheme`), gender toggle (shared context), language toggle, reminder/offers toggles, Log Out (→ onboarding)
@@ -198,9 +219,10 @@ Legend: ✅ works (with mock data) · 🟡 visual only, no handler · ❌ missin
 ## 6. State & data model
 
 - **Server state**: none — `lib/data.ts` exports static, normalized mock tables. Screens read them through `useMemo` filters or the derived-data helpers below, not by reaching into nested objects.
-- **App state** (`lib/app-state.tsx`): `hasOnboarded`, `isSignedIn`, `activeGender`, `favoriteVenueIds` (a `Set<string>`) in a React Context. **Resets on every app launch/reload** — nothing is persisted, *except* `language`, which is written to `AsyncStorage` on change and re-applied via a hydration `useEffect` on startup (see §2.6).
+- **App state** (`lib/app-state.tsx`): `hasOnboarded`, `isSignedIn`, `activeGender`, `favoriteVenueIds` (a `Set<string>`), `bookings` (+ `addBooking`), `addresses` (+ `addAddress`), `language` (persisted) in a React Context. **Resets on every app launch/reload** — nothing is persisted except `language` (written to `AsyncStorage` on change, re-applied via a hydration `useEffect` on startup, see §2.6). `bookings`/`addresses` are real `useState` seeded from the mock tables — `addBooking()`/`addAddress()` append to them, so a booking made in the go-booking wizard or on a venue page is immediately visible elsewhere in the same session (e.g. the Bookings tab), just not across a reload.
 - **Theme**: NativeWind's built-in colour scheme (`useColorScheme()` from `nativewind`); follows the system by default, toggled from the header or Profile. Also not persisted.
-- **Booking selection** lives in local `useState` inside `venue/[id].tsx` and is discarded on confirm.
+- **Go-booking wizard draft** (`app/go-booking/_layout.tsx`'s `GoBookingDraftContext`): selected service ids, chosen address id, event date/notes, selected date/time — scoped to the 4-step flow only, deliberately **not** part of `AppStateProvider` since it's meaningless outside an in-progress booking. Only the finished `Booking` object crosses into shared state, via `addBooking()`.
+- **Venue-detail booking selection** lives in local `useState` inside `venue/[id].tsx` (separate from the go-booking draft above, since salon booking is a single screen, not a wizard) and is discarded once `addBooking()` fires.
 
 `lib/data.ts` types (deliberately shaped to match what a real Supabase backend would return — normalized tables keyed by `venueId`/`staffId`/etc., not deeply nested object literals):
 
@@ -213,19 +235,35 @@ type Venue = {
   description; openingHours: Record<DayOfWeek, { open; close } | null>
 }
 type Staff = { id; venueId; name; role; photoUrl: string | null; rating? }
-type Service = { id; venueId; name; durationMinutes; priceEGP; category }
+type Stylist = {                             // a Cutit Go mobile/event provider — distinct from venue-scoped Staff
+  id; name; isFreelancer; venueId: string | null
+  serviceTypes: ('at-home' | 'events-bridal')[]
+  servesGender: ('male' | 'female')[]        // who this stylist serves, not who they are
+  specialties: string[]; rating; reviewCount; bio; photoUrl: string | null; portfolioPhotos: string[]
+  priceFrom; yearsExperience?
+  availability: OpeningHours                 // same shape as Venue.openingHours, no per-day exceptions yet
+}
+type Service = { id; venueId: string | null; stylistId?; name; durationMinutes; priceEGP; category }
 type TimeSlot = { id; venueId; staffId; serviceId; startTime; endTime; status: 'available' | 'booked' | 'blocked' }
-type Booking = { id; userId; venueId; staffId; serviceId; startTime; endTime; status: 'confirmed' | 'completed' | 'cancelled'; priceEGP; createdAt; locationType: 'in-salon' | 'at-home' }
+type Address = { id; label; area; details; latitude?; longitude? }
+type Booking = {
+  id; userId; bookingType: 'salon' | 'at-home' | 'events-bridal'
+  venueId: string | null; staffId: string | null; stylistId: string | null; addressId: string | null
+  travelFeeEGP?; eventDate?; eventNotes?
+  serviceIds: string[]; startTime; endTime; status: 'confirmed' | 'completed' | 'cancelled'; priceEGP; createdAt
+}
 type Review = { id; bookingId; venueId; userId; rating; text: string | null; authorName; createdAt }
 type User = { id; fullName; email; phone; avatarUrl: string | null; gender; addresses: Address[]; walletBalance }
 type Favorite = { id; userId; venueId; createdAt }   // a user↔venue join, not an isFavorite field on Venue — matches the Booking/Review pattern
 ```
 
-Mock tables: `venues`, `staff`, `services`, `reviews`, `bookings`, `favorites`, `currentUser`, plus `serviceFilters` (unchanged). `AppStateProvider` hydrates its live `favoriteVenueIds` Set from `favorites` once on mount, filtered to `currentUser.id`; `toggleFavorite(venueId)` then owns it from there (the `favorites` array itself isn't mutated). Derived-data helpers stand in for what would be backend queries/RPCs:
-- `getVenueStaff/Services/Reviews(venueId)` — the join a real `select('*, staff(*), services(*)')` query would do.
+Mock tables: `venues`, `staff`, `stylists`, `services`, `reviews`, `bookings`, `favorites`, `currentUser`, plus `serviceFilters` (unchanged). `AppStateProvider` hydrates its live `favoriteVenueIds` Set from `favorites` once on mount, filtered to `currentUser.id`; `toggleFavorite(venueId)` then owns it from there (the `favorites` array itself isn't mutated). Derived-data helpers stand in for what would be backend queries/RPCs:
+- `getVenueStaff/Services/Reviews(venueId)`, `getStylistServices/Reviews(stylistId)`, `getStylistsByType(type)` — the joins a real `select('*, staff(*), services(*)')` query would do.
 - `getVenueStartingPrice(venueId)` — cheapest service, not a stored/guessed number (card prices dropped when this landed — they used to just show the first-listed service's price).
 - `isVenueOpenNow(openingHours)` — live-computed "Open"/"Closed" badge instead of a static boolean (Maven Studio's hours are `null` every day to preserve its old always-closed demo state).
 - `generateTimeSlots({ venueId, staffId, serviceId, date, durationMinutes? })` — availability from venue hours + existing `bookings` + service duration (a hardcoded lunch-break rule at hour 13 stands in for a real per-staff schedule exceptions table, which doesn't exist yet).
+- `generateStylistTimeSlots({ stylistId, durationMinutes, date, bookingsList? })` — same idea for the go-booking wizard, reading the stylist's own `availability` instead of a venue's; no lunch-break rule (mobile stylists aren't modeled as needing one).
+- `calculateTravelFee(area)` (`lib/travel-fee.ts`) — flat EGP 50 base fee plus a per-Cairo-area surcharge table (New Cairo 0, Zamalek/Maadi 20, Heliopolis 30, Sheikh Zayed 50, else 40) — a placeholder pricing rule, not distance-based.
 
 Screen-local state that isn't in a shared context (each resets on unmount/reload, same as everything else): `chat-support.tsx`'s message list, `help.tsx`'s placeholder actions, `menu.tsx`'s row taps, `auth.tsx`'s selected country/OTP digits.
 
@@ -243,6 +281,7 @@ Screen-local state that isn't in a shared context (each resets on unmount/reload
 - **Modal screens** (`venue/[id]`, `chat-support`, `help`, `menu`) all share one header shape: a circular bordered back button (`ArrowLeft`, `size-9`, `accessibilityLabel="Close"` or `"Back"`) on the left, a centered `font-serif text-lg font-semibold` title, and either a matching action button or an empty `size-9` spacer on the right to keep the title centered. Reuse this shape for any new modal rather than inventing a new header.
 - **Segmented digit input** (OTP in `auth.tsx`): an array of single-char `TextInput`s with a `ref` array, auto-advancing focus forward on entry and back on backspace-into-empty — not a library, hand-rolled since none was installed.
 - **Fixed overlay + full-bleed background**: when a screen layers a fixed top/bottom control strip over a full-bleed background (Explore's map, any future full-bleed layout), the fixed strip needs its own opaque page-background color (`bg-[#f7f5f1] dark:bg-zinc-950`) — a transparent strip lets whatever's layered underneath bleed through the gaps between its child elements.
+- **Multi-step modal flow** (`app/go-booking/`): when a flow has several internal steps that should all open as *one* modal (not one modal per step), give the group its own `_layout.tsx` with a nested `<Stack>` and register only the group itself as `presentation: 'modal'` in the root `_layout.tsx` — never register the individual step screens. Steps then push as normal card transitions inside the already-open modal. Carry step-to-step selections in a small React Context scoped to that group's `_layout.tsx` (e.g. `GoBookingDraftContext`), not in `AppStateProvider` — only the final committed result (here, the finished `Booking`) belongs in shared app state.
 
 ---
 
@@ -274,14 +313,14 @@ Nothing here is in git yet. Commit the Expo migration as one baseline commit bef
 | `lib/data.ts` mock tables (now Supabase-shaped, still in-memory) | **Supabase** (Postgres + Row-Level Security + Storage + phone OTP auth via Twilio/Vonage) accessed through **TanStack Query** | The types/normalization are already shaped for this (see §6) — the remaining work is a real Postgres schema + swapping the mock arrays for queries. Phone OTP fits the existing auth UI; RLS keeps the customer app safe without a custom API layer. Firebase is the alternative if you prefer NoSQL + FCM. |
 | In-memory `AppStateProvider` (language now persisted, see §2.6) | Persist the rest with **react-native-mmkv** (or AsyncStorage, already a dependency): onboarding done, session, gender, favorites, theme | Users shouldn't re-onboard on every launch, and favorites/gender/theme resetting is an easy near-term win now that AsyncStorage is already wired for language. |
 | Fake OTP flow in `auth.tsx` | Supabase Auth phone sign-in (or Firebase Auth) with a real resend timer | Currently anyone can "log in". |
-| `Alert` on Confirm Booking | Actually insert into the `bookings` table + a confirmation screen (summary, add-to-calendar, "View in Bookings") | The core action currently saves nothing — `generateTimeSlots()` already reads from `bookings`, so a real insert would immediately start affecting availability. |
+| ~~`Alert` on Confirm Booking~~ | **Done** — both Venue detail and the go-booking wizard now call `addBooking()` and route to a shared `/booking-confirmation` screen (summary, add-to-calendar placeholder, "View in Bookings") | Still local-only: `addBooking()` writes to in-memory `AppStateProvider` state, not a real backend, so it resets on reload. The real remaining work is a Supabase insert once a backend exists. |
 | `ExploreMap` pattern | **`react-native-maps`** (Google on Android, Apple on iOS) + **`expo-location`** for "near you" and "Search this area" | Location-based discovery is central to the product; `Venue` already carries `latitude`/`longitude`. |
 | Hardcoded `Amira Nabil` user, stats, addresses, wallet | Wire Profile to the new `currentUser`/`Address` types in `lib/data.ts`, then back those with real backend tables | `User`/`Address` types and a matching mock `currentUser` now exist (§6) but `profile.tsx` doesn't consume them yet — everything in Profile is still inert/hardcoded inline. |
 | Unsplash / pravatar images | Supabase Storage (or Cloudinary) with `expo-image` caching | Hot-linked images break and are unreliable. |
 
 ### 9.3 Add — product
 
-1. **At-home and Events & Bridal booking flows.** Entry screens now exist (Cutit Go tab → gender toggle → stylist list, see §2.8/§5), but the actual booking flow past picking a stylist is still missing: service type selection, address picker (Profile already models Home/Work addresses), travel-fee logic, date/time, payment, and confirmation — this is the `/booking-flow` route referenced but not built. Also still needed: a real mobile-provider/event-specialist dataset (currently reusing salon `staff`, filtered by venue gender, as a placeholder).
+1. ~~At-home and Events & Bridal booking flows.~~ **Done** (§2.9/§2.10, §5) — Cutit Go tab → gender toggle → stylist list → stylist detail → 4-step go-booking wizard (services, address, date/time, review) → confirmation, all working end-to-end with mock data. Still needed: **real payment** (nothing charges anything yet — Confirm Booking just writes a local record) and a **real mobile-provider dataset** (the 7 mock `Stylist` rows are hand-written, not a real onboarding/CRUD system).
 2. **Booking lifecycle**: cancel, reschedule, no-show/late policies, status timeline (pending → confirmed → completed).
 3. **Payments**: **Paymob** and/or **Fawry** for Egypt (cards, wallets, cash-on-service), plus Apple Pay/Google Pay; connect the existing wallet UI to real balance/top-ups.
 4. **Arabic + RTL** — in progress: `i18next` + `expo-localization` infrastructure is built, the language toggle is wired to `i18n.changeLanguage()` and persists via AsyncStorage (survives restarts), and roughly **70–80% of the app's strings are translated** (all of `app/` is done; the `components/` group is not yet). **RTL layout mirroring itself is unverified** — `I18nManager.forceRTL` doesn't visually mirror the layout even after a full app restart in Expo Go, matching a currently unresolved upstream Expo/RN issue reported across iOS/Android/web ([expo/expo#39752](https://github.com/expo/expo/issues/39752)). Testing in a real dev-client/production build (to rule out an Expo-Go-only quirk) is blocked on not having an Apple Developer account for an iOS ad-hoc build; an Android EAS build remains a lower-friction untested alternative. Parked until build access is available, or until the decision is made to stop relying on automatic `flexDirection` mirroring and make direction explicit everywhere instead.
@@ -343,7 +382,15 @@ So concretely, right now, your queue is:
 
 ### 9.10 New since the last update (2026-09-16, Cutit Go)
 
-- **`/booking-flow` is now referenced from four places** (`cutit-go.tsx`'s two cards originally, now `at-home.tsx` and `events-bridal.tsx`'s stylist rows) **and still doesn't exist.** This is the single biggest concrete gap blocking the At-Home/Events & Bridal pillars from being real — worth prioritizing the actual flow screen next given how many entry points now funnel into it.
-- **The stylist list under the For Her/For Him toggle is borrowed salon data, not real mobile providers.** `GenderStylistPicker` filters the existing venue-scoped `staff` table by venue gender and excludes the "Any Stylist" placeholder rows. This works for demo purposes (Kareem/Omar/Ahmed for Him, Noor/Layla for Her) but conflates "works at a salon" with "available for at-home/event bookings" — a real implementation needs its own provider entity (service-area, mobile fee, event specialties) independent of per-venue `Staff`.
+- ~~`/booking-flow` is now referenced from four places ... and still doesn't exist.~~ **Resolved in §2.9** — `booking-flow.tsx` was built (replacing `at-home.tsx`/`events-bridal.tsx` entirely) and now leads all the way through to a working booking.
+- ~~The stylist list under the For Her/For Him toggle is borrowed salon data, not real mobile providers.~~ **Resolved in §2.9** — `Stylist` is now its own entity in `lib/data.ts`, independent of venue `Staff`.
 - **`components/service-shortcuts.tsx` is gone.** All four of its original chips (At Home, Events & Bridal, Hair & Barbering, Beauty & Care) are now removed — the first two moved to the Cutit Go tab, the remaining two were dropped with no replacement. Home currently has no service-type filter chips at all; if that filtering capability is still wanted, it needs a new home.
-- **Each of `at-home.tsx`/`events-bridal.tsx` keeps its own local toggle state** (defaults to "For Her" on every visit) rather than sharing `activeGender` from `lib/app-state.tsx`. Deliberate for now since the task didn't specify, but worth reconsidering — using the shared context would make the toggle remember the user's preference across screens, consistent with how Home/Profile's gender toggle already behaves.
+- ~~Each of `at-home.tsx`/`events-bridal.tsx` keeps its own local toggle state...~~ **Superseded by §2.9** — those two screens no longer exist; the replacement `booking-flow.tsx` still keeps its gender toggle local (not shared `activeGender`) for the same reason, so the underlying question (should it be shared?) still stands.
+
+### 9.11 New since the last update (2026-09-16, sessions 2–3 — Stylist model + full go-booking flow)
+
+- **Booking data now genuinely branches three ways.** `Booking.bookingType` (`'salon' | 'at-home' | 'events-bridal'`) plus the nullable `venueId`/`staffId` vs. `stylistId`/`addressId` pairs mean any code that reads `bookings` (currently just `bookings.tsx` and the new `booking-confirmation.tsx`) has to branch on `bookingType` rather than assuming a venue booking shape. Keep this in mind for any future screen that lists or summarizes bookings.
+- **The Bookings tab's "Upcoming" card is a single `.find()`, not a list** — confirmed via Playwright that a freshly-added second confirmed booking (from the go-booking flow) doesn't visibly appear there because an earlier mock booking is found first. This is a pre-existing simplification of `bookings.tsx` from before this session, surfaced now because `addBooking()` finally makes a second simultaneous confirmed booking possible. Worth a real fix (show all upcoming bookings, or at least the most recent) before this matters for a real user.
+- **The go-booking wizard's draft state is intentionally ephemeral.** `GoBookingDraftContext` (services/address/date/time selections) lives only in memory for the lifetime of the `go-booking` route group and is discarded on `router.back()` past step 1 or a reload — matches the instruction to keep it out of `AppStateProvider`, but means there's no "resume where you left off" if the app is killed mid-booking. Fine for a mock-data prototype; would need reconsidering (e.g. persisted draft, or a single-screen wizard) if drop-off during a multi-step native flow becomes a real concern.
+- **`calculateTravelFee()` is a flat lookup table, not distance-based.** It maps `Address.area` (a free-text string on `Address`, not a controlled enum) to a surcharge via exact string match, falling back to a default surcharge for anything unrecognized (including new user-entered areas from the "add address" form, which are never validated against the known area list). Fine for a demo; a real implementation would need either a controlled area picker or real geocoding + distance calculation.
+- **End-to-end Playwright verification for this flow is now on record**: guest onboarding → Cutit Go tab → At Home → gender-filtered stylist list → stylist detail → 4 go-booking steps (with a real new address typed in and saved) → review totals math-checked (services subtotal + area travel fee) → confirm → confirmation screen → View in Bookings, all with zero console/page errors. This is the first booking flow in the app verified this thoroughly end-to-end rather than screen-by-screen.

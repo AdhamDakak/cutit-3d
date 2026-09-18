@@ -3,12 +3,12 @@ import { I18nManager, Pressable, ScrollView, Text, TextInput, View } from 'react
 import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, ArrowRight, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound } from 'lucide-react-native'
+import { ArrowLeft, ArrowRight, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound, Users } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { ReviewModal } from '@/components/review-modal'
 import { useAppState } from '@/lib/app-state'
-import { currentUser, generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues, type Booking } from '@/lib/data'
+import { ANY_STAFF_ID, currentUser, generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues, type Booking } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'
@@ -74,14 +74,17 @@ export default function VenueScreen() {
     return sum + (service?.priceEGP ?? 0)
   }, 0)
   const filteredServices = venueServices.filter((service) => service.name.toLowerCase().includes(serviceQuery.toLowerCase()))
-  const canConfirm = selectedServices.size > 0 && !!selectedTime
+  const canConfirm = selectedServices.size > 0 && !!selectedTime && selectedStaff !== null
 
   const selectedDurationMinutes =
     Array.from(selectedServices).reduce((sum, serviceId) => {
       const service = venueServices.find((item) => item.id === serviceId)
       return sum + (service?.durationMinutes ?? 0)
     }, 0) || 30
-  const effectiveStaffId = selectedStaff ?? `${establishment.id}-any`
+  // Falls back to the same "no preference" sentinel used when the user
+  // explicitly taps "Any stylist", so browsing before picking anyone and
+  // picking "Any stylist" behave identically — one convention, not two.
+  const effectiveStaffId = selectedStaff ?? ANY_STAFF_ID
   const representativeServiceId = Array.from(selectedServices)[0] ?? venueServices[0]?.id ?? ''
   const daySlots = representativeServiceId
     ? generateTimeSlots({
@@ -107,7 +110,7 @@ export default function VenueScreen() {
       serviceIds: Array.from(selectedServices),
       startTime: selectedTime,
       endTime,
-      status: 'confirmed',
+      status: 'pending',
       priceEGP: totalPrice,
       createdAt: new Date().toISOString(),
     }
@@ -163,6 +166,20 @@ export default function VenueScreen() {
             <Text className="mb-4 font-semibold text-stone-900 dark:text-white">{t('venue.selectStylist')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => setSelectedStaff(ANY_STAFF_ID)}
+                  className={`items-center gap-2 rounded-lg px-3 py-2 ${selectedStaff === ANY_STAFF_ID ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
+                >
+                  <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
+                    <Users size={18} color={colors.mutedStrong} />
+                  </View>
+                  <View className="items-center">
+                    <Text className={`text-xs ${selectedStaff === ANY_STAFF_ID ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{t('venue.anyStylist')}</Text>
+                    <Text className={`text-[10px] ${selectedStaff === ANY_STAFF_ID ? 'text-white/80' : 'text-stone-500 dark:text-zinc-400'}`}>
+                      {t('venue.firstAvailable')}
+                    </Text>
+                  </View>
+                </Pressable>
                 {venueStaff.map((person) => {
                   const active = selectedStaff === person.id
                   return (
@@ -187,6 +204,7 @@ export default function VenueScreen() {
                 })}
               </View>
             </ScrollView>
+            {selectedStaff === null && <Text className="mt-2 text-xs text-amber-600 dark:text-amber-500">{t('venue.chooseStylistHint')}</Text>}
           </View>
 
           <View className="mt-8">

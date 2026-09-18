@@ -97,8 +97,11 @@ export type TimeSlot = {
   status: TimeSlotStatus
 }
 
-export type BookingStatus = 'confirmed' | 'completed' | 'cancelled'
+export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 export type BookingType = 'salon' | 'at-home' | 'events-bridal'
+
+/** Sentinel `Booking.staffId` for "no stylist preference" — never a real `Staff.id`. */
+export const ANY_STAFF_ID = 'any'
 
 export type Booking = {
   id: string
@@ -106,6 +109,7 @@ export type Booking = {
   bookingType: BookingType
   // Salon bookings:
   venueId: string | null
+  /** A real Staff id, or ANY_STAFF_ID when the customer chose "Any stylist". Always set for bookingType 'salon' (staff selection is mandatory); null for Cutit Go bookings, which use stylistId instead. */
   staffId: string | null
   // Cutit Go bookings:
   stylistId: string | null
@@ -273,20 +277,17 @@ export const venues: Venue[] = [
   },
 ]
 
+// No per-venue "Any Stylist" rows here anymore — venue/[id].tsx renders that
+// option itself, keyed by the shared ANY_STAFF_ID sentinel above, so there's
+// one convention instead of a mock Staff row per venue plus a state sentinel.
 export const staff: Staff[] = [
-  { id: 'v1-any', venueId: 'v1', name: 'Any Stylist', role: 'Available', photoUrl: null },
   { id: 'v1-kareem', venueId: 'v1', name: 'Kareem', role: 'Master Barber', photoUrl: 'https://i.pravatar.cc/80?img=10', rating: 4.9 },
   { id: 'v1-omar', venueId: 'v1', name: 'Omar', role: 'Barber', photoUrl: 'https://i.pravatar.cc/80?img=11', rating: 4.7 },
 
-  { id: 'v2-any', venueId: 'v2', name: 'Any Stylist', role: 'Available', photoUrl: null },
   { id: 'v2-noor', venueId: 'v2', name: 'Noor', role: 'Lead Stylist', photoUrl: 'https://i.pravatar.cc/80?img=50', rating: 4.8 },
 
-  { id: 'v3-any', venueId: 'v3', name: 'Any Stylist', role: 'Available', photoUrl: null },
-
-  { id: 'v4-any', venueId: 'v4', name: 'Any Stylist', role: 'Available', photoUrl: null },
   { id: 'v4-ahmed', venueId: 'v4', name: 'Ahmed', role: 'Senior Barber', photoUrl: 'https://i.pravatar.cc/80?img=12', rating: 4.6 },
 
-  { id: 'v5-any', venueId: 'v5', name: 'Any Stylist', role: 'Available', photoUrl: null },
   { id: 'v5-layla', venueId: 'v5', name: 'Layla', role: 'Master Colorist', photoUrl: 'https://i.pravatar.cc/80?img=51', rating: 4.9 },
 ]
 
@@ -535,7 +536,7 @@ export const bookings: Booking[] = [
     userId: currentUser.id,
     bookingType: 'salon',
     venueId: 'v3',
-    staffId: 'v3-any',
+    staffId: ANY_STAFF_ID,
     stylistId: null,
     addressId: null,
     serviceIds: ['v3-svc-1'],
@@ -592,6 +593,35 @@ export function getStylistServices(stylistId: string): Service[] {
   return services.filter((service) => service.stylistId === stylistId)
 }
 
+/**
+ * Resolves the venue/staff (salon) or stylist/address (Cutit Go) side of a
+ * booking, plus its booked services, for display. `addresses` is a
+ * parameter rather than the static `currentUser.addresses` because callers
+ * read it from the live `AppState` (new addresses added mid-session
+ * wouldn't otherwise resolve).
+ */
+export function getBookingDetails(booking: Booking, addresses: Address[] = []) {
+  const venue = booking.venueId ? venues.find((item) => item.id === booking.venueId) : undefined
+  const bookingStaff = booking.staffId ? staff.find((item) => item.id === booking.staffId) : undefined
+  const stylist = booking.stylistId ? stylists.find((item) => item.id === booking.stylistId) : undefined
+  const address = booking.addressId ? addresses.find((item) => item.id === booking.addressId) : undefined
+  const bookedServices = services.filter((service) => booking.serviceIds.includes(service.id))
+  const startDate = new Date(booking.startTime)
+  return {
+    venue,
+    staff: bookingStaff,
+    stylist,
+    address,
+    services: bookedServices,
+    startDate,
+    priceEGP: booking.priceEGP,
+    bookingType: booking.bookingType,
+    status: booking.status,
+    dateLabel: startDate.toLocaleDateString([], { month: 'long', day: '2-digit', year: 'numeric' }),
+    timeLabel: startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+  }
+}
+
 /** Cheapest bookable service at a venue, shown as the "From EGP X" card price. */
 export function getVenueStartingPrice(venueId: string): number {
   const venueServices = getVenueServices(venueId)
@@ -645,7 +675,13 @@ export function generateTimeSlots({
   const dayEnd = new Date(date)
   dayEnd.setHours(closeH, closeM, 0, 0)
 
-  const staffBookings = bookings.filter((booking) => booking.staffId === staffId && booking.status !== 'cancelled')
+  // ANY_STAFF_ID means "no staff preference" — treat the slot as taken if
+  // *any* of the venue's staff has a conflicting booking, rather than
+  // filtering to one specific staffId.
+  const staffBookings =
+    staffId === ANY_STAFF_ID
+      ? bookings.filter((booking) => booking.venueId === venueId && booking.status !== 'cancelled')
+      : bookings.filter((booking) => booking.staffId === staffId && booking.status !== 'cancelled')
 
   const slots: TimeSlot[] = []
   for (let start = new Date(dayStart); start.getTime() + step * 60_000 <= dayEnd.getTime(); start = new Date(start.getTime() + step * 60_000)) {

@@ -1,70 +1,48 @@
 import { useState } from 'react'
-import { Image } from 'expo-image'
-import { I18nManager, Pressable, ScrollView, Text, View } from 'react-native'
+import { FlatList, Pressable, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import {
-  Bell,
-  CalendarDays,
-  CalendarX2,
-  Clock3,
-  HelpCircle,
-  MapPin,
-  PhoneCall,
-} from 'lucide-react-native'
+import { Bell, CalendarDays, CalendarX2, Clock3 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { BookingCard } from '@/components/booking-card'
 import { ReviewModal } from '@/components/review-modal'
 import { useAppState } from '@/lib/app-state'
-import { currentUser, services, staff, venues, type Booking } from '@/lib/data'
+import { currentUser, getBookingDetails, type Booking } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
 
-function getBookingDetails(booking: Booking) {
-  const venue = venues.find((item) => item.id === booking.venueId)
-  const bookingStaff = staff.find((item) => item.id === booking.staffId)
-  // First matching service only — the existing UI shows a single
-  // service name; showing all of a multi-service Cutit Go booking is a
-  // later polish pass, not part of this data-model change.
-  const service = services.find((item) => booking.serviceIds.includes(item.id))
-  const startDate = new Date(booking.startTime)
-  return {
-    venue,
-    staff: bookingStaff,
-    service,
-    startDate,
-    priceEGP: booking.priceEGP,
-    bookingType: booking.bookingType,
-    dateLabel: startDate.toLocaleDateString([], { month: 'long', day: '2-digit', year: 'numeric' }),
-    timeLabel: startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-  }
-}
+const UPCOMING_STATUSES: Booking['status'][] = ['pending', 'confirmed']
+const PAST_STATUSES: Booking['status'][] = ['completed', 'cancelled']
 
 export default function BookingsScreen() {
   const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('Upcoming')
-  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewBookingId, setReviewBookingId] = useState<string | null>(null)
   const colors = useThemeColors()
   const router = useRouter()
-  const { bookings } = useAppState()
+  const { bookings, addresses } = useAppState()
 
   const myBookings = bookings.filter((booking) => booking.userId === currentUser.id)
-  // .find() picks the first match, same as before this was switched from a
-  // static mock array to the live app-state list — showing the *soonest*
-  // upcoming booking once multiple can exist is a later polish item.
-  const upcomingBooking = myBookings.find((booking) => booking.status === 'confirmed')
-  const pastBooking = myBookings.find((booking) => booking.status === 'completed')
-  const cancelledBooking = myBookings.find((booking) => booking.status === 'cancelled')
 
-  // Guaranteed present in mock data — one booking per status.
-  const upcoming = getBookingDetails(upcomingBooking!)
-  const past = getBookingDetails(pastBooking!)
-  const cancelled = getBookingDetails(cancelledBooking!)
+  const upcoming = myBookings
+    .filter((booking) => UPCOMING_STATUSES.includes(booking.status))
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
 
-  const minutesUntil = Math.max(0, Math.round((upcoming.startDate.getTime() - Date.now()) / 60000))
+  const past = myBookings
+    .filter((booking) => PAST_STATUSES.includes(booking.status))
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+
+  const soonest = upcoming[0]
+  const soonestDetails = soonest ? getBookingDetails(soonest, addresses) : null
+  const minutesUntil = soonestDetails ? Math.max(0, Math.round((soonestDetails.startDate.getTime() - Date.now()) / 60000)) : 0
   const hoursUntil = Math.floor(minutesUntil / 60)
   const remainderMinutes = minutesUntil % 60
+  const isSoonestToday = soonestDetails ? soonestDetails.startDate.toDateString() === new Date().toDateString() : false
+
+  const reviewBooking = past.find((booking) => booking.id === reviewBookingId)
+  const reviewDetails = reviewBooking ? getBookingDetails(reviewBooking, addresses) : null
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
@@ -90,134 +68,69 @@ export default function BookingsScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-10 pt-5">
-        {tab === 'Upcoming' ? (
-          <>
-            <View className="flex-row items-center gap-3 rounded-2xl bg-blue-50 px-4 py-4 dark:bg-blue-950/50">
-              <View className="size-10 items-center justify-center rounded-xl bg-blue-600">
-                <Clock3 size={20} color="#ffffff" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                  {t('bookings.appointmentIn', { count: hoursUntil, minutes: remainderMinutes })}
-                </Text>
-                <Text className="mt-1 text-xs text-blue-900/70 dark:text-blue-100/70">{t('bookings.todayAt', { time: upcoming.timeLabel })}</Text>
-              </View>
-            </View>
-
-            <View className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-              <View className="flex-row gap-3 p-4">
-                <Image source={{ uri: upcoming.venue?.coverImageUrl ?? undefined }} className="size-16 rounded-xl" contentFit="cover" />
-                <View className="min-w-0 flex-1">
-                  <View className="flex-row items-start justify-between gap-2">
-                    <View>
-                      <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{upcoming.venue?.name}</Text>
-                      <View className={`mt-1 rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800 ${I18nManager.isRTL ? 'self-end' : 'self-start'}`}>
-                        <Text className="text-[10px] text-stone-600 dark:text-zinc-300">{upcoming.venue?.area}</Text>
-                      </View>
-                    </View>
-                    <View className="rounded-full bg-emerald-100 px-2 py-1">
-                      <Text className="text-[10px] font-semibold text-emerald-700">{t('bookings.confirmed')}</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-              <View className="mx-4 flex-row items-center gap-3 border-y border-stone-100 py-3 dark:border-zinc-800">
-                <View className="size-9 items-center justify-center rounded-full bg-stone-200">
-                  <Text className="text-xs font-semibold text-stone-700">KA</Text>
+      {tab === 'Upcoming' ? (
+        <FlatList
+          data={upcoming}
+          keyExtractor={(booking) => booking.id}
+          contentContainerClassName="gap-4 px-5 pb-10 pt-5"
+          ListHeaderComponent={
+            soonestDetails ? (
+              <View className="mb-4 flex-row items-center gap-3 rounded-2xl bg-blue-50 px-4 py-4 dark:bg-blue-950/50">
+                <View className="size-10 items-center justify-center rounded-xl bg-blue-600">
+                  <Clock3 size={20} color="#ffffff" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-sm font-medium text-stone-900 dark:text-white">
-                    {upcoming.staff?.name} <Text className="text-stone-500 dark:text-zinc-400">({upcoming.staff?.role})</Text>
+                  <Text className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                    {t('bookings.appointmentIn', { count: hoursUntil, minutes: remainderMinutes })}
                   </Text>
-                  <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">
-                    {upcoming.service?.name} · EGP {upcoming.priceEGP}
-                  </Text>
-                </View>
-              </View>
-              <View className="flex-row items-center justify-between px-4 py-3">
-                <View className="flex-row items-center gap-1.5">
-                  <CalendarDays size={14} color={colors.foreground} />
-                  <Text className="text-xs font-medium text-stone-900 dark:text-white">{t('bookings.todayAtShort', { time: upcoming.timeLabel })}</Text>
-                </View>
-                <View className="rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
-                  <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">
-                    {upcoming.bookingType === 'salon'
-                      ? t('bookings.inSalon')
-                      : upcoming.bookingType === 'events-bridal'
-                        ? t('bookings.eventsBridal')
-                        : t('bookings.atHome')}
+                  <Text className="mt-1 text-xs text-blue-900/70 dark:text-blue-100/70">
+                    {isSoonestToday
+                      ? t('bookings.todayAt', { time: soonestDetails.timeLabel })
+                      : t('bookings.upcomingAt', { date: soonestDetails.dateLabel, time: soonestDetails.timeLabel })}
                   </Text>
                 </View>
               </View>
-              <View className="gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
-                <View className="flex-row gap-2">
-                  <Pressable className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
-                    <PhoneCall size={14} color={colors.mutedStrong} />
-                    <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.callVenue')}</Text>
-                  </Pressable>
-                  <Pressable className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
-                    <MapPin size={14} color={colors.mutedStrong} />
-                    <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.getDirections')}</Text>
-                  </Pressable>
-                </View>
-                <Pressable onPress={() => router.push('/help')} className="flex-row items-center justify-center gap-1.5 py-1">
-                  <HelpCircle size={14} color={colors.accent} />
-                  <Text className="text-xs font-semibold text-blue-600 dark:text-blue-400">{t('bookings.needHelp')}</Text>
-                </Pressable>
+            ) : null
+          }
+          renderItem={({ item }) => <BookingCard booking={item} variant="upcoming" />}
+          ListEmptyComponent={
+            <View className="items-center gap-4 px-4 py-16">
+              <View className="size-16 items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800">
+                <CalendarDays size={28} color={colors.muted} />
               </View>
+              <View className="items-center gap-1">
+                <Text className="font-serif text-lg font-semibold text-stone-900 dark:text-white">{t('bookings.emptyUpcomingTitle')}</Text>
+                <Text className="text-center text-sm text-stone-500 dark:text-zinc-400">{t('bookings.emptyUpcomingBody')}</Text>
+              </View>
+              <Pressable onPress={() => router.push('/(tabs)/explore')} className="mt-2 rounded-xl bg-stone-900 px-5 py-3 dark:bg-blue-600">
+                <Text className="text-sm font-semibold text-white">{t('bookings.findASalon')}</Text>
+              </Pressable>
             </View>
-          </>
-        ) : (
-          <>
-            <View className="overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-              <View className="flex-row gap-3 p-4">
-                <Image source={{ uri: past.venue?.coverImageUrl ?? undefined }} className="size-16 rounded-xl" contentFit="cover" />
-                <View className="min-w-0 flex-1">
-                  <View className="flex-row items-start justify-between gap-2">
-                    <View>
-                      <Text numberOfLines={1} className="text-sm font-semibold text-stone-900 dark:text-white">{past.venue?.name}</Text>
-                      <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{past.venue?.area} · {past.dateLabel}</Text>
-                    </View>
-                    <View className="rounded-full bg-emerald-100 px-2 py-1">
-                      <Text className="text-[10px] font-semibold text-emerald-700">{t('bookings.completed')}</Text>
-                    </View>
-                  </View>
-                  <Text className="mt-3 text-sm font-semibold text-stone-900 dark:text-white">{t('bookings.totalPaid', { price: past.priceEGP })}</Text>
-                </View>
+          }
+        />
+      ) : (
+        <FlatList
+          data={past}
+          keyExtractor={(booking) => booking.id}
+          contentContainerClassName="gap-4 px-5 pb-10 pt-5"
+          renderItem={({ item }) => <BookingCard booking={item} variant="past" onLeaveReview={() => setReviewBookingId(item.id)} />}
+          ListEmptyComponent={
+            <View className="items-center gap-4 px-4 py-16">
+              <View className="size-16 items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800">
+                <CalendarX2 size={28} color={colors.muted} />
               </View>
-              <View className="flex-row gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
-                <Pressable onPress={() => router.push('/(tabs)/explore')} className="flex-1 items-center rounded-xl bg-stone-900 py-2.5 dark:bg-blue-600">
-                  <Text className="text-xs font-semibold text-white">{t('bookings.rebook')}</Text>
-                </Pressable>
-                <Pressable onPress={() => setReviewOpen(true)} className="flex-1 items-center rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
-                  <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.leaveReview')}</Text>
-                </Pressable>
-              </View>
+              <Text className="font-serif text-lg font-semibold text-stone-900 dark:text-white">{t('bookings.emptyPastTitle')}</Text>
             </View>
-
-            <View className="flex-row gap-3 overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-              <View className="size-16 items-center justify-center rounded-xl bg-stone-100 dark:bg-zinc-800">
-                <CalendarX2 size={24} color={colors.muted} />
-              </View>
-              <View>
-                <Text className="text-sm font-semibold text-stone-900 dark:text-white">{cancelled.venue?.name}</Text>
-                <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{cancelled.venue?.area} · {cancelled.dateLabel}</Text>
-                <View className={`mt-3 rounded-full bg-stone-200 px-2 py-1 ${I18nManager.isRTL ? 'self-end' : 'self-start'}`}>
-                  <Text className="text-[10px] font-semibold text-stone-600">{t('bookings.cancelled')}</Text>
-                </View>
-              </View>
-            </View>
-          </>
-        )}
-      </ScrollView>
+          }
+        />
+      )}
 
       <ReviewModal
-        visible={reviewOpen}
+        visible={reviewBookingId !== null}
         title={t('bookings.howWasVisit')}
-        subtitle={past.venue?.name}
-        onClose={() => setReviewOpen(false)}
-        onSubmit={() => {}}
+        subtitle={reviewDetails?.venue?.name ?? reviewDetails?.stylist?.name}
+        onClose={() => setReviewBookingId(null)}
+        onSubmit={() => setReviewBookingId(null)}
       />
     </SafeAreaView>
   )
