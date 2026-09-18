@@ -3,8 +3,9 @@ import { Pressable, Text, View } from 'react-native'
 import { Heart, Home, MapPin, Star } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { getVenueStartingPrice, isVenueOpenNow } from '@/lib/api'
+import type { Venue } from '@/lib/data'
 import { useFavorites, useToggleFavorite } from '@/lib/hooks'
-import { getVenueStartingPrice, isVenueOpenNow, type Venue } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'

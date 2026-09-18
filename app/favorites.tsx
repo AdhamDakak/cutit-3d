@@ -4,19 +4,28 @@ import { useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Heart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { ErrorState } from '@/components/error-state'
 import { EstablishmentCard } from '@/components/establishment-card'
-import { venues } from '@/lib/data'
-import { useFavorites } from '@/lib/hooks'
+import { SkeletonCard } from '@/components/skeleton-card'
+import { useFavorites, useVenues } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 export default function FavoritesScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const colors = useThemeColors()
-  const { data: favoriteVenueIds } = useFavorites()
+  const { data: favoriteVenueIds, isLoading: favoritesLoading, error: favoritesError, refetch: refetchFavorites } = useFavorites()
+  const { data: venues, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
-  const favoriteVenues = venues.filter((venue) => favoriteVenueIds?.has(venue.id))
+  const isLoading = favoritesLoading || venuesLoading
+  const error = favoritesError || venuesError
+  const refetch = () => {
+    refetchFavorites()
+    refetchVenues()
+  }
+
+  const favoriteVenues = (venues ?? []).filter((venue) => favoriteVenueIds?.has(venue.id))
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
@@ -32,7 +41,14 @@ export default function FavoritesScreen() {
         <View className="size-9" />
       </View>
 
-      {favoriteVenues.length === 0 ? (
+      {isLoading ? (
+        <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 py-6">
+          <SkeletonCard />
+          <SkeletonCard />
+        </ScrollView>
+      ) : error ? (
+        <ErrorState onRetry={refetch} />
+      ) : favoriteVenues.length === 0 ? (
         <View className="flex-1 items-center justify-center gap-4 px-8">
           <View className="size-16 items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800">
             <Heart size={28} color={colors.muted} />

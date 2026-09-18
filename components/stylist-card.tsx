@@ -3,13 +3,23 @@ import { I18nManager, Pressable, Text, View } from 'react-native'
 import { Star, UserRound } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { venues, type Stylist } from '@/lib/data'
+import type { Stylist } from '@/lib/data'
+import { useVenue } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
-export function StylistCard({ stylist, onPress }: { stylist: Stylist; onPress: () => void }) {
+type StylistCardProps = {
+  stylist: Stylist
+  /** Callers that already have the venue list loaded (e.g. booking-flow.tsx) can pass this to skip this card's own fetch. */
+  venueName?: string
+  onPress: () => void
+}
+
+export function StylistCard({ stylist, venueName, onPress }: StylistCardProps) {
   const { t } = useTranslation()
   const colors = useThemeColors()
-  const venue = stylist.venueId ? venues.find((item) => item.id === stylist.venueId) : undefined
+  // Only fetched here when the caller didn't already resolve it.
+  const { data: fetchedVenue } = useVenue(venueName === undefined && stylist.venueId ? stylist.venueId : undefined)
+  const resolvedVenueName = venueName ?? fetchedVenue?.name ?? ''
 
   return (
     <Pressable
@@ -32,7 +42,7 @@ export function StylistCard({ stylist, onPress }: { stylist: Stylist; onPress: (
           {stylist.specialties.join(' · ')}
         </Text>
         <Text numberOfLines={1} className="mt-0.5 text-xs text-stone-500 dark:text-zinc-400">
-          {stylist.isFreelancer ? t('stylist.freelancer') : t('stylist.worksAt', { venue: venue?.name ?? '' })}
+          {stylist.isFreelancer ? t('stylist.freelancer') : t('stylist.worksAt', { venue: resolvedVenueName })}
         </Text>
         <Text className="mt-1 text-xs font-semibold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: stylist.priceFrom })}</Text>
       </View>

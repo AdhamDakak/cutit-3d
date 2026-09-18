@@ -3,8 +3,9 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { Star } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 
-import { getVenueStartingPrice, type Venue } from '@/lib/data'
+import { getVenueStartingPrice } from '@/lib/api'
 import type { Gender } from '@/lib/app-state'
+import type { Venue } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 export function RecommendationFeed({

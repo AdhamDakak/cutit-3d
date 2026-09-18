@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CalendarCheck, CheckCircle2, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { services, staff, stylists, venues } from '@/lib/data'
+import { getBookingDetails } from '@/lib/api'
 import { useAddresses, useBooking } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
@@ -51,12 +51,12 @@ export default function BookingConfirmationScreen() {
   }
 
   const isSalon = booking.bookingType === 'salon'
-  const venue = isSalon ? venues.find((item) => item.id === booking.venueId) : undefined
-  const staffMember = isSalon ? staff.find((item) => item.id === booking.staffId) : undefined
-  const stylist = !isSalon ? stylists.find((item) => item.id === booking.stylistId) : undefined
-  const address = !isSalon ? (addresses ?? []).find((item) => item.id === booking.addressId) : undefined
-  const bookedServices = services.filter((service) => booking.serviceIds.includes(service.id))
+  const details = getBookingDetails(booking, addresses ?? [])
+  const { venue, staff: staffMember, stylist, address, services: bookedServices } = details
 
+  // Keep this screen's own weekday-inclusive format rather than
+  // getBookingDetails' (month/day/year, no weekday) — that helper's format
+  // is tuned for compact list rows, not this screen's original wording.
   const dateLabel = new Date(booking.startTime).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })
   const timeLabel = new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 

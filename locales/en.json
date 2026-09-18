@@ -12,7 +12,8 @@
     "him": "Him",
     "her": "Her",
     "somethingWentWrong": "Something went wrong. Please try again.",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "retry": "Retry"
   },
   "onboarding": {
     "slides": [
