@@ -5,18 +5,18 @@ import { ArrowLeft, ArrowRight, Heart } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { EstablishmentCard } from '@/components/establishment-card'
-import { useAppState } from '@/lib/app-state'
 import { venues } from '@/lib/data'
+import { useFavorites } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 export default function FavoritesScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const colors = useThemeColors()
-  const { favoriteVenueIds } = useAppState()
+  const { data: favoriteVenueIds } = useFavorites()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
-  const favoriteVenues = venues.filter((venue) => favoriteVenueIds.has(venue.id))
+  const favoriteVenues = venues.filter((venue) => favoriteVenueIds?.has(venue.id))
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>

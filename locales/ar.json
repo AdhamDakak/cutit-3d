@@ -10,7 +10,9 @@
     "addToFavorites": "إضافة {{name}} إلى المفضلة",
     "removeFromFavorites": "إزالة {{name}} من المفضلة",
     "him": "له",
-    "her": "لها"
+    "her": "لها",
+    "somethingWentWrong": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "loading": "جارٍ التحميل..."
   },
   "onboarding": {
     "slides": [
@@ -47,7 +49,17 @@
     "rescheduleBooking": "إعادة جدولة الحجز",
     "cancelBooking": "إلغاء الحجز",
     "chatSupport": "الدردشة مع الدعم",
-    "chatWithTeam": "تحدث مع فريقنا"
+    "chatWithTeam": "تحدث مع فريقنا",
+    "cancelConfirmTitle": "إلغاء هذا الحجز؟",
+    "cancelConfirmMessage": "لا يمكن التراجع عن هذا الإجراء.",
+    "keepBooking": "الاحتفاظ بالحجز",
+    "confirmCancelBooking": "نعم، إلغاء الحجز"
+  },
+  "reschedule": {
+    "title": "إعادة جدولة الحجز",
+    "currentAppointment": "الموعد الحالي",
+    "selectNewTime": "اختر تاريخاً ووقتاً جديدين",
+    "confirmNewTime": "تأكيد الموعد الجديد"
   },
   "favorites": {
     "title": "المفضلة",
@@ -224,6 +236,7 @@
     "reviewsCountParen": "({{count}} تقييم)",
     "total": "الإجمالي",
     "confirmBooking": "تأكيد الحجز",
+    "confirmingBooking": "جارٍ التأكيد...",
     "bookingConfirmedTitle": "تم تأكيد الحجز",
     "bookingConfirmedMessage": "{{venue}} · {{day}} الساعة {{time}}"
   },

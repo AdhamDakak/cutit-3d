@@ -5,8 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Plus } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { useAppState } from '@/lib/app-state'
 import type { StylistServiceType } from '@/lib/data'
+import { useAddAddress, useAddresses } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 import { useGoBookingDraft } from './_layout'
 
@@ -15,7 +15,8 @@ export default function GoBookingAddressScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const { stylistId, type } = useLocalSearchParams<{ stylistId: string; type: StylistServiceType }>()
-  const { addresses, addAddress } = useAppState()
+  const { data: addresses } = useAddresses()
+  const { mutate: addAddress } = useAddAddress()
   const { addressId, setAddressId, eventDate, setEventDate, eventNotes, setEventNotes } = useGoBookingDraft()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
@@ -27,14 +28,18 @@ export default function GoBookingAddressScreen() {
   const isEvents = type === 'events-bridal'
   const canContinue = !!addressId
 
-  const saveNewAddress = () => {
+  const saveNewAddress = async () => {
     if (!newArea.trim() || !newDetails.trim()) return
-    const created = addAddress({ label: newLabel.trim() || 'Address', area: newArea.trim(), details: newDetails.trim() })
-    setAddressId(created.id)
-    setShowAddForm(false)
-    setNewLabel('')
-    setNewArea('')
-    setNewDetails('')
+    try {
+      const created = await addAddress({ label: newLabel.trim() || 'Address', area: newArea.trim(), details: newDetails.trim() })
+      setAddressId(created.id)
+      setShowAddForm(false)
+      setNewLabel('')
+      setNewArea('')
+      setNewDetails('')
+    } catch {
+      // form stays open with the entered values so the user can retry
+    }
   }
 
   return (
@@ -58,7 +63,7 @@ export default function GoBookingAddressScreen() {
         <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('goBooking.savedAddresses')}</Text>
 
         <View className="gap-3">
-          {addresses.map((address) => {
+          {(addresses ?? []).map((address) => {
             const selected = addressId === address.id
             return (
               <Pressable

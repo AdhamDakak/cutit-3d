@@ -1,6 +1,19 @@
 import type { Gender } from '@/lib/app-state'
 
 // ---------------------------------------------------------------------------
+// GUARDRAIL: the mock tables below (venues, staff, stylists, services,
+// reviews, bookings, favorites, currentUser) are the pre-Supabase "database"
+// for this app. lib/api/* is the only code allowed to import them — every
+// screen and component goes through lib/api's functions/hooks instead, so
+// swapping mock data for real Supabase calls later only touches that one
+// folder. Only the *types* on this file are meant to be imported elsewhere
+// (ANY_STAFF_ID and getBookingDetails are re-exported through lib/api/index.ts
+// for convenience, but are still defined here). If you're adding a new
+// screen and reaching for `import { venues } from '@/lib/data'`, look for
+// (or add) the equivalent in lib/api instead.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // Core entity types — shaped to match what a real Supabase backend would
 // eventually return (normalized tables joined by foreign key, not deeply
 // nested object literals).
@@ -109,8 +122,10 @@ export type Booking = {
   bookingType: BookingType
   // Salon bookings:
   venueId: string | null
-  /** A real Staff id, or ANY_STAFF_ID when the customer chose "Any stylist". Always set for bookingType 'salon' (staff selection is mandatory); null for Cutit Go bookings, which use stylistId instead. */
+  /** A real Staff id, or null when `anyStaff` is true (customer chose "Any stylist") or for Cutit Go bookings (which use stylistId instead). ANY_STAFF_ID is a client-side selection sentinel only — it's never stored here; createBooking translates it to `{ staffId: null, anyStaff: true }`. */
   staffId: string | null
+  /** True when this salon booking has no staff preference. Explicit flag rather than overloading staffId with a magic string, since a real backend needs the "any" case to be part of the contract, not an implementation detail. */
+  anyStaff?: boolean
   // Cutit Go bookings:
   stylistId: string | null
   addressId: string | null
@@ -536,7 +551,8 @@ export const bookings: Booking[] = [
     userId: currentUser.id,
     bookingType: 'salon',
     venueId: 'v3',
-    staffId: ANY_STAFF_ID,
+    staffId: null,
+    anyStaff: true,
     stylistId: null,
     addressId: null,
     serviceIds: ['v3-svc-1'],

@@ -7,8 +7,9 @@ import { ArrowLeft, ArrowRight, Heart, Image as ImageIcon, MapPin, Search, Star,
 import { useTranslation } from 'react-i18next'
 
 import { ReviewModal } from '@/components/review-modal'
-import { useAppState } from '@/lib/app-state'
-import { ANY_STAFF_ID, currentUser, generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues, type Booking } from '@/lib/data'
+import { ANY_STAFF_ID, type CreateBookingInput } from '@/lib/api'
+import { generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues } from '@/lib/data'
+import { useCreateBooking, useFavorites, useToggleFavorite } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'
@@ -37,7 +38,9 @@ export default function VenueScreen() {
   const establishment = venues.find((item) => item.id === id)
   const router = useRouter()
   const colors = useThemeColors()
-  const { isFavorite, toggleFavorite, addBooking } = useAppState()
+  const { data: favoriteVenueIds } = useFavorites()
+  const { mutate: toggleFavorite } = useToggleFavorite()
+  const { mutate: createBooking, isPending: isConfirming, error: confirmError } = useCreateBooking()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
   const periodLabels: Record<Period, string> = {
     Morning: t('venue.periodMorning'),
@@ -64,7 +67,7 @@ export default function VenueScreen() {
 
   if (!establishment) return <Redirect href="/(tabs)" />
 
-  const favorited = isFavorite(establishment.id)
+  const favorited = favoriteVenueIds?.has(establishment.id) ?? false
   const venueStaff = getVenueStaff(establishment.id)
   const venueServices = getVenueServices(establishment.id)
   const venueReviews = getVenueReviews(establishment.id)
@@ -96,12 +99,10 @@ export default function VenueScreen() {
       })
     : []
 
-  const confirmBooking = () => {
+  const confirmBooking = async () => {
     if (!selectedTime) return
     const endTime = new Date(new Date(selectedTime).getTime() + selectedDurationMinutes * 60_000).toISOString()
-    const booking: Booking = {
-      id: `bk-salon-${Date.now()}`,
-      userId: currentUser.id,
+    const input: CreateBookingInput = {
       bookingType: 'salon',
       venueId: establishment.id,
       staffId: selectedStaff,
@@ -110,12 +111,14 @@ export default function VenueScreen() {
       serviceIds: Array.from(selectedServices),
       startTime: selectedTime,
       endTime,
-      status: 'pending',
       priceEGP: totalPrice,
-      createdAt: new Date().toISOString(),
     }
-    addBooking(booking)
-    router.replace(`/booking-confirmation?bookingId=${booking.id}`)
+    try {
+      const booking = await createBooking(input)
+      router.replace(`/booking-confirmation?bookingId=${booking.id}`)
+    } catch {
+      // confirmError below already surfaces this in the UI
+    }
   }
 
   return (
@@ -128,7 +131,7 @@ export default function VenueScreen() {
           {establishment.name}
         </Text>
         <Pressable
-          onPress={() => toggleFavorite(establishment.id)}
+          onPress={() => toggleFavorite(establishment.id).catch(() => {})}
           accessibilityLabel={t(favorited ? 'common.removeFromFavorites' : 'common.addToFavorites', { name: establishment.name })}
           className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800"
         >
@@ -356,13 +359,14 @@ export default function VenueScreen() {
       </ScrollView>
 
       <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+        {confirmError ? <Text className="mb-2 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-xs uppercase tracking-widest text-stone-500 dark:text-zinc-400">{t('venue.total')}</Text>
             <Text className="text-2xl font-bold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: totalPrice })}</Text>
           </View>
-          <Pressable disabled={!canConfirm} onPress={confirmBooking} className="rounded-xl bg-blue-600 px-6 py-3 disabled:opacity-50">
-            <Text className="font-semibold text-white">{t('venue.confirmBooking')}</Text>
+          <Pressable disabled={!canConfirm || isConfirming} onPress={confirmBooking} className="rounded-xl bg-blue-600 px-6 py-3 disabled:opacity-50">
+            <Text className="font-semibold text-white">{t(isConfirming ? 'venue.confirmingBooking' : 'venue.confirmBooking')}</Text>
           </Pressable>
         </View>
       </View>

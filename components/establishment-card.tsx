@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native'
 import { Heart, Home, MapPin, Star } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { useAppState } from '@/lib/app-state'
+import { useFavorites, useToggleFavorite } from '@/lib/hooks'
 import { getVenueStartingPrice, isVenueOpenNow, type Venue } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
@@ -12,8 +12,9 @@ const FAVORITE_RED = '#ef4444'
 export function EstablishmentCard({ establishment, onPress }: { establishment: Venue; onPress: () => void }) {
   const { t } = useTranslation()
   const colors = useThemeColors()
-  const { isFavorite, toggleFavorite } = useAppState()
-  const favorited = isFavorite(establishment.id)
+  const { data: favoriteVenueIds } = useFavorites()
+  const { mutate: toggleFavorite } = useToggleFavorite()
+  const favorited = favoriteVenueIds?.has(establishment.id) ?? false
   const visibleServices = establishment.servicesOffered.slice(0, 2)
   const remainingCount = establishment.servicesOffered.length - 2
   const isOpen = isVenueOpenNow(establishment.openingHours)

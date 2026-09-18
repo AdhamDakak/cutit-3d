@@ -3,21 +3,16 @@ import { Alert, I18nManager } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Updates from 'expo-updates'
 
-import { bookings as seedBookings, currentUser, favorites, type Address, type Booking } from '@/lib/data'
 import i18n, { type AppLanguage } from '@/lib/i18n'
 
 const LANGUAGE_STORAGE_KEY = 'cutit.language'
 
-/**
- * MOCK ONLY. Stands in for the venue/stylist actually confirming a pending
- * booking (a real backend would flip this via a staff dashboard or webhook,
- * not a client-side timer). Delete this whole function — and its call
- * sites in addBooking/rescheduleBooking below — once that exists.
- */
-const MOCK_AUTO_CONFIRM_DELAY_MS = 5000
-
 export type Gender = 'For Her' | 'For Him'
 
+// Session/UI-only state lives here. Everything that used to be mock "data"
+// — bookings, addresses, favorites, and their mutations — now lives behind
+// lib/api + lib/hooks instead, so it can be swapped for a real backend
+// without touching this provider.
 type AppState = {
   hasOnboarded: boolean
   completeOnboarding: () => void
@@ -30,16 +25,6 @@ type AppState = {
   setLanguage: (value: AppLanguage) => Promise<void>
   /** True once the persisted language has been read and applied at startup. */
   isHydrated: boolean
-  favoriteVenueIds: Set<string>
-  isFavorite: (venueId: string) => boolean
-  toggleFavorite: (venueId: string) => void
-  /** In-memory only — resets on reload, same as everything else here except language. */
-  bookings: Booking[]
-  addBooking: (booking: Booking) => void
-  cancelBooking: (id: string) => void
-  rescheduleBooking: (id: string, startTime: string, endTime: string) => void
-  addresses: Address[]
-  addAddress: (address: Omit<Address, 'id'>) => Address
 }
 
 const AppStateContext = createContext<AppState | null>(null)
@@ -50,11 +35,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [activeGender, setActiveGender] = useState<Gender>('For Her')
   const [language, setLanguageState] = useState<AppLanguage>(i18n.language as AppLanguage)
   const [isHydrated, setIsHydrated] = useState(false)
-  const [favoriteVenueIds, setFavoriteVenueIds] = useState<Set<string>>(
-    () => new Set(favorites.filter((favorite) => favorite.userId === currentUser.id).map((favorite) => favorite.venueId)),
-  )
-  const [bookings, setBookings] = useState<Booking[]>(seedBookings)
-  const [addresses, setAddresses] = useState<Address[]>(currentUser.addresses)
 
   useEffect(() => {
     let cancelled = false
@@ -101,42 +81,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const toggleFavorite = (venueId: string) => {
-    setFavoriteVenueIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(venueId)) next.delete(venueId)
-      else next.add(venueId)
-      return next
-    })
-  }
-
-  // MOCK ONLY — see MOCK_AUTO_CONFIRM_DELAY_MS above.
-  const scheduleMockAutoConfirm = (bookingId: string) => {
-    setTimeout(() => {
-      setBookings((prev) => prev.map((item) => (item.id === bookingId && item.status === 'pending' ? { ...item, status: 'confirmed' } : item)))
-    }, MOCK_AUTO_CONFIRM_DELAY_MS)
-  }
-
-  const addBooking = (booking: Booking) => {
-    setBookings((prev) => [...prev, booking])
-    if (booking.status === 'pending') scheduleMockAutoConfirm(booking.id)
-  }
-
-  const cancelBooking = (id: string) => {
-    setBookings((prev) => prev.map((item) => (item.id === id ? { ...item, status: 'cancelled' } : item)))
-  }
-
-  const rescheduleBooking = (id: string, startTime: string, endTime: string) => {
-    setBookings((prev) => prev.map((item) => (item.id === id ? { ...item, startTime, endTime, status: 'pending' } : item)))
-    scheduleMockAutoConfirm(id)
-  }
-
-  const addAddress = (address: Omit<Address, 'id'>): Address => {
-    const newAddress: Address = { ...address, id: `addr-${Date.now()}` }
-    setAddresses((prev) => [...prev, newAddress])
-    return newAddress
-  }
-
   const value = useMemo<AppState>(
     () => ({
       hasOnboarded,
@@ -152,17 +96,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       language,
       setLanguage,
       isHydrated,
-      favoriteVenueIds,
-      isFavorite: (venueId: string) => favoriteVenueIds.has(venueId),
-      toggleFavorite,
-      bookings,
-      addBooking,
-      cancelBooking,
-      rescheduleBooking,
-      addresses,
-      addAddress,
     }),
-    [hasOnboarded, isSignedIn, activeGender, language, isHydrated, favoriteVenueIds, bookings, addresses],
+    [hasOnboarded, isSignedIn, activeGender, language, isHydrated],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

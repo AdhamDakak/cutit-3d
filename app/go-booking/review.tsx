@@ -4,8 +4,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { useAppState } from '@/lib/app-state'
-import { currentUser, getStylistServices, stylists, type Booking, type StylistServiceType } from '@/lib/data'
+import type { CreateBookingInput } from '@/lib/api'
+import { getStylistServices, stylists, type StylistServiceType } from '@/lib/data'
+import { useAddresses, useCreateBooking } from '@/lib/hooks'
 import { calculateTravelFee } from '@/lib/travel-fee'
 import { useThemeColors } from '@/lib/theme'
 import { useGoBookingDraft } from './_layout'
@@ -15,12 +16,13 @@ export default function GoBookingReviewScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const { stylistId, type } = useLocalSearchParams<{ stylistId: string; type: StylistServiceType }>()
-  const { addresses, addBooking } = useAppState()
+  const { data: addresses } = useAddresses()
+  const { mutate: createBooking, isPending: isConfirming, error: confirmError } = useCreateBooking()
   const { selectedServiceIds, addressId, eventDate, eventNotes, selectedTime } = useGoBookingDraft()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
   const stylist = stylists.find((item) => item.id === stylistId)
-  const address = addresses.find((item) => item.id === addressId)
+  const address = (addresses ?? []).find((item) => item.id === addressId)
   const selectedServices = getStylistServices(stylistId).filter((service) => selectedServiceIds.has(service.id))
   const subtotal = selectedServices.reduce((sum, service) => sum + service.priceEGP, 0)
   const totalDuration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0)
@@ -31,12 +33,10 @@ export default function GoBookingReviewScreen() {
   const timeLabel = selectedTime ? new Date(selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
   const dateLabel = selectedTime ? new Date(selectedTime).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) : ''
 
-  const confirmBooking = () => {
+  const confirmBooking = async () => {
     if (!stylist || !address || !selectedTime) return
     const endTime = new Date(new Date(selectedTime).getTime() + totalDuration * 60_000).toISOString()
-    const booking: Booking = {
-      id: `bk-go-${Date.now()}`,
-      userId: currentUser.id,
+    const input: CreateBookingInput = {
       bookingType: isEvents ? 'events-bridal' : 'at-home',
       venueId: null,
       staffId: null,
@@ -48,12 +48,14 @@ export default function GoBookingReviewScreen() {
       serviceIds: Array.from(selectedServiceIds),
       startTime: selectedTime,
       endTime,
-      status: 'pending',
       priceEGP: total,
-      createdAt: new Date().toISOString(),
     }
-    addBooking(booking)
-    router.replace(`/booking-confirmation?bookingId=${booking.id}`)
+    try {
+      const booking = await createBooking(input)
+      router.replace(`/booking-confirmation?bookingId=${booking.id}`)
+    } catch {
+      // confirmError below already surfaces this in the UI
+    }
   }
 
   return (
@@ -124,8 +126,9 @@ export default function GoBookingReviewScreen() {
       </ScrollView>
 
       <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <Pressable onPress={confirmBooking} className="items-center rounded-xl bg-blue-600 py-3.5">
-          <Text className="font-semibold text-white">{t('venue.confirmBooking')}</Text>
+        {confirmError ? <Text className="mb-2 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
+        <Pressable disabled={isConfirming} onPress={confirmBooking} className="items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-50">
+          <Text className="font-semibold text-white">{t(isConfirming ? 'venue.confirmingBooking' : 'venue.confirmBooking')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

@@ -4,8 +4,10 @@ import { useRouter } from 'expo-router'
 import { CalendarDays, CalendarX2, HelpCircle, MapPin, PhoneCall, Users } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { useAppState } from '@/lib/app-state'
-import { ANY_STAFF_ID, getBookingDetails, type Booking } from '@/lib/data'
+import { BookingTimeline } from '@/components/booking-timeline'
+import { getBookingDetails } from '@/lib/api'
+import type { Booking } from '@/lib/data'
+import { useAddresses } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 function getInitials(name: string) {
@@ -29,11 +31,11 @@ export function BookingCard({ booking, variant, onLeaveReview }: BookingCardProp
   const { t } = useTranslation()
   const router = useRouter()
   const colors = useThemeColors()
-  const { addresses } = useAppState()
+  const { data: addresses } = useAddresses()
 
-  const details = getBookingDetails(booking, addresses)
+  const details = getBookingDetails(booking, addresses ?? [])
   const isSalon = booking.bookingType === 'salon'
-  const isAnyStaff = booking.staffId === ANY_STAFF_ID
+  const isAnyStaff = !!booking.anyStaff
   const title = isSalon ? details.venue?.name : details.stylist?.name
   const area = isSalon ? details.venue?.area : details.address?.area
   const imageUrl = isSalon ? details.venue?.coverImageUrl : details.stylist?.photoUrl
@@ -168,6 +170,8 @@ export function BookingCard({ booking, variant, onLeaveReview }: BookingCardProp
           <Text className="text-[10px] font-medium text-stone-600 dark:text-zinc-300">{locationTypeLabel}</Text>
         </View>
       </View>
+
+      <BookingTimeline status={booking.status} />
 
       <View className="gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
         <View className="flex-row gap-2">

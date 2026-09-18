@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next'
 
 import { BookingCard } from '@/components/booking-card'
 import { ReviewModal } from '@/components/review-modal'
-import { useAppState } from '@/lib/app-state'
-import { currentUser, getBookingDetails, type Booking } from '@/lib/data'
+import { getBookingDetails } from '@/lib/api'
+import type { Booking } from '@/lib/data'
+import { useAddresses, useBookings } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
@@ -22,9 +23,10 @@ export default function BookingsScreen() {
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null)
   const colors = useThemeColors()
   const router = useRouter()
-  const { bookings, addresses } = useAppState()
+  const { data: bookings, isLoading: bookingsLoading } = useBookings()
+  const { data: addresses } = useAddresses()
 
-  const myBookings = bookings.filter((booking) => booking.userId === currentUser.id)
+  const myBookings = bookings ?? []
 
   const upcoming = myBookings
     .filter((booking) => UPCOMING_STATUSES.includes(booking.status))
@@ -35,14 +37,14 @@ export default function BookingsScreen() {
     .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
 
   const soonest = upcoming[0]
-  const soonestDetails = soonest ? getBookingDetails(soonest, addresses) : null
+  const soonestDetails = soonest ? getBookingDetails(soonest, addresses ?? []) : null
   const minutesUntil = soonestDetails ? Math.max(0, Math.round((soonestDetails.startDate.getTime() - Date.now()) / 60000)) : 0
   const hoursUntil = Math.floor(minutesUntil / 60)
   const remainderMinutes = minutesUntil % 60
   const isSoonestToday = soonestDetails ? soonestDetails.startDate.toDateString() === new Date().toDateString() : false
 
   const reviewBooking = past.find((booking) => booking.id === reviewBookingId)
-  const reviewDetails = reviewBooking ? getBookingDetails(reviewBooking, addresses) : null
+  const reviewDetails = reviewBooking ? getBookingDetails(reviewBooking, addresses ?? []) : null
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
@@ -68,7 +70,11 @@ export default function BookingsScreen() {
         </View>
       </View>
 
-      {tab === 'Upcoming' ? (
+      {bookingsLoading ? (
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.loading')}</Text>
+        </View>
+      ) : tab === 'Upcoming' ? (
         <FlatList
           data={upcoming}
           keyExtractor={(booking) => booking.id}

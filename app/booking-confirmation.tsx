@@ -5,8 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CalendarCheck, CheckCircle2, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { useAppState } from '@/lib/app-state'
-import { ANY_STAFF_ID, services, staff, stylists, venues } from '@/lib/data'
+import { services, staff, stylists, venues } from '@/lib/data'
+import { useAddresses, useBooking } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 export default function BookingConfirmationScreen() {
@@ -14,7 +14,8 @@ export default function BookingConfirmationScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>()
-  const { bookings, addresses } = useAppState()
+  const { data: booking, isLoading } = useBooking(bookingId)
+  const { data: addresses } = useAddresses()
 
   // This is a terminal screen after a completed booking — swipe-to-dismiss
   // is disabled at the route level (app/_layout.tsx), and Android's
@@ -30,8 +31,6 @@ export default function BookingConfirmationScreen() {
     router.replace('/(tabs)')
   }
 
-  const booking = bookings.find((item) => item.id === bookingId)
-
   if (!booking) {
     return (
       <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
@@ -45,7 +44,7 @@ export default function BookingConfirmationScreen() {
           </Pressable>
         </View>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-center text-stone-600 dark:text-zinc-300">{t('bookingConfirmation.notFound')}</Text>
+          <Text className="text-center text-stone-600 dark:text-zinc-300">{isLoading ? t('common.loading') : t('bookingConfirmation.notFound')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -55,7 +54,7 @@ export default function BookingConfirmationScreen() {
   const venue = isSalon ? venues.find((item) => item.id === booking.venueId) : undefined
   const staffMember = isSalon ? staff.find((item) => item.id === booking.staffId) : undefined
   const stylist = !isSalon ? stylists.find((item) => item.id === booking.stylistId) : undefined
-  const address = !isSalon ? addresses.find((item) => item.id === booking.addressId) : undefined
+  const address = !isSalon ? (addresses ?? []).find((item) => item.id === booking.addressId) : undefined
   const bookedServices = services.filter((service) => booking.serviceIds.includes(service.id))
 
   const dateLabel = new Date(booking.startTime).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })
@@ -88,7 +87,7 @@ export default function BookingConfirmationScreen() {
         <View className="mt-4 w-full gap-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <Text className="font-serif text-lg font-semibold text-stone-900 dark:text-white">{isSalon ? venue?.name : stylist?.name}</Text>
           {isSalon ? (
-            booking.staffId === ANY_STAFF_ID ? (
+            booking.anyStaff ? (
               <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.anyStylist')}</Text>
             ) : staffMember ? (
               <Text className="text-sm text-stone-500 dark:text-zinc-400">

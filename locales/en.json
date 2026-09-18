@@ -10,7 +10,9 @@
     "addToFavorites": "Add {{name}} to favorites",
     "removeFromFavorites": "Remove {{name}} from favorites",
     "him": "Him",
-    "her": "Her"
+    "her": "Her",
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "loading": "Loading..."
   },
   "onboarding": {
     "slides": [
@@ -47,7 +49,17 @@
     "rescheduleBooking": "Reschedule Booking",
     "cancelBooking": "Cancel Booking",
     "chatSupport": "Chat Support",
-    "chatWithTeam": "Chat with our team"
+    "chatWithTeam": "Chat with our team",
+    "cancelConfirmTitle": "Cancel this booking?",
+    "cancelConfirmMessage": "This can't be undone.",
+    "keepBooking": "Keep Booking",
+    "confirmCancelBooking": "Yes, Cancel Booking"
+  },
+  "reschedule": {
+    "title": "Reschedule Booking",
+    "currentAppointment": "Current appointment",
+    "selectNewTime": "Select a new date & time",
+    "confirmNewTime": "Confirm New Time"
   },
   "favorites": {
     "title": "Favorites",
@@ -224,6 +236,7 @@
     "reviewsCountParen": "({{count}} reviews)",
     "total": "Total",
     "confirmBooking": "Confirm Booking",
+    "confirmingBooking": "Confirming...",
     "bookingConfirmedTitle": "Booking confirmed",
     "bookingConfirmedMessage": "{{venue}} · {{day}} at {{time}}"
   },
