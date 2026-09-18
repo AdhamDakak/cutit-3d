@@ -5,7 +5,9 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Image as ImageIcon, Star } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { getStylistReviews, stylists, venues, type StylistServiceType } from '@/lib/data'
+import { ErrorState } from '@/components/error-state'
+import type { StylistServiceType } from '@/lib/data'
+import { useStylist, useStylistReviews, useVenue } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 function getInitials(name: string) {
@@ -20,15 +22,53 @@ function getInitials(name: string) {
 export default function StylistScreen() {
   const { t } = useTranslation()
   const { id, type } = useLocalSearchParams<{ id: string; type?: StylistServiceType }>()
-  const stylist = stylists.find((item) => item.id === id)
   const router = useRouter()
   const colors = useThemeColors()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
-  if (!stylist) return <Redirect href="/(tabs)" />
+  const { data: stylist, isLoading: stylistLoading, error: stylistError, refetch: refetchStylist } = useStylist(id)
+  const { data: stylistReviewsData, isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useStylistReviews(id)
+  const { data: venue } = useVenue(stylist?.venueId ?? undefined)
+  const stylistReviews = stylistReviewsData ?? []
 
-  const venue = stylist.venueId ? venues.find((item) => item.id === stylist.venueId) : undefined
-  const stylistReviews = getStylistReviews(stylist.id)
+  const isLoading = stylistLoading || reviewsLoading
+  const hasError = stylistError || reviewsError
+  const refetchAll = () => {
+    refetchStylist()
+    refetchReviews()
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
+        <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable onPress={() => router.back()} accessibilityLabel={t('common.back')} className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800">
+            <BackIcon size={18} color={colors.foreground} />
+          </Pressable>
+          <View className="size-9" />
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.loading')}</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (hasError) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
+        <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable onPress={() => router.back()} accessibilityLabel={t('common.back')} className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800">
+            <BackIcon size={18} color={colors.foreground} />
+          </Pressable>
+          <View className="size-9" />
+        </View>
+        <ErrorState onRetry={refetchAll} />
+      </SafeAreaView>
+    )
+  }
+
+  if (!stylist) return <Redirect href="/(tabs)" />
 
   const bookStylist = () => {
     router.push({

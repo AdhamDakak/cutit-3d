@@ -6,11 +6,13 @@ import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw, Search, SlidersHori
 import { useTranslation } from 'react-i18next'
 
 import { AppHeader } from '@/components/app-header'
+import { ErrorState } from '@/components/error-state'
 import { EstablishmentCard } from '@/components/establishment-card'
 import { RecommendationFeed } from '@/components/recommendation-feed'
 import { SkeletonCard } from '@/components/skeleton-card'
 import { useAppState, type Gender } from '@/lib/app-state'
-import { serviceFilters, venues } from '@/lib/data'
+import { serviceFilters } from '@/lib/data'
+import { useVenues } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 const ForwardChevron = I18nManager.isRTL ? ChevronLeft : ChevronRight
@@ -22,7 +24,9 @@ export default function HomeScreen() {
   const router = useRouter()
   const [service, setService] = useState('All services')
   const [query, setQuery] = useState('')
-  const [loading, setLoading] = useState(false)
+
+  const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues()
+  const venues = venuesData ?? []
 
   const filtered = useMemo(() => {
     return venues.filter((item) => {
@@ -32,17 +36,12 @@ export default function HomeScreen() {
       const search = `${item.name} ${item.area} ${item.category} ${item.servicesOffered.join(' ')}`.toLowerCase()
       return genderMatch && serviceMatch && search.includes(query.toLowerCase())
     })
-  }, [activeGender, query, service])
+  }, [venues, activeGender, query, service])
 
   const resetFilters = () => {
     setActiveGender('For Her')
     setService('All services')
     setQuery('')
-  }
-
-  const refresh = () => {
-    setLoading(true)
-    setTimeout(() => setLoading(false), 1200)
   }
 
   return (
@@ -136,17 +135,19 @@ export default function HomeScreen() {
                 {t('home.nearYou')} <Text className="font-sans text-sm font-normal text-stone-500 dark:text-zinc-400">({filtered.length})</Text>
               </Text>
             </View>
-            <Pressable onPress={refresh} className="flex-row items-center gap-1">
+            <Pressable onPress={() => refetchVenues()} className="flex-row items-center gap-1">
               <RotateCcw size={14} color={colors.mutedStrong} />
               <Text className="text-xs font-semibold text-stone-500 dark:text-zinc-400">{t('home.refresh')}</Text>
             </Pressable>
           </View>
 
-          {loading ? (
+          {venuesLoading ? (
             <View className="gap-4">
               <SkeletonCard />
               <SkeletonCard />
             </View>
+          ) : venuesError ? (
+            <ErrorState onRetry={refetchVenues} />
           ) : filtered.length > 0 ? (
             <View className="gap-4">
               {filtered.map((establishment) => (

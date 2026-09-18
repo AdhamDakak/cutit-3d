@@ -6,10 +6,10 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound, Users } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { ErrorState } from '@/components/error-state'
 import { ReviewModal } from '@/components/review-modal'
-import { ANY_STAFF_ID, type CreateBookingInput } from '@/lib/api'
-import { generateTimeSlots, getVenueReviews, getVenueServices, getVenueStaff, venues } from '@/lib/data'
-import { useCreateBooking, useFavorites, useToggleFavorite } from '@/lib/hooks'
+import { ANY_STAFF_ID, type CreateBookingInput, type ListSlotsParams } from '@/lib/api'
+import { useCreateBooking, useFavorites, useSlots, useToggleFavorite, useVenue, useVenueReviews, useVenueServices, useVenueStaff } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'
@@ -35,9 +35,13 @@ function getSlotPeriod(startTime: string): Period {
 export default function VenueScreen() {
   const { t, i18n } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
-  const establishment = venues.find((item) => item.id === id)
   const router = useRouter()
   const colors = useThemeColors()
+
+  const { data: establishment, isLoading: venueLoading, error: venueError, refetch: refetchVenue } = useVenue(id)
+  const { data: venueStaffData, isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useVenueStaff(id)
+  const { data: venueServicesData, isLoading: servicesLoading, error: servicesError, refetch: refetchServices } = useVenueServices(id)
+  const { data: venueReviewsData, isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useVenueReviews(id)
   const { data: favoriteVenueIds } = useFavorites()
   const { mutate: toggleFavorite } = useToggleFavorite()
   const { mutate: createBooking, isPending: isConfirming, error: confirmError } = useCreateBooking()
@@ -65,12 +69,9 @@ export default function VenueScreen() {
     })
   }, [])
 
-  if (!establishment) return <Redirect href="/(tabs)" />
-
-  const favorited = favoriteVenueIds?.has(establishment.id) ?? false
-  const venueStaff = getVenueStaff(establishment.id)
-  const venueServices = getVenueServices(establishment.id)
-  const venueReviews = getVenueReviews(establishment.id)
+  const venueServices = venueServicesData ?? []
+  const venueStaff = venueStaffData ?? []
+  const venueReviews = venueReviewsData ?? []
 
   const totalPrice = Array.from(selectedServices).reduce((sum, serviceId) => {
     const service = venueServices.find((item) => item.id === serviceId)
@@ -89,15 +90,60 @@ export default function VenueScreen() {
   // picking "Any stylist" behave identically — one convention, not two.
   const effectiveStaffId = selectedStaff ?? ANY_STAFF_ID
   const representativeServiceId = Array.from(selectedServices)[0] ?? venueServices[0]?.id ?? ''
-  const daySlots = representativeServiceId
-    ? generateTimeSlots({
-        venueId: establishment.id,
-        staffId: effectiveStaffId,
-        serviceId: representativeServiceId,
-        date: dates[selectedDate],
-        durationMinutes: selectedDurationMinutes,
-      })
-    : []
+  const slotsParams: ListSlotsParams | null =
+    establishment && representativeServiceId
+      ? {
+          venueId: establishment.id,
+          staffId: effectiveStaffId,
+          serviceId: representativeServiceId,
+          date: dates[selectedDate],
+          durationMinutes: selectedDurationMinutes,
+        }
+      : null
+  const { data: daySlots = [] } = useSlots(slotsParams)
+
+  const isLoading = venueLoading || staffLoading || servicesLoading || reviewsLoading
+  const hasError = venueError || staffError || servicesError || reviewsError
+  const refetchAll = () => {
+    refetchVenue()
+    refetchStaff()
+    refetchServices()
+    refetchReviews()
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
+        <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable onPress={() => router.back()} accessibilityLabel={t('common.back')} className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800">
+            <BackIcon size={18} color={colors.foreground} />
+          </Pressable>
+          <View className="size-9" />
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.loading')}</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (hasError) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
+        <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable onPress={() => router.back()} accessibilityLabel={t('common.back')} className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800">
+            <BackIcon size={18} color={colors.foreground} />
+          </Pressable>
+          <View className="size-9" />
+        </View>
+        <ErrorState onRetry={refetchAll} />
+      </SafeAreaView>
+    )
+  }
+
+  if (!establishment) return <Redirect href="/(tabs)" />
+
+  const favorited = favoriteVenueIds?.has(establishment.id) ?? false
 
   const confirmBooking = async () => {
     if (!selectedTime) return

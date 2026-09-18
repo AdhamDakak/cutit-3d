@@ -5,9 +5,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { ErrorState } from '@/components/error-state'
 import { StylistCard } from '@/components/stylist-card'
 import { useAppState } from '@/lib/app-state'
-import { getStylistsByType, type StylistServiceType } from '@/lib/data'
+import type { StylistServiceType } from '@/lib/data'
+import { useStylists } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 type GenderFilter = 'him' | 'her'
@@ -31,9 +33,7 @@ export default function BookingFlowScreen() {
   const title = isEvents ? t('eventsBridal.title') : t('atHome.title')
   const subtitle = isEvents ? t('eventsBridal.subtitle') : t('atHome.subtitle')
   const servesKey = genderFilter === 'her' ? 'female' : 'male'
-  const matchingStylists = getStylistsByType(isEvents ? 'events-bridal' : 'at-home').filter((stylist) =>
-    stylist.servesGender.includes(servesKey),
-  )
+  const { data: matchingStylists, isLoading, error, refetch } = useStylists({ type: isEvents ? 'events-bridal' : 'at-home', gender: servesKey })
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
@@ -67,21 +67,29 @@ export default function BookingFlowScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-10 pt-4">
-        <Text className="text-sm text-stone-500 dark:text-zinc-400">{subtitle}</Text>
+      {isLoading ? (
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.loading')}</Text>
+        </View>
+      ) : error ? (
+        <ErrorState onRetry={refetch} />
+      ) : (
+        <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-10 pt-4">
+          <Text className="text-sm text-stone-500 dark:text-zinc-400">{subtitle}</Text>
 
-        {matchingStylists.length === 0 ? (
-          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('bookingFlow.noStylists')}</Text>
-        ) : (
-          matchingStylists.map((stylist) => (
-            <StylistCard
-              key={stylist.id}
-              stylist={stylist}
-              onPress={() => router.push({ pathname: '/stylist/[id]', params: { id: stylist.id, type } })}
-            />
-          ))
-        )}
-      </ScrollView>
+          {!matchingStylists || matchingStylists.length === 0 ? (
+            <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('bookingFlow.noStylists')}</Text>
+          ) : (
+            matchingStylists.map((stylist) => (
+              <StylistCard
+                key={stylist.id}
+                stylist={stylist}
+                onPress={() => router.push({ pathname: '/stylist/[id]', params: { id: stylist.id, type } })}
+              />
+            ))
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   )
 }

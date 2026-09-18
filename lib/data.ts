@@ -6,11 +6,18 @@ import type { Gender } from '@/lib/app-state'
 // for this app. lib/api/* is the only code allowed to import them — every
 // screen and component goes through lib/api's functions/hooks instead, so
 // swapping mock data for real Supabase calls later only touches that one
-// folder. Only the *types* on this file are meant to be imported elsewhere
-// (ANY_STAFF_ID and getBookingDetails are re-exported through lib/api/index.ts
-// for convenience, but are still defined here). If you're adding a new
-// screen and reaching for `import { venues } from '@/lib/data'`, look for
-// (or add) the equivalent in lib/api instead.
+// folder. Only the *types* and `serviceFilters` on this file are meant to be
+// imported elsewhere (ANY_STAFF_ID, getBookingDetails, getVenueStartingPrice,
+// and isVenueOpenNow are re-exported through lib/api/index.ts for
+// convenience, but are still defined here). If you're adding a new screen
+// and reaching for `import { venues } from '@/lib/data'` — or any
+// `get*`/`generate*` helper — look for (or add) the equivalent in lib/api
+// instead. There's no ESLint config in this project to enforce this
+// automatically (see APP_CONTEXT.md); verify by hand with:
+//
+//   grep -rnE "import .*\b(venues|stylists|services|staff|reviews|bookings|favorites|currentUser|generate[A-Za-z]*|get(Venue|Stylist)[A-Za-z]*)\b.*from '@/lib/data'" app components lib/hooks | grep -v "import type"
+//
+// A clean migration returns nothing.
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------

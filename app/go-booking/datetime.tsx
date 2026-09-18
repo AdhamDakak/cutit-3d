@@ -5,7 +5,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { getStylistServices, generateStylistTimeSlots, type StylistServiceType } from '@/lib/data'
+import { ErrorState } from '@/components/error-state'
+import type { ListSlotsParams } from '@/lib/api'
+import type { StylistServiceType } from '@/lib/data'
+import { useSlots, useStylistServices } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 import { useGoBookingDraft } from './_layout'
 
@@ -30,11 +33,20 @@ export default function GoBookingDatetimeScreen() {
 
   const activeDate = selectedDate ?? dates[0]
 
-  const totalDuration = getStylistServices(stylistId)
+  const { data: stylistServicesData, isLoading: servicesLoading, error: servicesError, refetch: refetchServices } = useStylistServices(stylistId)
+  const totalDuration = (stylistServicesData ?? [])
     .filter((service) => selectedServiceIds.has(service.id))
     .reduce((sum, service) => sum + service.durationMinutes, 0)
 
-  const daySlots = totalDuration > 0 ? generateStylistTimeSlots({ stylistId, durationMinutes: totalDuration, date: activeDate }) : []
+  const slotsParams: ListSlotsParams | null = totalDuration > 0 ? { stylistId, durationMinutes: totalDuration, date: activeDate } : null
+  const { data: daySlots = [], isLoading: slotsLoading, error: slotsError, refetch: refetchSlots } = useSlots(slotsParams)
+
+  const isLoading = servicesLoading || slotsLoading
+  const hasError = servicesError || slotsError
+  const refetchAll = () => {
+    refetchServices()
+    refetchSlots()
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
@@ -50,66 +62,74 @@ export default function GoBookingDatetimeScreen() {
         <View className="size-9" />
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
-        <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
-          {t('goBooking.stepIndicator', { current: 3, total: 4 })}
-        </Text>
+      {isLoading ? (
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.loading')}</Text>
+        </View>
+      ) : hasError ? (
+        <ErrorState onRetry={refetchAll} />
+      ) : (
+        <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
+          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
+            {t('goBooking.stepIndicator', { current: 3, total: 4 })}
+          </Text>
 
-        <View>
-          <Text className="mb-3 font-semibold text-stone-900 dark:text-white">{t('venue.selectDate')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row gap-2">
-              {dates.map((date, idx) => {
-                const active = date.toDateString() === activeDate.toDateString()
+          <View>
+            <Text className="mb-3 font-semibold text-stone-900 dark:text-white">{t('venue.selectDate')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-2">
+                {dates.map((date, idx) => {
+                  const active = date.toDateString() === activeDate.toDateString()
+                  return (
+                    <Pressable
+                      key={idx}
+                      onPress={() => {
+                        setSelectedDate(date)
+                        setSelectedTime(null)
+                      }}
+                      className={`rounded-full border px-3.5 py-2 ${
+                        active
+                          ? 'border-stone-900 bg-stone-900 dark:border-blue-500 dark:bg-blue-600'
+                          : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
+                      }`}
+                    >
+                      <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-600 dark:text-zinc-300'}`}>{dayFormatter.format(date)}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </ScrollView>
+          </View>
+
+          <View className="gap-2">
+            <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectTime')}</Text>
+            {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.noAvailability')}</Text>}
+            <View className="flex-row flex-wrap gap-2">
+              {daySlots.map((slot) => {
+                const active = selectedTime === slot.startTime
+                const disabled = slot.status !== 'available'
+                const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 return (
                   <Pressable
-                    key={idx}
-                    onPress={() => {
-                      setSelectedDate(date)
-                      setSelectedTime(null)
-                    }}
-                    className={`rounded-full border px-3.5 py-2 ${
+                    key={slot.id}
+                    disabled={disabled}
+                    onPress={() => setSelectedTime(slot.startTime)}
+                    className={`min-w-[70px] items-center rounded-lg border py-2 ${
                       active
-                        ? 'border-stone-900 bg-stone-900 dark:border-blue-500 dark:bg-blue-600'
-                        : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
+                        ? 'border-transparent bg-stone-900 dark:bg-blue-600'
+                        : disabled
+                          ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
+                          : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
                     }`}
                   >
-                    <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-600 dark:text-zinc-300'}`}>{dayFormatter.format(date)}</Text>
+                    <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
                   </Pressable>
                 )
               })}
             </View>
-          </ScrollView>
-        </View>
-
-        <View className="gap-2">
-          <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectTime')}</Text>
-          {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.noAvailability')}</Text>}
-          <View className="flex-row flex-wrap gap-2">
-            {daySlots.map((slot) => {
-              const active = selectedTime === slot.startTime
-              const disabled = slot.status !== 'available'
-              const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              return (
-                <Pressable
-                  key={slot.id}
-                  disabled={disabled}
-                  onPress={() => setSelectedTime(slot.startTime)}
-                  className={`min-w-[70px] items-center rounded-lg border py-2 ${
-                    active
-                      ? 'border-transparent bg-stone-900 dark:bg-blue-600'
-                      : disabled
-                        ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
-                        : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
-                  }`}
-                >
-                  <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
-                </Pressable>
-              )
-            })}
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      )}
 
       <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
         <Pressable

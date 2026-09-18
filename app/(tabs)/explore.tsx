@@ -6,10 +6,13 @@ import { ChevronDown, ListFilter, Search, SlidersHorizontal } from 'lucide-react
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet'
 import { useTranslation } from 'react-i18next'
 
+import { ErrorState } from '@/components/error-state'
 import { EstablishmentCard } from '@/components/establishment-card'
 import { ExploreMap } from '@/components/explore-map'
+import { SkeletonCard } from '@/components/skeleton-card'
 import { useAppState } from '@/lib/app-state'
-import { venues, type Venue } from '@/lib/data'
+import type { Venue } from '@/lib/data'
+import { useVenues } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 const SNAP_POINTS = ['14%', '50%', '92%']
@@ -37,12 +40,15 @@ export default function ExploreScreen() {
   const [mode, setMode] = useState<'Venues' | 'Professionals'>('Venues')
   const [selectedDay, setSelectedDay] = useState(0)
 
+  const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues()
+  const venues = venuesData ?? []
+
   const filtered = useMemo(() => {
     return venues.filter((item) => {
       const genderKey = activeGender === 'For Her' ? 'Women' : 'Men'
       return item.gender === genderKey || item.gender === 'Unisex'
     })
-  }, [activeGender])
+  }, [venues, activeGender])
 
   const renderItem = useCallback(
     ({ item }: { item: Venue }) => (
@@ -137,6 +143,16 @@ export default function ExploreScreen() {
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 24 }}
+          ListEmptyComponent={
+            venuesLoading ? (
+              <View className="gap-4 px-5">
+                <SkeletonCard />
+                <SkeletonCard />
+              </View>
+            ) : venuesError ? (
+              <ErrorState onRetry={refetchVenues} />
+            ) : null
+          }
         />
       </BottomSheet>
     </View>
