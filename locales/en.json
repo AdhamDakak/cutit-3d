@@ -15,6 +15,17 @@
     "loading": "Loading...",
     "retry": "Retry"
   },
+  "checkoutAuth": {
+    "title": "Create your account to confirm",
+    "subtitle": "Takes under a minute — your selections are saved.",
+    "stepIndicator": "Step {{current}} of {{total}}",
+    "phoneTitle": "Your phone number",
+    "phoneSubtitle": "We'll text you a code to confirm this booking.",
+    "profileTitle": "Almost done",
+    "createAndConfirm": "Create account & confirm",
+    "genderLabel": "Recommendations for",
+    "close": "Close"
+  },
   "onboarding": {
     "slides": [
       { "title": "Your next signature look", "body": "Discover trusted salons and barbershops across Egypt, all in one place." },

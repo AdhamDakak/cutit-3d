@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { I18nManager, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
 import { ErrorState } from '@/components/error-state'
 import type { CreateBookingInput } from '@/lib/api'
+import { useAppState } from '@/lib/app-state'
 import type { StylistServiceType } from '@/lib/data'
 import { useAddresses, useCreateBooking, useStylist, useStylistServices } from '@/lib/hooks'
 import { calculateTravelFee } from '@/lib/travel-fee'
@@ -23,6 +26,8 @@ export default function GoBookingReviewScreen() {
   const { mutate: createBooking, isPending: isConfirming, error: confirmError } = useCreateBooking()
   const { selectedServiceIds, addressId, eventDate, eventNotes, selectedTime } = useGoBookingDraft()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
+  const { isSignedIn } = useAppState()
+  const [authOpen, setAuthOpen] = useState(false)
 
   const isLoading = stylistLoading || servicesLoading
   const hasError = stylistError || servicesError
@@ -42,7 +47,7 @@ export default function GoBookingReviewScreen() {
   const timeLabel = selectedTime ? new Date(selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
   const dateLabel = selectedTime ? new Date(selectedTime).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) : ''
 
-  const confirmBooking = async () => {
+  const submitBooking = async () => {
     if (!stylist || !address || !selectedTime) return
     const endTime = new Date(new Date(selectedTime).getTime() + totalDuration * 60_000).toISOString()
     const input: CreateBookingInput = {
@@ -65,6 +70,16 @@ export default function GoBookingReviewScreen() {
     } catch {
       // confirmError below already surfaces this in the UI
     }
+  }
+
+  // Guests reach Confirm with the draft intact; the account is created in a
+  // sheet over this screen (never navigating away), then the same submit runs.
+  const confirmBooking = () => {
+    if (!isSignedIn) {
+      setAuthOpen(true)
+      return
+    }
+    void submitBooking()
   }
 
   return (
@@ -150,6 +165,15 @@ export default function GoBookingReviewScreen() {
           </View>
         </>
       )}
+
+      <CheckoutAuthSheet
+        visible={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthenticated={() => {
+          setAuthOpen(false)
+          void submitBooking()
+        }}
+      />
     </SafeAreaView>
   )
 }

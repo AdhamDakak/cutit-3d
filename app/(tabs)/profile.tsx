@@ -32,6 +32,7 @@ import { useTranslation } from 'react-i18next'
 
 import { SettingRow, ToggleRow } from '@/components/settings-rows'
 import { useAppState, type Gender } from '@/lib/app-state'
+import { useCurrentUser } from '@/lib/hooks'
 import type { AppLanguage } from '@/lib/i18n'
 import { useThemeColors } from '@/lib/theme'
 
@@ -49,6 +50,15 @@ export default function ProfileScreen() {
   const isDark = colorScheme === 'dark'
   const [reminders, setReminders] = useState(true)
   const [offers, setOffers] = useState(false)
+  const { data: user } = useCurrentUser()
+  const fullName = user?.fullName ?? ''
+  const initials = fullName
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
   const sectionClass = 'overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'
   const labelClass = 'mb-2 px-1 text-[11px] font-medium uppercase tracking-[2.5px] text-stone-500 dark:text-zinc-400'
@@ -69,14 +79,17 @@ export default function ProfileScreen() {
         </View>
 
         <View className="flex-row items-center gap-4">
-          <View accessibilityLabel="Amira Nabil initials" className="size-20 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60">
-            <Text className="text-2xl font-semibold text-blue-700 dark:text-blue-200">AN</Text>
+          <View accessibilityLabel={`${fullName} initials`} className="size-20 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60">
+            <Text className="text-2xl font-semibold text-blue-700 dark:text-blue-200">{initials}</Text>
           </View>
           <View>
-            <Text className="text-lg font-semibold text-stone-900 dark:text-white">Amira Nabil</Text>
+            <Text className="text-lg font-semibold text-stone-900 dark:text-white">{fullName}</Text>
             <View className="mt-1 flex-row items-center gap-1">
               <Phone size={14} color={colors.muted} />
-              <Text className="text-sm text-stone-500 dark:text-zinc-400">+20 100 123 4567</Text>
+              {/* Phone numbers stay LTR in every locale. */}
+              <Text className="text-sm text-stone-500 dark:text-zinc-400" style={{ writingDirection: 'ltr' }}>
+                {user?.phone ?? ''}
+              </Text>
               <Check size={14} color="#3b82f6" />
             </View>
             <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{t('profile.memberSince')}</Text>
@@ -101,8 +114,8 @@ export default function ProfileScreen() {
         <View>
           <Text className={labelClass}>{t('profile.personalInformation')}</Text>
           <View className={sectionClass}>
-            <SettingRow icon={UserRound} label={t('profile.fullName')} value="Amira Nabil" />
-            <SettingRow icon={Mail} label={t('profile.emailAddress')} value="amira.nabil@email.com" />
+            <SettingRow icon={UserRound} label={t('profile.fullName')} value={fullName} />
+            <SettingRow icon={Mail} label={t('profile.emailAddress')} value={user?.email || '—'} />
             <View className="flex-row items-center gap-3 border-b border-stone-100 px-4 py-3 dark:border-zinc-800">
               <View className="size-8 items-center justify-center rounded-lg bg-stone-100 dark:bg-zinc-800">
                 <UsersRound size={16} color={colors.mutedStrong} />

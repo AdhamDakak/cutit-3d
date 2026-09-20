@@ -6,9 +6,11 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound, Users } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
 import { ErrorState } from '@/components/error-state'
 import { ReviewModal } from '@/components/review-modal'
 import { ANY_STAFF_ID, type CreateBookingInput, type ListSlotsParams } from '@/lib/api'
+import { useAppState } from '@/lib/app-state'
 import { useCreateBooking, useFavorites, useSlots, useToggleFavorite, useVenue, useVenueReviews, useVenueServices, useVenueStaff } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
@@ -37,6 +39,7 @@ export default function VenueScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const colors = useThemeColors()
+  const { isSignedIn } = useAppState()
 
   const { data: establishment, isLoading: venueLoading, error: venueError, refetch: refetchVenue } = useVenue(id)
   const { data: venueStaffData, isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useVenueStaff(id)
@@ -59,6 +62,7 @@ export default function VenueScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [serviceQuery, setServiceQuery] = useState('')
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
 
   const dates = useMemo(() => {
     const today = new Date()
@@ -145,7 +149,7 @@ export default function VenueScreen() {
 
   const favorited = favoriteVenueIds?.has(establishment.id) ?? false
 
-  const confirmBooking = async () => {
+  const submitBooking = async () => {
     if (!selectedTime) return
     const endTime = new Date(new Date(selectedTime).getTime() + selectedDurationMinutes * 60_000).toISOString()
     const input: CreateBookingInput = {
@@ -165,6 +169,16 @@ export default function VenueScreen() {
     } catch {
       // confirmError below already surfaces this in the UI
     }
+  }
+
+  // Guests reach Confirm with their selections intact; the account is
+  // created here, in a sheet over this screen, and then the same submit runs.
+  const confirmBooking = () => {
+    if (!isSignedIn) {
+      setAuthOpen(true)
+      return
+    }
+    void submitBooking()
   }
 
   return (
@@ -422,6 +436,15 @@ export default function VenueScreen() {
         title={t('venue.writeReview')}
         onClose={() => setReviewOpen(false)}
         onSubmit={() => {}}
+      />
+
+      <CheckoutAuthSheet
+        visible={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthenticated={() => {
+          setAuthOpen(false)
+          void submitBooking()
+        }}
       />
     </SafeAreaView>
   )

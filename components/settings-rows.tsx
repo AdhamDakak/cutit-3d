@@ -15,11 +15,11 @@ export function SettingRow({ icon: Icon, label, value, onPress }: { icon: IconTy
       </View>
       <View className="min-w-0 flex-1">
         <Text className="text-sm font-medium text-stone-900 dark:text-white">{label}</Text>
-        {value && (
+        {value ? (
           <Text numberOfLines={1} className="mt-0.5 text-xs text-stone-500 dark:text-zinc-400">
             {value}
           </Text>
-        )}
+        ) : null}
       </View>
       <ChevronRight size={16} color={colors.muted} />
     </Pressable>
