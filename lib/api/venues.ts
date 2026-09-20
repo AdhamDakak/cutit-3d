@@ -1,11 +1,9 @@
 import {
-  getVenueReviews as findVenueReviews,
   getVenueServices as findVenueServices,
   getVenueStaff as findVenueStaff,
   getVenueStartingPrice as findVenueStartingPrice,
   isVenueOpenNow as checkVenueOpenNow,
   venues,
-  type Review,
   type Service,
   type Staff,
   type Venue,
@@ -80,11 +78,6 @@ export async function getVenueStaff(venueId: string): Promise<Staff[]> {
 export async function getVenueServices(venueId: string): Promise<Service[]> {
   await delay()
   return findVenueServices(venueId)
-}
-
-export async function getVenueReviews(venueId: string): Promise<Review[]> {
-  await delay()
-  return findVenueReviews(venueId)
 }
 
 // Both are pure, synchronous derivations over data already in memory (a

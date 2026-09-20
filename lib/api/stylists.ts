@@ -1,9 +1,7 @@
 import {
-  getStylistReviews as findStylistReviews,
   getStylistServices as findStylistServices,
   getStylistsByType,
   stylists,
-  type Review,
   type Service,
   type Stylist,
   type StylistServiceType,
@@ -33,9 +31,4 @@ export async function getStylist(id: string): Promise<Stylist | undefined> {
 export async function getStylistServices(stylistId: string): Promise<Service[]> {
   await delay()
   return findStylistServices(stylistId)
-}
-
-export async function getStylistReviews(stylistId: string): Promise<Review[]> {
-  await delay()
-  return findStylistReviews(stylistId)
 }

@@ -252,6 +252,21 @@
     "findASalon": "ابحث عن صالون",
     "emptyPastTitle": "لا يوجد سجل سابق بعد"
   },
+  "review": {
+    "closeReview": "إغلاق التقييم",
+    "shareExperience": "شاركنا المزيد عن تجربتك (اختياري)",
+    "starsLabel_one": "نجمة واحدة",
+    "starsLabel_other": "{{count}} نجوم",
+    "submit": "إرسال التقييم",
+    "submitting": "جارٍ الإرسال...",
+    "submitError": "تعذر إرسال تقييمك. حاول مرة أخرى.",
+    "addPhotos": "إضافة صور",
+    "maxPhotosHint": "حتى {{count}} صور",
+    "takePhoto": "التقاط صورة",
+    "chooseFromLibrary": "الاختيار من المعرض",
+    "removePhoto": "إزالة الصورة",
+    "viewerClose": "إغلاق عارض الصور"
+  },
   "venue": {
     "saveVenue": "حفظ الصالون",
     "noPhotoYet": "لا توجد صورة بعد",

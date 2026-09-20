@@ -160,6 +160,8 @@ export type Review = {
   userId: string
   rating: number
   text: string | null
+  /** Local file URIs in mock mode; a real backend uploads to Storage and stores the resulting URLs here instead. */
+  photoUrls: string[]
   authorName: string
   createdAt: string
 }
@@ -481,31 +483,79 @@ export const services: Service[] = [
 ]
 
 export const reviews: Review[] = [
-  { id: 'v1-rv-1', bookingId: 'bk-legacy-1', venueId: 'v1', userId: 'u-guest-1', rating: 5, text: 'Kareem always nails my fade. Hot towel finish is a nice touch.', authorName: 'Youssef Adel', createdAt: '2024-05-02T10:00:00' },
-  { id: 'v1-rv-2', bookingId: 'bk-legacy-2', venueId: 'v1', userId: 'u-guest-2', rating: 5, text: 'Clean shop, friendly staff, never had to wait more than 5 minutes.', authorName: 'Mostafa Hany', createdAt: '2024-04-18T10:00:00' },
-  { id: 'v1-rv-3', bookingId: 'bk-legacy-3', venueId: 'v1', userId: 'u-guest-3', rating: 4, text: 'Great haircut, a bit pricier than other places in New Cairo but worth it.', authorName: 'Amr Salah', createdAt: '2024-03-11T10:00:00' },
+  {
+    id: 'v1-rv-1',
+    bookingId: 'bk-legacy-1',
+    venueId: 'v1',
+    userId: 'u-guest-1',
+    rating: 5,
+    text: 'Kareem always nails my fade. Hot towel finish is a nice touch.',
+    photoUrls: [
+      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&q=80',
+    ],
+    authorName: 'Youssef Adel',
+    createdAt: '2024-05-02T10:00:00',
+  },
+  { id: 'v1-rv-2', bookingId: 'bk-legacy-2', venueId: 'v1', userId: 'u-guest-2', rating: 5, text: 'Clean shop, friendly staff, never had to wait more than 5 minutes.', photoUrls: [], authorName: 'Mostafa Hany', createdAt: '2024-04-18T10:00:00' },
+  { id: 'v1-rv-3', bookingId: 'bk-legacy-3', venueId: 'v1', userId: 'u-guest-3', rating: 4, text: 'Great haircut, a bit pricier than other places in New Cairo but worth it.', photoUrls: [], authorName: 'Amr Salah', createdAt: '2024-03-11T10:00:00' },
 
-  { id: 'v2-rv-1', bookingId: 'bk-legacy-4', venueId: 'v2', userId: 'u-guest-4', rating: 5, text: 'Noor is incredibly talented with color. My balayage turned out perfect.', authorName: 'Nour Fathy', createdAt: '2024-05-20T10:00:00' },
-  { id: 'v2-rv-2', bookingId: 'bk-legacy-5', venueId: 'v2', userId: 'u-guest-5', rating: 5, text: 'Beautiful salon, very relaxing atmosphere in Zamalek.', authorName: 'Salma Reda', createdAt: '2024-04-02T10:00:00' },
-  { id: 'v2-rv-3', bookingId: 'bk-legacy-6', venueId: 'v2', userId: 'u-guest-6', rating: 4, text: 'Loved my blow dry, will be back for the manicure next time.', authorName: 'Dina Kamal', createdAt: '2024-02-27T10:00:00' },
+  {
+    id: 'v2-rv-1',
+    bookingId: 'bk-legacy-4',
+    venueId: 'v2',
+    userId: 'u-guest-4',
+    rating: 5,
+    text: 'Noor is incredibly talented with color. My balayage turned out perfect.',
+    photoUrls: [
+      'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1522337094846-8a818192de1f?auto=format&fit=crop&w=600&q=80',
+    ],
+    authorName: 'Nour Fathy',
+    createdAt: '2024-05-20T10:00:00',
+  },
+  { id: 'v2-rv-2', bookingId: 'bk-legacy-5', venueId: 'v2', userId: 'u-guest-5', rating: 5, text: 'Beautiful salon, very relaxing atmosphere in Zamalek.', photoUrls: [], authorName: 'Salma Reda', createdAt: '2024-04-02T10:00:00' },
+  { id: 'v2-rv-3', bookingId: 'bk-legacy-6', venueId: 'v2', userId: 'u-guest-6', rating: 4, text: 'Loved my blow dry, will be back for the manicure next time.', photoUrls: [], authorName: 'Dina Kamal', createdAt: '2024-02-27T10:00:00' },
 
-  { id: 'v3-rv-1', bookingId: 'bk-legacy-7', venueId: 'v3', userId: 'u-guest-7', rating: 5, text: 'The facial was so relaxing, my skin has never looked better.', authorName: 'Heba Younes', createdAt: '2024-03-30T10:00:00' },
-  { id: 'v3-rv-2', bookingId: 'bk-legacy-8', venueId: 'v3', userId: 'u-guest-8', rating: 4, text: 'Unisex spot in Maadi is rare, glad I found this one.', authorName: 'Karim Fouad', createdAt: '2024-02-14T10:00:00' },
+  { id: 'v3-rv-1', bookingId: 'bk-legacy-7', venueId: 'v3', userId: 'u-guest-7', rating: 5, text: 'The facial was so relaxing, my skin has never looked better.', photoUrls: [], authorName: 'Heba Younes', createdAt: '2024-03-30T10:00:00' },
+  { id: 'v3-rv-2', bookingId: 'bk-legacy-8', venueId: 'v3', userId: 'u-guest-8', rating: 4, text: 'Unisex spot in Maadi is rare, glad I found this one.', photoUrls: [], authorName: 'Karim Fouad', createdAt: '2024-02-14T10:00:00' },
 
-  { id: 'v4-rv-1', bookingId: 'bk-legacy-9', venueId: 'v4', userId: 'u-guest-9', rating: 5, text: 'Ahmed is great with kids, my son actually enjoys his haircuts now.', authorName: 'Tarek Ibrahim', createdAt: '2024-05-05T10:00:00' },
-  { id: 'v4-rv-2', bookingId: 'bk-legacy-10', venueId: 'v4', userId: 'u-guest-10', rating: 4, text: 'Solid, no-frills barbershop. Good prices for Heliopolis.', authorName: 'Sherif Nabil', createdAt: '2024-03-22T10:00:00' },
+  { id: 'v4-rv-1', bookingId: 'bk-legacy-9', venueId: 'v4', userId: 'u-guest-9', rating: 5, text: 'Ahmed is great with kids, my son actually enjoys his haircuts now.', photoUrls: [], authorName: 'Tarek Ibrahim', createdAt: '2024-05-05T10:00:00' },
+  { id: 'v4-rv-2', bookingId: 'bk-legacy-10', venueId: 'v4', userId: 'u-guest-10', rating: 4, text: 'Solid, no-frills barbershop. Good prices for Heliopolis.', photoUrls: [], authorName: 'Sherif Nabil', createdAt: '2024-03-22T10:00:00' },
 
-  { id: 'v5-rv-1', bookingId: 'bk-legacy-11', venueId: 'v5', userId: 'u-guest-11', rating: 5, text: 'Layla did my bridal hair and makeup trial, absolutely stunning work.', authorName: 'Farida Osman', createdAt: '2024-05-15T10:00:00' },
-  { id: 'v5-rv-2', bookingId: 'bk-legacy-12', venueId: 'v5', userId: 'u-guest-12', rating: 5, text: 'Best balayage I have had in Cairo, worth the drive to Sheikh Zayed.', authorName: 'Mariam Adly', createdAt: '2024-04-08T10:00:00' },
-  { id: 'v5-rv-3', bookingId: 'bk-legacy-13', venueId: 'v5', userId: 'u-guest-13', rating: 5, text: 'Atelier feels luxurious from the moment you walk in.', authorName: 'Rana Fahmy', createdAt: '2024-03-01T10:00:00' },
+  {
+    id: 'v5-rv-1',
+    bookingId: 'bk-legacy-11',
+    venueId: 'v5',
+    userId: 'u-guest-11',
+    rating: 5,
+    text: 'Layla did my bridal hair and makeup trial, absolutely stunning work.',
+    photoUrls: ['https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80'],
+    authorName: 'Farida Osman',
+    createdAt: '2024-05-15T10:00:00',
+  },
+  { id: 'v5-rv-2', bookingId: 'bk-legacy-12', venueId: 'v5', userId: 'u-guest-12', rating: 5, text: 'Best balayage I have had in Cairo, worth the drive to Sheikh Zayed.', photoUrls: [], authorName: 'Mariam Adly', createdAt: '2024-04-08T10:00:00' },
+  { id: 'v5-rv-3', bookingId: 'bk-legacy-13', venueId: 'v5', userId: 'u-guest-13', rating: 5, text: 'Atelier feels luxurious from the moment you walk in.', photoUrls: [], authorName: 'Rana Fahmy', createdAt: '2024-03-01T10:00:00' },
 
-  { id: 'st-tarek-rv-1', bookingId: 'bk-legacy-14', venueId: null, stylistId: 'st-tarek', userId: 'u-guest-14', rating: 5, text: 'Showed up on time and gave me the best fade I have had at home.', authorName: 'Hossam Zaki', createdAt: '2024-05-08T10:00:00' },
-  { id: 'st-tarek-rv-2', bookingId: 'bk-legacy-15', venueId: null, stylistId: 'st-tarek', userId: 'u-guest-15', rating: 4, text: 'Great haircut, brought all his own tools and towels.', authorName: 'Fady Nassif', createdAt: '2024-04-01T10:00:00' },
+  {
+    id: 'st-tarek-rv-1',
+    bookingId: 'bk-legacy-14',
+    venueId: null,
+    stylistId: 'st-tarek',
+    userId: 'u-guest-14',
+    rating: 5,
+    text: 'Showed up on time and gave me the best fade I have had at home.',
+    photoUrls: ['https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=600&q=80'],
+    authorName: 'Hossam Zaki',
+    createdAt: '2024-05-08T10:00:00',
+  },
+  { id: 'st-tarek-rv-2', bookingId: 'bk-legacy-15', venueId: null, stylistId: 'st-tarek', userId: 'u-guest-15', rating: 4, text: 'Great haircut, brought all his own tools and towels.', photoUrls: [], authorName: 'Fady Nassif', createdAt: '2024-04-01T10:00:00' },
 
-  { id: 'st-rania-rv-1', bookingId: 'bk-legacy-16', venueId: null, stylistId: 'st-rania', userId: 'u-guest-16', rating: 5, text: 'Rania did my bridal trial and the real thing lasted all night without touch-ups.', authorName: 'Nadine Samir', createdAt: '2024-05-22T10:00:00' },
-  { id: 'st-rania-rv-2', bookingId: 'bk-legacy-17', venueId: null, stylistId: 'st-rania', userId: 'u-guest-17', rating: 5, text: 'Booked her for my engagement party, everyone asked who did my makeup.', authorName: 'Yara Emad', createdAt: '2024-03-19T10:00:00' },
+  { id: 'st-rania-rv-1', bookingId: 'bk-legacy-16', venueId: null, stylistId: 'st-rania', userId: 'u-guest-16', rating: 5, text: 'Rania did my bridal trial and the real thing lasted all night without touch-ups.', photoUrls: [], authorName: 'Nadine Samir', createdAt: '2024-05-22T10:00:00' },
+  { id: 'st-rania-rv-2', bookingId: 'bk-legacy-17', venueId: null, stylistId: 'st-rania', userId: 'u-guest-17', rating: 5, text: 'Booked her for my engagement party, everyone asked who did my makeup.', photoUrls: [], authorName: 'Yara Emad', createdAt: '2024-03-19T10:00:00' },
 
-  { id: 'st-kareem-mobile-rv-1', bookingId: 'bk-legacy-18', venueId: null, stylistId: 'st-kareem-mobile', userId: 'u-guest-18', rating: 5, text: 'Same great fade as in the shop, just at my apartment instead.', authorName: 'Ziad Moustafa', createdAt: '2024-04-25T10:00:00' },
+  { id: 'st-kareem-mobile-rv-1', bookingId: 'bk-legacy-18', venueId: null, stylistId: 'st-kareem-mobile', userId: 'u-guest-18', rating: 5, text: 'Same great fade as in the shop, just at my apartment instead.', photoUrls: [], authorName: 'Ziad Moustafa', createdAt: '2024-04-25T10:00:00' },
 ]
 
 export const currentUser: User = {
@@ -569,6 +619,21 @@ export const bookings: Booking[] = [
     priceEGP: 320,
     createdAt: '2024-04-28T09:00:00',
   },
+  {
+    id: 'bk4',
+    userId: currentUser.id,
+    bookingType: 'salon',
+    venueId: 'v1',
+    staffId: 'v1-kareem',
+    stylistId: null,
+    addressId: null,
+    serviceIds: ['v1-svc-1'],
+    startTime: '2024-05-20T15:00:00',
+    endTime: '2024-05-20T15:40:00',
+    status: 'completed',
+    priceEGP: 350,
+    createdAt: '2024-05-18T09:00:00',
+  },
 ]
 
 export const favorites: Favorite[] = [
@@ -598,14 +663,6 @@ export function getVenueStaff(venueId: string): Staff[] {
 
 export function getVenueServices(venueId: string): Service[] {
   return services.filter((service) => service.venueId === venueId)
-}
-
-export function getVenueReviews(venueId: string): Review[] {
-  return reviews.filter((review) => review.venueId === venueId)
-}
-
-export function getStylistReviews(stylistId: string): Review[] {
-  return reviews.filter((review) => review.stylistId === stylistId)
 }
 
 export function getStylistsByType(type: StylistServiceType): Stylist[] {

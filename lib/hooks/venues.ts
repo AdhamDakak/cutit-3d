@@ -1,4 +1,4 @@
-import { getVenue, getVenueReviews, getVenueServices, getVenueStaff, listVenues, type VenueFilters } from '@/lib/api'
+import { getVenue, getVenueServices, getVenueStaff, listVenues, type VenueFilters } from '@/lib/api'
 import { useAsync } from './useAsync'
 
 export function useVenues(filters?: VenueFilters) {
@@ -29,8 +29,4 @@ export function useVenueStaff(venueId: string | undefined) {
 
 export function useVenueServices(venueId: string | undefined) {
   return useAsync(() => (venueId ? getVenueServices(venueId) : Promise.resolve([])), [venueId])
-}
-
-export function useVenueReviews(venueId: string | undefined) {
-  return useAsync(() => (venueId ? getVenueReviews(venueId) : Promise.resolve([])), [venueId])
 }

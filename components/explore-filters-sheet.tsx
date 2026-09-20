@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import { I18nManager, Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import Slider from '@react-native-community/slider'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
@@ -26,9 +27,14 @@ export const DEFAULT_EXPLORE_FILTERS: ExploreFiltersDraft = {
 
 const CATEGORIES: VenueCategory[] = ['Barbershop', 'Beauty Salon']
 const GENDERS: VenueGender[] = ['Men', 'Women', 'Unisex']
-const PRICE_STEPS = [200, 400, 800]
 const RATING_STEPS = [3.5, 4, 4.5]
 const DISTANCE_STEPS_KM = [2, 5, 10]
+
+const PRICE_MIN = 0
+const PRICE_MAX = 5000
+const PRICE_STEP = 50
+/** Rough width (px) of the value label, for centering it over the thumb without a second layout pass, and for clamping it inside the track at both ends. */
+const PRICE_LABEL_WIDTH = 84
 
 type ExploreFiltersSheetProps = {
   visible: boolean
@@ -42,6 +48,19 @@ export function ExploreFiltersSheet({ visible, initial, onClose, onApply, onRese
   const { t } = useTranslation()
   const colors = useThemeColors()
   const [draft, setDraft] = useState(initial)
+  const [priceTrackWidth, setPriceTrackWidth] = useState(0)
+
+  // The slider always shows a concrete number — "no cap" is represented as
+  // the thumb sitting at the top of the range, matching the common
+  // "$X+" convention, rather than needing a separate null state on the track.
+  const priceValue = draft.priceMax ?? PRICE_MAX
+  const priceLabel = draft.priceMax == null ? t('exploreFilters.priceAny') : t('exploreFilters.priceUpTo', { price: draft.priceMax })
+  const priceRatio = (priceValue - PRICE_MIN) / (PRICE_MAX - PRICE_MIN)
+  // Centered on the thumb, but clamped so the label's own width never pushes
+  // it past either edge of the track — otherwise it runs off-screen right
+  // at the two values (0 and 5000) people are most likely to drag to.
+  const priceLabelMaxOffset = Math.max(priceTrackWidth - PRICE_LABEL_WIDTH, 0)
+  const priceLabelOffset = Math.min(Math.max(priceRatio * priceTrackWidth - PRICE_LABEL_WIDTH / 2, 0), priceLabelMaxOffset)
 
   // Re-seed the draft from whatever's currently active each time the sheet opens.
   useEffect(() => {
@@ -108,17 +127,34 @@ export function ExploreFiltersSheet({ visible, initial, onClose, onApply, onRese
               </View>
             </View>
 
-            <View className="gap-3">
+            <View className="gap-1">
               <Text className="text-sm font-semibold text-stone-900 dark:text-white">{t('exploreFilters.priceLabel')}</Text>
-              <View className="flex-row flex-wrap gap-2">
-                <Pressable onPress={() => setDraft((prev) => ({ ...prev, priceMax: null }))} className={chipClass(draft.priceMax === null)}>
-                  <Text className={chipTextClass(draft.priceMax === null)}>{t('exploreFilters.priceAny')}</Text>
-                </Pressable>
-                {PRICE_STEPS.map((price) => (
-                  <Pressable key={price} onPress={() => setDraft((prev) => ({ ...prev, priceMax: price }))} className={chipClass(draft.priceMax === price)}>
-                    <Text className={chipTextClass(draft.priceMax === price)}>{t('exploreFilters.priceUpTo', { price })}</Text>
-                  </Pressable>
-                ))}
+              <View
+                className="mt-5"
+                onLayout={(e) => setPriceTrackWidth(e.nativeEvent.layout.width)}
+              >
+                <View
+                  className="absolute -top-6 min-w-[84px] items-center rounded-md bg-stone-900 px-2 py-1 dark:bg-blue-600"
+                  style={I18nManager.isRTL ? { right: priceLabelOffset } : { left: priceLabelOffset }}
+                >
+                  <Text numberOfLines={1} className="text-[10px] font-semibold text-white">
+                    {priceLabel}
+                  </Text>
+                </View>
+                <Slider
+                  minimumValue={PRICE_MIN}
+                  maximumValue={PRICE_MAX}
+                  step={PRICE_STEP}
+                  value={priceValue}
+                  onValueChange={(value) => setDraft((prev) => ({ ...prev, priceMax: value >= PRICE_MAX ? null : value }))}
+                  minimumTrackTintColor={colors.accent}
+                  maximumTrackTintColor={colors.border}
+                  thumbTintColor={colors.accent}
+                />
+              </View>
+              <View className="flex-row items-center justify-between">
+                <Text className="text-[10px] text-stone-400 dark:text-zinc-500">EGP {PRICE_MIN}</Text>
+                <Text className="text-[10px] text-stone-400 dark:text-zinc-500">EGP {PRICE_MAX}+</Text>
               </View>
             </View>
 

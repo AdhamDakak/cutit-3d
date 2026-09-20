@@ -252,6 +252,21 @@
     "findASalon": "Find a Salon",
     "emptyPastTitle": "No past bookings yet"
   },
+  "review": {
+    "closeReview": "Close review",
+    "shareExperience": "Share more about your experience (optional)",
+    "starsLabel_one": "{{count}} star",
+    "starsLabel_other": "{{count}} stars",
+    "submit": "Submit Review",
+    "submitting": "Submitting...",
+    "submitError": "Couldn't submit your review. Please try again.",
+    "addPhotos": "Add photos",
+    "maxPhotosHint": "Up to {{count}} photos",
+    "takePhoto": "Take Photo",
+    "chooseFromLibrary": "Choose from Library",
+    "removePhoto": "Remove photo",
+    "viewerClose": "Close photo viewer"
+  },
   "venue": {
     "saveVenue": "Save venue",
     "noPhotoYet": "No photo yet",

@@ -6,10 +6,10 @@ import { Bell, CalendarDays, CalendarX2, Clock3 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { BookingCard } from '@/components/booking-card'
-import { ReviewModal } from '@/components/review-modal'
+import { ReviewModal, type ReviewTarget } from '@/components/review-modal'
 import { getBookingDetails } from '@/lib/api'
 import type { Booking } from '@/lib/data'
-import { useAddresses, useBookings } from '@/lib/hooks'
+import { useAddresses, useBookings, useReviewedBookingIds } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
@@ -25,6 +25,7 @@ export default function BookingsScreen() {
   const router = useRouter()
   const { data: bookings, isLoading: bookingsLoading } = useBookings()
   const { data: addresses } = useAddresses()
+  const { data: reviewedBookingIds } = useReviewedBookingIds()
 
   const myBookings = bookings ?? []
 
@@ -45,6 +46,12 @@ export default function BookingsScreen() {
 
   const reviewBooking = past.find((booking) => booking.id === reviewBookingId)
   const reviewDetails = reviewBooking ? getBookingDetails(reviewBooking, addresses ?? []) : null
+  const reviewTarget: ReviewTarget | null =
+    reviewBooking && reviewBooking.bookingType === 'salon' && reviewBooking.venueId
+      ? { kind: 'venue', id: reviewBooking.venueId, bookingId: reviewBooking.id }
+      : reviewBooking?.stylistId
+        ? { kind: 'stylist', id: reviewBooking.stylistId, bookingId: reviewBooking.id }
+        : null
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
@@ -119,7 +126,14 @@ export default function BookingsScreen() {
           data={past}
           keyExtractor={(booking) => booking.id}
           contentContainerClassName="gap-4 px-5 pb-10 pt-5"
-          renderItem={({ item }) => <BookingCard booking={item} variant="past" onLeaveReview={() => setReviewBookingId(item.id)} />}
+          renderItem={({ item }) => (
+            <BookingCard
+              booking={item}
+              variant="past"
+              onLeaveReview={() => setReviewBookingId(item.id)}
+              hasReviewed={reviewedBookingIds?.has(item.id) ?? false}
+            />
+          )}
           ListEmptyComponent={
             <View className="items-center gap-4 px-4 py-16">
               <View className="size-16 items-center justify-center rounded-full bg-stone-100 dark:bg-zinc-800">
@@ -133,10 +147,10 @@ export default function BookingsScreen() {
 
       <ReviewModal
         visible={reviewBookingId !== null}
+        target={reviewTarget}
         title={t('bookings.howWasVisit')}
         subtitle={reviewDetails?.venue?.name ?? reviewDetails?.stylist?.name}
         onClose={() => setReviewBookingId(null)}
-        onSubmit={() => setReviewBookingId(null)}
       />
     </SafeAreaView>
   )

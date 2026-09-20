@@ -25,9 +25,11 @@ type BookingCardProps = {
   variant: 'upcoming' | 'past'
   /** Past + completed only — opens the shared review modal for this booking. */
   onLeaveReview?: () => void
+  /** Past + completed only — hides "Leave a Review" once a review already exists for this booking. */
+  hasReviewed?: boolean
 }
 
-export function BookingCard({ booking, variant, onLeaveReview }: BookingCardProps) {
+export function BookingCard({ booking, variant, onLeaveReview, hasReviewed }: BookingCardProps) {
   const { t } = useTranslation()
   const router = useRouter()
   const colors = useThemeColors()
@@ -94,9 +96,11 @@ export function BookingCard({ booking, variant, onLeaveReview }: BookingCardProp
           <Pressable onPress={() => router.push('/(tabs)/explore')} className="flex-1 items-center rounded-xl bg-stone-900 py-2.5 dark:bg-blue-600">
             <Text className="text-xs font-semibold text-white">{t('bookings.rebook')}</Text>
           </Pressable>
-          <Pressable onPress={onLeaveReview} className="flex-1 items-center rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
-            <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.leaveReview')}</Text>
-          </Pressable>
+          {!hasReviewed && (
+            <Pressable onPress={onLeaveReview} className="flex-1 items-center rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
+              <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.leaveReview')}</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     )
