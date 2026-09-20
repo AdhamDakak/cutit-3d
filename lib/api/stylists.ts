@@ -11,15 +11,18 @@ import {
 import { delay } from './_internal/delay'
 
 export type ListStylistsParams = {
-  type: StylistServiceType
+  /** Omit to browse across both at-home and events-bridal stylists (Explore's Professionals mode). */
+  type?: StylistServiceType
   gender?: 'male' | 'female'
+  minRating?: number
 }
 
 export async function listStylists(params: ListStylistsParams): Promise<Stylist[]> {
   await delay()
-  const byType = getStylistsByType(params.type)
-  if (!params.gender) return byType
-  return byType.filter((stylist) => stylist.servesGender.includes(params.gender as 'male' | 'female'))
+  let result = params.type ? getStylistsByType(params.type) : stylists
+  if (params.gender) result = result.filter((stylist) => stylist.servesGender.includes(params.gender as 'male' | 'female'))
+  if (params.minRating != null) result = result.filter((stylist) => stylist.rating >= params.minRating!)
+  return result
 }
 
 export async function getStylist(id: string): Promise<Stylist | undefined> {

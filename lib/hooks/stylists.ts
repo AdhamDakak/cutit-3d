@@ -2,7 +2,7 @@ import { getStylist, getStylistReviews, getStylistServices, listStylists, type L
 import { useAsync } from './useAsync'
 
 export function useStylists(params: ListStylistsParams) {
-  return useAsync(() => listStylists(params), [params.type, params.gender])
+  return useAsync(() => listStylists(params), [params.type, params.gender, params.minRating])
 }
 
 export function useStylist(id: string | undefined) {

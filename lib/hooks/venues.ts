@@ -2,7 +2,21 @@ import { getVenue, getVenueReviews, getVenueServices, getVenueStaff, listVenues,
 import { useAsync } from './useAsync'
 
 export function useVenues(filters?: VenueFilters) {
-  return useAsync(() => listVenues(filters), [filters?.gender, filters?.category])
+  return useAsync(
+    () => listVenues(filters),
+    [
+      filters?.query,
+      filters?.gender,
+      filters?.categories?.join(','),
+      filters?.priceMax,
+      filters?.minRating,
+      filters?.location?.latitude,
+      filters?.location?.longitude,
+      filters?.maxDistanceKm,
+      filters?.openNow,
+      filters?.day,
+    ],
+  )
 }
 
 export function useVenue(id: string | undefined) {
