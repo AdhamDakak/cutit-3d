@@ -1,5 +1,6 @@
 import '../global.css'
 import '@/lib/i18n'
+import '@/lib/nativewind-interop'
 
 import { Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces'
 import { Inter_400Regular } from '@expo-google-fonts/inter'
