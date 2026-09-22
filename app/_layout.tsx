@@ -17,8 +17,8 @@ SplashScreen.preventAutoHideAsync()
 
 /**
  * Renders nothing — just watches both readiness signals (fonts + the
- * persisted-language hydration read in AppStateProvider) and hides the
- * native splash once both are ready. Kept as a sibling of <Stack> rather
+ * persisted language/theme hydration read in AppStateProvider) and hides
+ * the native splash once both are ready. Kept as a sibling of <Stack> rather
  * than gating the tree's mount on either signal, since deferring <Stack>'s
  * mount races index.tsx's <Redirect> against React Navigation's own mount
  * handshake (the exact bug fixed earlier when the fonts gate was removed).

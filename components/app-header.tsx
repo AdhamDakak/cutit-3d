@@ -1,5 +1,4 @@
 import { Pressable, Text, View } from 'react-native'
-import { useColorScheme } from 'nativewind'
 import { useRouter } from 'expo-router'
 import { Bell, ChevronRight, MapPin, Menu, Moon, Sun } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
@@ -10,11 +9,10 @@ import { useThemeColors } from '@/lib/theme'
 
 export function AppHeader() {
   const { t } = useTranslation()
-  const { colorScheme, toggleColorScheme } = useColorScheme()
-  const { isSignedIn, signIn, signOut } = useAppState()
+  const { isSignedIn, signIn, signOut, theme, toggleTheme } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
-  const isDark = colorScheme === 'dark'
+  const isDark = theme === 'dark'
 
   return (
     <View className="border-b border-stone-200/70 bg-[#f7f5f1]/95 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950/95">
@@ -22,7 +20,7 @@ export function AppHeader() {
         <Logo />
         <View className="flex-row items-center gap-1">
           <Pressable
-            onPress={toggleColorScheme}
+            onPress={toggleTheme}
             accessibilityLabel={t('home.toggleDarkMode')}
             className="size-9 items-center justify-center rounded-full active:opacity-80 dark:bg-zinc-800"
           >

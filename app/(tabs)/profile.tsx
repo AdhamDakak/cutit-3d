@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { useColorScheme } from 'nativewind'
 import {
   Bell,
   Check,
@@ -43,11 +42,10 @@ const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
 
 export default function ProfileScreen() {
   const { t } = useTranslation()
-  const { activeGender, setActiveGender, signOut, language, setLanguage } = useAppState()
-  const { colorScheme, toggleColorScheme } = useColorScheme()
+  const { activeGender, setActiveGender, signOut, language, setLanguage, theme, toggleTheme } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
-  const isDark = colorScheme === 'dark'
+  const isDark = theme === 'dark'
   const [reminders, setReminders] = useState(true)
   const [offers, setOffers] = useState(false)
   const { data: user } = useCurrentUser()
@@ -170,7 +168,7 @@ export default function ProfileScreen() {
         <View>
           <Text className={labelClass}>{t('profile.preferences')}</Text>
           <View className={sectionClass}>
-            <ToggleRow icon={isDark ? Moon : Sun} label={t('profile.darkMode')} checked={isDark} onChange={toggleColorScheme} />
+            <ToggleRow icon={isDark ? Moon : Sun} label={t('profile.darkMode')} checked={isDark} onChange={toggleTheme} />
             <View className="min-h-14 flex-row items-center gap-3 border-b border-stone-100 px-4 py-3 dark:border-zinc-800">
               <Languages size={16} color={colors.mutedStrong} />
               <Text className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{t('profile.language')}</Text>

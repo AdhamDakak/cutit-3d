@@ -24,9 +24,8 @@ export async function listSlots(params: ListSlotsParams): Promise<(TimeSlot | St
   await delay()
 
   if (params.stylistId) {
-    const bookingsList = params.excludeBookingId
-      ? getBookingsSnapshot().filter((booking) => booking.id !== params.excludeBookingId)
-      : getBookingsSnapshot()
+    const snapshot = await getBookingsSnapshot()
+    const bookingsList = params.excludeBookingId ? snapshot.filter((booking) => booking.id !== params.excludeBookingId) : snapshot
     return generateStylistTimeSlots({
       stylistId: params.stylistId,
       durationMinutes: params.durationMinutes ?? 30,
