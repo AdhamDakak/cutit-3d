@@ -137,8 +137,6 @@ export type Booking = {
   stylistId: string | null
   addressId: string | null
   travelFeeEGP?: number
-  /** events-bridal only. */
-  eventDate?: string
   /** events-bridal only — venue name, guest count, etc., freeform for now. */
   eventNotes?: string
   // Shared:

@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
+import Animated from 'react-native-reanimated'
 import { ChevronDown, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { useSheetDismissGesture } from '@/components/useSheetDismissGesture'
 import { useThemeColors } from '@/lib/theme'
 
 export type CountryCode = { name: string; code: string; flag: string }
@@ -25,6 +28,7 @@ export function CountryCodePicker({ value, onChange }: { value: CountryCode; onC
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const colors = useThemeColors()
+  const { panGesture, animatedStyle } = useSheetDismissGesture(open, () => setOpen(false))
 
   return (
     <>
@@ -40,36 +44,42 @@ export function CountryCodePicker({ value, onChange }: { value: CountryCode; onC
       </Pressable>
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <View className="flex-1 justify-end bg-black/40 p-4">
-          <View className="max-h-[70%] w-full rounded-2xl bg-white p-5 dark:bg-zinc-900">
-            <View className="flex-row items-center justify-between">
-              <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('auth.countryCodeTitle')}</Text>
-              <Pressable accessibilityLabel={t('common.close')} onPress={() => setOpen(false)}>
-                <X size={18} color={colors.muted} />
-              </Pressable>
-            </View>
-            <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
-              {COUNTRY_CODES.map((country) => {
-                const selected = value.code === country.code && value.name === country.name
-                return (
-                  <Pressable
-                    key={`${country.code}-${country.name}`}
-                    onPress={() => {
-                      onChange(country)
-                      setOpen(false)
-                    }}
-                    className={`flex-row items-center justify-between rounded-xl px-3 py-3 ${selected ? 'bg-stone-100 dark:bg-zinc-800' : ''}`}
-                  >
-                    <Text className="text-sm text-stone-900 dark:text-white">
-                      {country.flag}  {country.name}
-                    </Text>
-                    <Text className="text-sm text-stone-500 dark:text-zinc-400">{country.code}</Text>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View className="flex-1 justify-end bg-black/40 p-4">
+            <Animated.View style={animatedStyle}>
+              <View className="max-h-[70%] w-full rounded-2xl bg-white p-5 dark:bg-zinc-900">
+                <GestureDetector gesture={panGesture}>
+                  <View className="flex-row items-center justify-between">
+                    <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('auth.countryCodeTitle')}</Text>
+                    <Pressable accessibilityLabel={t('common.close')} onPress={() => setOpen(false)}>
+                      <X size={18} color={colors.muted} />
+                    </Pressable>
+                  </View>
+                </GestureDetector>
+                <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
+                  {COUNTRY_CODES.map((country) => {
+                    const selected = value.code === country.code && value.name === country.name
+                    return (
+                      <Pressable
+                        key={`${country.code}-${country.name}`}
+                        onPress={() => {
+                          onChange(country)
+                          setOpen(false)
+                        }}
+                        className={`flex-row items-center justify-between rounded-xl px-3 py-3 ${selected ? 'bg-stone-100 dark:bg-zinc-800' : ''}`}
+                      >
+                        <Text className="text-sm text-stone-900 dark:text-white">
+                          {country.flag}  {country.name}
+                        </Text>
+                        <Text className="text-sm text-stone-500 dark:text-zinc-400">{country.code}</Text>
+                      </Pressable>
+                    )
+                  })}
+                </ScrollView>
+              </View>
+            </Animated.View>
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
     </>
   )

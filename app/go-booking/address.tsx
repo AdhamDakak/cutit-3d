@@ -17,7 +17,7 @@ export default function GoBookingAddressScreen() {
   const { stylistId, type } = useLocalSearchParams<{ stylistId: string; type: StylistServiceType }>()
   const { data: addresses } = useAddresses()
   const { mutate: addAddress } = useAddAddress()
-  const { addressId, setAddressId, eventDate, setEventDate, eventNotes, setEventNotes } = useGoBookingDraft()
+  const { addressId, setAddressId, eventNotes, setEventNotes } = useGoBookingDraft()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
   const [showAddForm, setShowAddForm] = useState(false)
@@ -121,16 +121,6 @@ export default function GoBookingAddressScreen() {
 
         {isEvents && (
           <View className="mt-4 gap-3">
-            <View>
-              <Text className="mb-1.5 text-sm font-medium text-stone-700 dark:text-zinc-200">{t('goBooking.eventDateLabel')}</Text>
-              <TextInput
-                value={eventDate}
-                onChangeText={setEventDate}
-                placeholder={t('goBooking.eventDatePlaceholder')}
-                placeholderTextColor={colors.muted}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-              />
-            </View>
             <View>
               <Text className="mb-1.5 text-sm font-medium text-stone-700 dark:text-zinc-200">{t('goBooking.eventNotesLabel')}</Text>
               <TextInput

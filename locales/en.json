@@ -91,8 +91,6 @@
     "addressAreaPlaceholder": "Area / neighborhood",
     "addressDetailsPlaceholder": "Street, building, floor...",
     "saveAddress": "Save Address",
-    "eventDateLabel": "Event date (optional)",
-    "eventDatePlaceholder": "e.g. 25 Dec 2026",
     "eventNotesLabel": "Event notes (optional)",
     "eventNotesPlaceholder": "Venue name, number of guests...",
     "reviewStepTitle": "Review & Confirm",

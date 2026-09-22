@@ -24,7 +24,7 @@ export default function GoBookingReviewScreen() {
   const { data: stylist, isLoading: stylistLoading, error: stylistError, refetch: refetchStylist } = useStylist(stylistId)
   const { data: stylistServicesData, isLoading: servicesLoading, error: servicesError, refetch: refetchServices } = useStylistServices(stylistId)
   const { mutate: createBooking, isPending: isConfirming, error: confirmError } = useCreateBooking()
-  const { selectedServiceIds, addressId, eventDate, eventNotes, selectedTime } = useGoBookingDraft()
+  const { selectedServiceIds, addressId, eventNotes, selectedTime } = useGoBookingDraft()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
   const { isSignedIn } = useAppState()
   const [authOpen, setAuthOpen] = useState(false)
@@ -57,7 +57,6 @@ export default function GoBookingReviewScreen() {
       stylistId: stylist.id,
       addressId: address.id,
       travelFeeEGP: travelFee,
-      eventDate: isEvents && eventDate.trim() ? eventDate.trim() : undefined,
       eventNotes: isEvents && eventNotes.trim() ? eventNotes.trim() : undefined,
       serviceIds: Array.from(selectedServiceIds),
       startTime: selectedTime,
@@ -133,9 +132,6 @@ export default function GoBookingReviewScreen() {
               <Text className="text-sm text-stone-700 dark:text-zinc-200">
                 {address?.label} — {address?.area}, {address?.details}
               </Text>
-              {isEvents && eventDate.trim() ? (
-                <Text className="mt-2 text-sm text-stone-500 dark:text-zinc-400">{t('goBooking.eventDateLabel')}: {eventDate}</Text>
-              ) : null}
               {isEvents && eventNotes.trim() ? (
                 <Text className="mt-1 text-sm text-stone-500 dark:text-zinc-400">{eventNotes}</Text>
               ) : null}

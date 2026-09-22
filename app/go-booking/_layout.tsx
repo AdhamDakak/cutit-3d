@@ -6,8 +6,6 @@ type GoBookingDraft = {
   toggleService: (id: string) => void
   addressId: string | null
   setAddressId: (id: string) => void
-  eventDate: string
-  setEventDate: (date: string) => void
   eventNotes: string
   setEventNotes: (notes: string) => void
   selectedDate: Date | null
@@ -33,7 +31,6 @@ export function useGoBookingDraft() {
 function GoBookingDraftProvider({ children }: { children: ReactNode }) {
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
   const [addressId, setAddressId] = useState<string | null>(null)
-  const [eventDate, setEventDate] = useState('')
   const [eventNotes, setEventNotes] = useState('')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
@@ -52,8 +49,6 @@ function GoBookingDraftProvider({ children }: { children: ReactNode }) {
     toggleService,
     addressId,
     setAddressId,
-    eventDate,
-    setEventDate,
     eventNotes,
     setEventNotes,
     selectedDate,
