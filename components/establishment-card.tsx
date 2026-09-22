@@ -31,7 +31,7 @@ export function EstablishmentCard({ establishment, onPress }: { establishment: V
         <View className="absolute inset-x-0 top-0 flex-row items-center justify-between p-2.5">
           <View className={`rounded-full px-2 py-1 ${isOpen ? 'bg-white/95' : 'bg-stone-900/75'}`}>
             <Text className={`text-[10px] font-semibold ${isOpen ? 'text-emerald-700' : 'text-white'}`}>
-              {isOpen ? 'Open' : 'Closed'}
+              {t(isOpen ? 'venue.openBadge' : 'venue.closedBadge')}
             </Text>
           </View>
           <View className="rounded-full bg-stone-950/65 px-2 py-1">
@@ -78,17 +78,17 @@ export function EstablishmentCard({ establishment, onPress }: { establishment: V
           )}
           <View className="ml-auto flex-row items-center gap-1 rounded-full border border-stone-200 px-2 py-0.5 dark:border-zinc-700">
             <Home size={10} color={colors.muted} />
-            <Text className="text-[10px] text-stone-500 dark:text-zinc-400">At Salon</Text>
+            <Text className="text-[10px] text-stone-500 dark:text-zinc-400">{t('venue.atSalon')}</Text>
           </View>
         </View>
 
         <View className="flex-row items-center justify-between gap-2 border-t border-stone-100 pt-2 dark:border-zinc-800">
           <View>
-            <Text className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500">From</Text>
-            <Text className="mt-0.5 text-xs font-semibold text-stone-900 dark:text-white">EGP {startingPrice}</Text>
+            <Text className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500">{t('venue.from')}</Text>
+            <Text className="mt-0.5 text-xs font-semibold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: startingPrice })}</Text>
           </View>
           <Pressable onPress={onPress} className="rounded-lg bg-stone-900 px-3 py-2 active:opacity-90 dark:bg-blue-600">
-            <Text className="text-xs font-semibold text-white">Book</Text>
+            <Text className="text-xs font-semibold text-white">{t('venue.book')}</Text>
           </Pressable>
         </View>
       </View>

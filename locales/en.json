@@ -46,7 +46,9 @@
     "verifyContinue": "Verify & Continue",
     "createProfileTitle": "Create your profile",
     "fullNamePlaceholder": "Full name",
-    "emailPlaceholder": "Email address (optional)"
+    "emailPlaceholder": "Email address (optional)",
+    "chooseCountryCode": "Choose country code",
+    "countryCodeTitle": "Country code"
   },
   "menu": {
     "title": "Menu",
@@ -101,6 +103,7 @@
     "title": "Booking Confirmed",
     "subtitle": "You're all set — we'll see you soon.",
     "addToCalendar": "Add to Calendar",
+    "comingSoon": "Coming soon",
     "viewInBookings": "View in Bookings",
     "notFound": "This booking couldn't be found."
   },
@@ -176,7 +179,17 @@
     "nearYou": "Near you",
     "emptyTitle": "Nothing found in Cairo",
     "emptyBody": "No salons or barbershops found matching your search in Cairo.",
-    "resetFilters": "Reset filters"
+    "resetFilters": "Reset filters",
+    "toggleDarkMode": "Toggle dark mode",
+    "notifications": "Notifications",
+    "openMenu": "Open menu",
+    "discoverIn": "Discover in",
+    "cairoEgypt": "Cairo, Egypt",
+    "toggleSignedInProfile": "Toggle signed in recommendation profile",
+    "smartPicks": "Smart picks",
+    "recommendedForYou": "Recommended for You",
+    "basedOnProfile": "Based on your profile",
+    "exploreBoth": "Explore both"
   },
   "explore": {
     "allTreatments": "All treatments",
@@ -279,6 +292,12 @@
     "searchServices": "Search services",
     "minutesShort": "{{count}} min",
     "priceEGP": "EGP {{price}}",
+    "fromPriceEGP": "From EGP {{price}}",
+    "openBadge": "Open",
+    "closedBadge": "Closed",
+    "atSalon": "At Salon",
+    "from": "From",
+    "book": "Book",
     "selectDate": "Select Date",
     "selectTime": "Select Time",
     "noAvailability": "No availability this day.",
@@ -314,6 +333,7 @@
     "paymentWallet": "Payment & wallet",
     "wallet": "CUTIT Wallet",
     "availableBalance": "Available balance",
+    "topUpWallet": "Top up wallet",
     "savedCards": "Saved cards",
     "defaultPayment": "Default payment",
     "preferences": "Preferences",

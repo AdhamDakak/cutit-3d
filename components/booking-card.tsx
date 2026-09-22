@@ -160,7 +160,7 @@ export function BookingCard({ booking, variant, onLeaveReview, hasReviewed }: Bo
             </Text>
           )}
           <Text numberOfLines={1} className="mt-1 text-xs text-stone-500 dark:text-zinc-400">
-            {serviceNames} · EGP {details.priceEGP}
+            {serviceNames} · {t('venue.priceEGP', { price: details.priceEGP })}
           </Text>
         </View>
       </View>

@@ -157,8 +157,8 @@ export default function ProfileScreen() {
                 <Text className="text-sm font-semibold text-stone-900 dark:text-white">{t('profile.wallet')}</Text>
                 <Text className="text-xs text-stone-500 dark:text-zinc-400">{t('profile.availableBalance')}</Text>
               </View>
-              <Text className="text-sm font-bold text-stone-900 dark:text-white">EGP 350</Text>
-              <Pressable accessibilityLabel="Top up wallet" className="size-7 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950">
+              <Text className="text-sm font-bold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: 350 })}</Text>
+              <Pressable accessibilityLabel={t('profile.topUpWallet')} className="size-7 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950">
                 <Plus size={16} color="#2563eb" />
               </Pressable>
             </View>

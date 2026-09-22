@@ -46,7 +46,9 @@
     "verifyContinue": "تحقق ومتابعة",
     "createProfileTitle": "أنشئ ملفك الشخصي",
     "fullNamePlaceholder": "الاسم الكامل",
-    "emailPlaceholder": "البريد الإلكتروني (اختياري)"
+    "emailPlaceholder": "البريد الإلكتروني (اختياري)",
+    "chooseCountryCode": "اختر رمز الدولة",
+    "countryCodeTitle": "رمز الدولة"
   },
   "menu": {
     "title": "القائمة",
@@ -101,6 +103,7 @@
     "title": "تم تأكيد الحجز",
     "subtitle": "كل شيء جاهز — نراك قريباً.",
     "addToCalendar": "إضافة إلى التقويم",
+    "comingSoon": "قريباً",
     "viewInBookings": "عرض في الحجوزات",
     "notFound": "تعذر العثور على هذا الحجز."
   },
@@ -176,7 +179,17 @@
     "nearYou": "بالقرب منك",
     "emptyTitle": "لا توجد نتائج في القاهرة",
     "emptyBody": "لم يتم العثور على صالونات أو حلاقين مطابقين لبحثك في القاهرة.",
-    "resetFilters": "إعادة ضبط الفلاتر"
+    "resetFilters": "إعادة ضبط الفلاتر",
+    "toggleDarkMode": "تبديل الوضع الداكن",
+    "notifications": "الإشعارات",
+    "openMenu": "فتح القائمة",
+    "discoverIn": "اكتشف في",
+    "cairoEgypt": "القاهرة، مصر",
+    "toggleSignedInProfile": "تبديل ملف التوصيات",
+    "smartPicks": "اختيارات ذكية",
+    "recommendedForYou": "موصى به لك",
+    "basedOnProfile": "بناءً على ملفك الشخصي",
+    "exploreBoth": "استكشف الاثنين"
   },
   "explore": {
     "allTreatments": "جميع الخدمات",
@@ -279,6 +292,12 @@
     "searchServices": "ابحث عن الخدمات",
     "minutesShort": "{{count}} دقيقة",
     "priceEGP": "{{price}} جنيه",
+    "fromPriceEGP": "يبدأ من {{price}} جنيه",
+    "openBadge": "مفتوح",
+    "closedBadge": "مغلق",
+    "atSalon": "في الصالون",
+    "from": "يبدأ من",
+    "book": "احجز",
     "selectDate": "اختر التاريخ",
     "selectTime": "اختر الوقت",
     "noAvailability": "لا توجد مواعيد متاحة هذا اليوم.",
@@ -314,6 +333,7 @@
     "paymentWallet": "الدفع والمحفظة",
     "wallet": "محفظة كتِت",
     "availableBalance": "الرصيد المتاح",
+    "topUpWallet": "شحن المحفظة",
     "savedCards": "البطاقات المحفوظة",
     "defaultPayment": "طريقة الدفع الافتراضية",
     "preferences": "التفضيلات",

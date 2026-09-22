@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -119,11 +119,20 @@ export default function ExploreScreen() {
     () => [t('explore.dayAnyDay'), t('explore.dayToday'), t('explore.dayTomorrow'), ...buildDayPills(i18n.language)],
     [t, i18n.language],
   )
+  const bottomSheetRef = useRef<BottomSheet>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mode, setMode] = useState<'Venues' | 'Professionals'>('Venues')
   const [selectedDay, setSelectedDay] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [timeWindowOpen, setTimeWindowOpen] = useState(false)
+
+  // Switching Venues <-> Professionals swaps the whole list underneath the
+  // sheet — reset to the 50% snap point so the new list isn't left collapsed
+  // (or covering the map) at whatever position the previous list was at.
+  const handleModeChange = (next: 'Venues' | 'Professionals') => {
+    setMode(next)
+    bottomSheetRef.current?.snapToIndex(1)
+  }
 
   const { searchInput, setSearchInput, debouncedQuery, draft, setDraft, timeWindow, setTimeWindow, activeCount } = useExploreFilters()
 
@@ -231,7 +240,7 @@ export default function ExploreScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row items-center gap-2">
               {(['Venues', 'Professionals'] as const).map((item) => (
-                <Pressable key={item} onPress={() => setMode(item)} className={pillClass(mode === item)}>
+                <Pressable key={item} onPress={() => handleModeChange(item)} className={pillClass(mode === item)}>
                   <Text className={pillTextClass(mode === item)}>{item === 'Venues' ? t('explore.modeVenues') : t('explore.modeProfessionals')}</Text>
                 </Pressable>
               ))}
@@ -274,6 +283,7 @@ export default function ExploreScreen() {
       </SafeAreaView>
 
       <BottomSheet
+        ref={bottomSheetRef}
         index={1}
         snapPoints={SNAP_POINTS}
         enablePanDownToClose={false}

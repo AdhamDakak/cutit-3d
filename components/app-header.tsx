@@ -2,12 +2,14 @@ import { Pressable, Text, View } from 'react-native'
 import { useColorScheme } from 'nativewind'
 import { useRouter } from 'expo-router'
 import { Bell, ChevronRight, MapPin, Menu, Moon, Sun } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 import { Logo } from '@/components/logo'
 import { useAppState } from '@/lib/app-state'
 import { useThemeColors } from '@/lib/theme'
 
 export function AppHeader() {
+  const { t } = useTranslation()
   const { colorScheme, toggleColorScheme } = useColorScheme()
   const { isSignedIn, signIn, signOut } = useAppState()
   const colors = useThemeColors()
@@ -21,17 +23,17 @@ export function AppHeader() {
         <View className="flex-row items-center gap-1">
           <Pressable
             onPress={toggleColorScheme}
-            accessibilityLabel="Toggle dark mode"
+            accessibilityLabel={t('home.toggleDarkMode')}
             className="size-9 items-center justify-center rounded-full active:opacity-80 dark:bg-zinc-800"
           >
             {isDark ? <Sun size={16} color="#facc15" /> : <Moon size={16} color={colors.muted} />}
           </Pressable>
-          <Pressable accessibilityLabel="Notifications" className="size-9 items-center justify-center rounded-full active:opacity-80">
+          <Pressable accessibilityLabel={t('home.notifications')} className="size-9 items-center justify-center rounded-full active:opacity-80">
             <Bell size={16} color={colors.muted} />
           </Pressable>
           <Pressable
             onPress={() => router.push('/menu')}
-            accessibilityLabel="Open menu"
+            accessibilityLabel={t('home.openMenu')}
             className="size-9 items-center justify-center rounded-full active:opacity-80"
           >
             <Menu size={16} color={colors.muted} />
@@ -41,16 +43,16 @@ export function AppHeader() {
 
       <View className="mt-5 flex-row items-center justify-between">
         <View>
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">Discover in</Text>
+          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('home.discoverIn')}</Text>
           <Pressable className="mt-1 flex-row items-center gap-1.5">
             <MapPin size={14} color={colors.foreground} />
-            <Text className="text-sm font-semibold text-stone-900 dark:text-white">Cairo, Egypt</Text>
+            <Text className="text-sm font-semibold text-stone-900 dark:text-white">{t('home.cairoEgypt')}</Text>
             <ChevronRight size={14} color={colors.muted} />
           </Pressable>
         </View>
         <Pressable
           onPress={() => (isSignedIn ? signOut() : signIn())}
-          accessibilityLabel="Toggle signed in recommendation profile"
+          accessibilityLabel={t('home.toggleSignedInProfile')}
           className="size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800"
         >
           <Text className="text-sm font-semibold text-stone-900 dark:text-white">{isSignedIn ? 'AN' : 'G'}</Text>

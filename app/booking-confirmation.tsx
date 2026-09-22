@@ -127,13 +127,16 @@ export default function BookingConfirmationScreen() {
       </ScrollView>
 
       <View className="gap-3 border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <Pressable
-          onPress={() => {}}
-          className="flex-row items-center justify-center gap-2 rounded-xl border border-stone-300 py-3.5 dark:border-zinc-700"
-        >
-          <CalendarCheck size={18} color={colors.foreground} />
-          <Text className="font-semibold text-stone-900 dark:text-white">{t('bookingConfirmation.addToCalendar')}</Text>
-        </Pressable>
+        <View>
+          <Pressable
+            disabled
+            className="flex-row items-center justify-center gap-2 rounded-xl border border-stone-300 py-3.5 opacity-50 dark:border-zinc-700"
+          >
+            <CalendarCheck size={18} color={colors.muted} />
+            <Text className="font-semibold text-stone-500 dark:text-zinc-400">{t('bookingConfirmation.addToCalendar')}</Text>
+          </Pressable>
+          <Text className="mt-1.5 text-center text-xs text-stone-400 dark:text-zinc-500">{t('bookingConfirmation.comingSoon')}</Text>
+        </View>
         <Pressable onPress={goToBookings} className="items-center rounded-xl bg-blue-600 py-3.5">
           <Text className="font-semibold text-white">{t('bookingConfirmation.viewInBookings')}</Text>
         </Pressable>

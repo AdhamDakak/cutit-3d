@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native'
 import { ChevronDown, X } from 'lucide-react-native'
+import { useTranslation } from 'react-i18next'
 
 import { useThemeColors } from '@/lib/theme'
 
@@ -21,6 +22,7 @@ export const COUNTRY_CODES: CountryCode[] = [
 ]
 
 export function CountryCodePicker({ value, onChange }: { value: CountryCode; onChange: (country: CountryCode) => void }) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const colors = useThemeColors()
 
@@ -28,7 +30,7 @@ export function CountryCodePicker({ value, onChange }: { value: CountryCode; onC
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        accessibilityLabel="Choose country code"
+        accessibilityLabel={t('auth.chooseCountryCode')}
         className="flex-row items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-3 dark:border-zinc-700 dark:bg-zinc-900"
       >
         <Text className="text-sm text-stone-900 dark:text-white">
@@ -41,8 +43,8 @@ export function CountryCodePicker({ value, onChange }: { value: CountryCode; onC
         <View className="flex-1 justify-end bg-black/40 p-4">
           <View className="max-h-[70%] w-full rounded-2xl bg-white p-5 dark:bg-zinc-900">
             <View className="flex-row items-center justify-between">
-              <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">Country code</Text>
-              <Pressable accessibilityLabel="Close" onPress={() => setOpen(false)}>
+              <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('auth.countryCodeTitle')}</Text>
+              <Pressable accessibilityLabel={t('common.close')} onPress={() => setOpen(false)}>
                 <X size={18} color={colors.muted} />
               </Pressable>
             </View>

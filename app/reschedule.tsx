@@ -9,6 +9,8 @@ import { ANY_STAFF_ID, getBookingDetails, type ListSlotsParams } from '@/lib/api
 import { useAddresses, useBooking, useRescheduleBooking, useSlots } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
+const SLOT_SKELETON_KEYS = ['s1', 's2', 's3', 's4', 's5', 's6']
+
 export default function RescheduleScreen() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
@@ -58,7 +60,7 @@ export default function RescheduleScreen() {
           }
         : null
 
-  const { data: daySlots = [] } = useSlots(slotsParams)
+  const { data: daySlots = [], isLoading: slotsLoading, error: slotsError, refetch: refetchSlots } = useSlots(slotsParams)
 
   if (!booking || !details) {
     return (
@@ -145,30 +147,47 @@ export default function RescheduleScreen() {
 
         <View className="gap-2">
           <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectTime')}</Text>
-          {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.noAvailability')}</Text>}
-          <View className="flex-row flex-wrap gap-2">
-            {daySlots.map((slot) => {
-              const active = selectedTime === slot.startTime
-              const disabled = slot.status !== 'available'
-              const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              return (
-                <Pressable
-                  key={slot.id}
-                  disabled={disabled}
-                  onPress={() => setSelectedTime(slot.startTime)}
-                  className={`min-w-[70px] items-center rounded-lg border py-2 ${
-                    active
-                      ? 'border-transparent bg-stone-900 dark:bg-blue-600'
-                      : disabled
-                        ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
-                        : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
-                  }`}
-                >
-                  <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
-                </Pressable>
-              )
-            })}
-          </View>
+          {slotsLoading ? (
+            <View className="flex-row flex-wrap gap-2">
+              {SLOT_SKELETON_KEYS.map((key) => (
+                <View key={key} className="h-9 w-[70px] rounded-lg bg-stone-100 dark:bg-zinc-800" />
+              ))}
+            </View>
+          ) : slotsError ? (
+            <View className="items-center gap-2 py-2">
+              <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.somethingWentWrong')}</Text>
+              <Pressable onPress={refetchSlots} className="rounded-lg bg-stone-900 px-4 py-2 dark:bg-blue-600">
+                <Text className="text-xs font-semibold text-white">{t('common.retry')}</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.noAvailability')}</Text>}
+              <View className="flex-row flex-wrap gap-2">
+                {daySlots.map((slot) => {
+                  const active = selectedTime === slot.startTime
+                  const disabled = slot.status !== 'available'
+                  const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  return (
+                    <Pressable
+                      key={slot.id}
+                      disabled={disabled}
+                      onPress={() => setSelectedTime(slot.startTime)}
+                      className={`min-w-[70px] items-center rounded-lg border py-2 ${
+                        active
+                          ? 'border-transparent bg-stone-900 dark:bg-blue-600'
+                          : disabled
+                            ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
+                            : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
+                      }`}
+                    >
+                      <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
 

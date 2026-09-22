@@ -153,8 +153,8 @@ export function ExploreFiltersSheet({ visible, initial, onClose, onApply, onRese
                 />
               </View>
               <View className="flex-row items-center justify-between">
-                <Text className="text-[10px] text-stone-400 dark:text-zinc-500">EGP {PRICE_MIN}</Text>
-                <Text className="text-[10px] text-stone-400 dark:text-zinc-500">EGP {PRICE_MAX}+</Text>
+                <Text className="text-[10px] text-stone-400 dark:text-zinc-500">{t('venue.priceEGP', { price: PRICE_MIN })}</Text>
+                <Text className="text-[10px] text-stone-400 dark:text-zinc-500">{t('venue.priceEGP', { price: PRICE_MAX })}+</Text>
               </View>
             </View>
 

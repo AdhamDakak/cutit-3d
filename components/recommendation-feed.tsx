@@ -2,6 +2,7 @@ import { Image } from 'expo-image'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { Star } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 
 import { getVenueStartingPrice } from '@/lib/api'
 import type { Gender } from '@/lib/app-state'
@@ -17,6 +18,7 @@ export function RecommendationFeed({
   signedIn: boolean
   gender: Gender
 }) {
+  const { t } = useTranslation()
   const colors = useThemeColors()
   const router = useRouter()
   const recommendations = establishments.filter(
@@ -27,10 +29,10 @@ export function RecommendationFeed({
     <View className="px-5 pt-7">
       <View className="mb-4 flex-row items-end justify-between">
         <View>
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">Smart picks</Text>
-          <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">Recommended for You</Text>
+          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('home.smartPicks')}</Text>
+          <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('home.recommendedForYou')}</Text>
         </View>
-        <Text className="text-xs text-stone-400 dark:text-zinc-500">{signedIn ? 'Based on your profile' : 'Explore both'}</Text>
+        <Text className="text-xs text-stone-400 dark:text-zinc-500">{t(signedIn ? 'home.basedOnProfile' : 'home.exploreBoth')}</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-3 pb-1">
@@ -52,7 +54,7 @@ export function RecommendationFeed({
                   </View>
                 </View>
                 <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">
-                  {item.area} · From EGP {getVenueStartingPrice(item.id)}
+                  {item.area} · {t('venue.fromPriceEGP', { price: getVenueStartingPrice(item.id) })}
                 </Text>
                 <View className="mt-2 flex-row items-center gap-1">
                   <View className="rounded-full bg-stone-100 px-2 py-1 dark:bg-zinc-800">
@@ -62,7 +64,7 @@ export function RecommendationFeed({
                     onPress={() => router.push(`/venue/${item.id}`)}
                     className="ml-auto rounded-lg bg-stone-900 px-2.5 py-1.5 active:opacity-90 dark:bg-blue-600"
                   >
-                    <Text className="text-[10px] font-semibold text-white">Book</Text>
+                    <Text className="text-[10px] font-semibold text-white">{t('venue.book')}</Text>
                   </Pressable>
                 </View>
               </View>
