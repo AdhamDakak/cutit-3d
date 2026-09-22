@@ -34,7 +34,7 @@ export function PhoneStep({ country, onCountryChange, phone, onPhoneChange, onSu
           onChangeText={onPhoneChange}
           keyboardType="phone-pad"
           placeholder={t('auth.phonePlaceholder')}
-          style={{ writingDirection: 'ltr', textAlign: 'left' }}
+          style={{ writingDirection: 'ltr', textAlign: 'left', textAlignVertical: 'center' }}
           className="flex-1 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
         />
       </View>

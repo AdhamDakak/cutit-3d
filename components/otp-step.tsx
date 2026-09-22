@@ -65,7 +65,7 @@ export function OtpStep({ countryCode, phone, onComplete, isPending, title }: Ot
             onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
             keyboardType="number-pad"
             maxLength={1}
-            style={{ textAlign: 'center' }}
+            style={{ textAlign: 'center', textAlignVertical: 'center' }}
             className="h-14 w-12 rounded-xl border border-stone-200 bg-white text-lg font-semibold text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
           />
         ))}

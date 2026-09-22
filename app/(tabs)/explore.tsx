@@ -215,6 +215,7 @@ export default function ExploreScreen() {
                 onChangeText={setSearchInput}
                 placeholder={t('home.searchPlaceholder')}
                 placeholderTextColor={colors.muted}
+                textAlignVertical="center"
                 className="min-w-0 flex-1 text-sm text-stone-900 dark:text-white"
               />
               {searchInput.length > 0 && (

@@ -132,6 +132,7 @@ export function ReviewModal({
                   placeholder={t('review.shareExperience')}
                   placeholderTextColor={colors.muted}
                   multiline
+                  textAlignVertical="top"
                   className="min-h-24 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                 />
 

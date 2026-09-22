@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -67,26 +67,28 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] px-5 dark:bg-zinc-950" edges={['top', 'bottom']}>
-      <View className="mx-auto w-full max-w-md flex-1 pb-28 pt-6">
-        <Logo />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View className="mx-auto w-full max-w-md flex-1 pb-28 pt-6">
+          <Logo />
 
-        <View className="mt-16">
-          {step === 'phone' && (
-            <PhoneStep country={country} onCountryChange={setCountry} phone={phone} onPhoneChange={setPhone} onSubmit={handlePhone} isPending={requestOtp.isPending} />
-          )}
-          {step === 'otp' && <OtpStep countryCode={country.code} phone={phone} onComplete={handleOtp} isPending={verifyOtp.isPending} />}
-          {step === 'profile' && (
-            <ProfileStep name={name} onNameChange={setName} email={email} onEmailChange={setEmail} onSubmit={handleProfile} isPending={completeProfile.isPending} />
-          )}
-          {error ? <Text className="mt-3 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
+          <View className="mt-16">
+            {step === 'phone' && (
+              <PhoneStep country={country} onCountryChange={setCountry} phone={phone} onPhoneChange={setPhone} onSubmit={handlePhone} isPending={requestOtp.isPending} />
+            )}
+            {step === 'otp' && <OtpStep countryCode={country.code} phone={phone} onComplete={handleOtp} isPending={verifyOtp.isPending} />}
+            {step === 'profile' && (
+              <ProfileStep name={name} onNameChange={setName} email={email} onEmailChange={setEmail} onSubmit={handleProfile} isPending={completeProfile.isPending} />
+            )}
+            {error ? <Text className="mt-3 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
+          </View>
         </View>
-      </View>
 
-      {step !== 'profile' && (
-        <Pressable onPress={continueAsGuest} className="absolute inset-x-5 bottom-10 items-center py-4">
-          <Text className="text-sm font-semibold text-stone-700 underline dark:text-zinc-300">{t('common.continueAsGuest')}</Text>
-        </Pressable>
-      )}
+        {step !== 'profile' && (
+          <Pressable onPress={continueAsGuest} className="absolute inset-x-5 bottom-10 items-center py-4">
+            <Text className="text-sm font-semibold text-stone-700 underline dark:text-zinc-300">{t('common.continueAsGuest')}</Text>
+          </Pressable>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }

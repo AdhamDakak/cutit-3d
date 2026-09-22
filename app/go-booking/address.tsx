@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { I18nManager, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { I18nManager, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Plus } from 'lucide-react-native'
@@ -56,95 +56,101 @@ export default function GoBookingAddressScreen() {
         <View className="size-9" />
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
-        <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
-          {t('goBooking.stepIndicator', { current: 2, total: 4 })}
-        </Text>
-        <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('goBooking.savedAddresses')}</Text>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5" keyboardShouldPersistTaps="handled">
+          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
+            {t('goBooking.stepIndicator', { current: 2, total: 4 })}
+          </Text>
+          <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('goBooking.savedAddresses')}</Text>
 
-        <View className="gap-3">
-          {(addresses ?? []).map((address) => {
-            const selected = addressId === address.id
-            return (
-              <Pressable
-                key={address.id}
-                onPress={() => setAddressId(address.id)}
-                className={`rounded-xl border p-3 ${
-                  selected ? 'border-stone-900 bg-stone-50 dark:border-blue-500 dark:bg-blue-900/20' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
-                }`}
-              >
-                <Text className="font-semibold text-stone-900 dark:text-white">{address.label}</Text>
-                <Text className="mt-0.5 text-sm text-stone-500 dark:text-zinc-400">
-                  {address.area} · {address.details}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </View>
-
-        {showAddForm ? (
-          <View className="gap-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <TextInput
-              value={newLabel}
-              onChangeText={setNewLabel}
-              placeholder={t('goBooking.addressLabelPlaceholder')}
-              placeholderTextColor={colors.muted}
-              className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-            />
-            <TextInput
-              value={newArea}
-              onChangeText={setNewArea}
-              placeholder={t('goBooking.addressAreaPlaceholder')}
-              placeholderTextColor={colors.muted}
-              className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-            />
-            <TextInput
-              value={newDetails}
-              onChangeText={setNewDetails}
-              placeholder={t('goBooking.addressDetailsPlaceholder')}
-              placeholderTextColor={colors.muted}
-              className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-            />
-            <Pressable onPress={saveNewAddress} className="items-center rounded-lg bg-stone-900 py-2.5 dark:bg-blue-600">
-              <Text className="text-sm font-semibold text-white">{t('goBooking.saveAddress')}</Text>
-            </Pressable>
+          <View className="gap-3">
+            {(addresses ?? []).map((address) => {
+              const selected = addressId === address.id
+              return (
+                <Pressable
+                  key={address.id}
+                  onPress={() => setAddressId(address.id)}
+                  className={`rounded-xl border p-3 ${
+                    selected ? 'border-stone-900 bg-stone-50 dark:border-blue-500 dark:bg-blue-900/20' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
+                  }`}
+                >
+                  <Text className="font-semibold text-stone-900 dark:text-white">{address.label}</Text>
+                  <Text className="mt-0.5 text-sm text-stone-500 dark:text-zinc-400">
+                    {address.area} · {address.details}
+                  </Text>
+                </Pressable>
+              )
+            })}
           </View>
-        ) : (
-          <Pressable
-            onPress={() => setShowAddForm(true)}
-            className="flex-row items-center gap-2 rounded-xl border border-dashed border-stone-300 px-4 py-3 dark:border-zinc-700"
-          >
-            <Plus size={16} color={colors.accent} />
-            <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('goBooking.addNewAddress')}</Text>
-          </Pressable>
-        )}
 
-        {isEvents && (
-          <View className="mt-4 gap-3">
-            <View>
-              <Text className="mb-1.5 text-sm font-medium text-stone-700 dark:text-zinc-200">{t('goBooking.eventNotesLabel')}</Text>
+          {showAddForm ? (
+            <View className="gap-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
               <TextInput
-                value={eventNotes}
-                onChangeText={setEventNotes}
-                placeholder={t('goBooking.eventNotesPlaceholder')}
+                value={newLabel}
+                onChangeText={setNewLabel}
+                placeholder={t('goBooking.addressLabelPlaceholder')}
                 placeholderTextColor={colors.muted}
-                multiline
-                className="min-h-20 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                textAlignVertical="center"
+                className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               />
+              <TextInput
+                value={newArea}
+                onChangeText={setNewArea}
+                placeholder={t('goBooking.addressAreaPlaceholder')}
+                placeholderTextColor={colors.muted}
+                textAlignVertical="center"
+                className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+              />
+              <TextInput
+                value={newDetails}
+                onChangeText={setNewDetails}
+                placeholder={t('goBooking.addressDetailsPlaceholder')}
+                placeholderTextColor={colors.muted}
+                textAlignVertical="center"
+                className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+              />
+              <Pressable onPress={saveNewAddress} className="items-center rounded-lg bg-stone-900 py-2.5 dark:bg-blue-600">
+                <Text className="text-sm font-semibold text-white">{t('goBooking.saveAddress')}</Text>
+              </Pressable>
             </View>
-          </View>
-        )}
-      </ScrollView>
+          ) : (
+            <Pressable
+              onPress={() => setShowAddForm(true)}
+              className="flex-row items-center gap-2 rounded-xl border border-dashed border-stone-300 px-4 py-3 dark:border-zinc-700"
+            >
+              <Plus size={16} color={colors.accent} />
+              <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">{t('goBooking.addNewAddress')}</Text>
+            </Pressable>
+          )}
 
-      <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <Pressable
-          disabled={!canContinue}
-          onPress={() => router.push({ pathname: '/go-booking/datetime', params: { stylistId, type } })}
-          className="items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-50"
-        >
-          <Text className="font-semibold text-white">{canContinue ? t('common.continue') : t('goBooking.noAddressYet')}</Text>
-        </Pressable>
-      </View>
+          {isEvents && (
+            <View className="mt-4 gap-3">
+              <View>
+                <Text className="mb-1.5 text-sm font-medium text-stone-700 dark:text-zinc-200">{t('goBooking.eventNotesLabel')}</Text>
+                <TextInput
+                  value={eventNotes}
+                  onChangeText={setEventNotes}
+                  placeholder={t('goBooking.eventNotesPlaceholder')}
+                  placeholderTextColor={colors.muted}
+                  multiline
+                  textAlignVertical="top"
+                  className="min-h-20 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                />
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable
+            disabled={!canContinue}
+            onPress={() => router.push({ pathname: '/go-booking/datetime', params: { stylistId, type } })}
+            className="items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-50"
+          >
+            <Text className="font-semibold text-white">{canContinue ? t('common.continue') : t('goBooking.noAddressYet')}</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }

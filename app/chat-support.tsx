@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { I18nManager, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import { I18nManager, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react-native'
@@ -20,6 +20,7 @@ export default function ChatSupportScreen() {
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
   const [messages, setMessages] = useState<Message[]>([{ id: 1, from: 'support', text: t('chatSupport.greeting') }])
   const [draft, setDraft] = useState('')
+  const scrollRef = useRef<ScrollView>(null)
 
   const send = () => {
     const text = draft.trim()
@@ -27,6 +28,21 @@ export default function ChatSupportScreen() {
     setMessages((prev) => [...prev, { id: prev.length + 1, from: 'user', text }])
     setDraft('')
   }
+
+  // A composer that's visible above a list that hasn't followed it still
+  // looks broken — scroll to the newest message both when it's sent and
+  // when the keyboard itself rises (which can newly cover the tail of the
+  // list even without a new message arriving).
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: true })
+  }, [messages])
+
+  useEffect(() => {
+    const subscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
+      scrollRef.current?.scrollToEnd({ animated: true })
+    })
+    return () => subscription.remove()
+  }, [])
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
@@ -42,8 +58,8 @@ export default function ChatSupportScreen() {
         <View className="size-9" />
       </View>
 
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView className="flex-1" contentContainerClassName="gap-3 px-5 py-5">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView ref={scrollRef} className="flex-1" contentContainerClassName="gap-3 px-5 py-5" keyboardShouldPersistTaps="handled">
           {messages.map((message) => {
             // alignSelf doesn't auto-flip under RTL the way flexDirection: row
             // does, so "my messages" would stay stuck on the physical right
@@ -74,6 +90,7 @@ export default function ChatSupportScreen() {
             placeholder={t('chatSupport.placeholder')}
             placeholderTextColor={colors.muted}
             multiline
+            textAlignVertical="center"
             className="max-h-28 min-h-11 flex-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
           />
           <Pressable
