@@ -280,6 +280,7 @@ export default function VenueScreen() {
                 placeholder={t('venue.searchServices')}
                 placeholderTextColor={colors.muted}
                 textAlignVertical="center"
+                style={{ fontSize: 14, lineHeight: 18 }}
                 className="min-w-0 flex-1 text-sm text-stone-900 dark:text-white"
               />
             </View>

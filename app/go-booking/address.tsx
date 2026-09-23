@@ -91,6 +91,7 @@ export default function GoBookingAddressScreen() {
                 placeholder={t('goBooking.addressLabelPlaceholder')}
                 placeholderTextColor={colors.muted}
                 textAlignVertical="center"
+                style={{ fontSize: 14, lineHeight: 18 }}
                 className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               />
               <TextInput
@@ -99,6 +100,7 @@ export default function GoBookingAddressScreen() {
                 placeholder={t('goBooking.addressAreaPlaceholder')}
                 placeholderTextColor={colors.muted}
                 textAlignVertical="center"
+                style={{ fontSize: 14, lineHeight: 18 }}
                 className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               />
               <TextInput
@@ -107,6 +109,7 @@ export default function GoBookingAddressScreen() {
                 placeholder={t('goBooking.addressDetailsPlaceholder')}
                 placeholderTextColor={colors.muted}
                 textAlignVertical="center"
+                style={{ fontSize: 14, lineHeight: 18 }}
                 className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               />
               <Pressable onPress={saveNewAddress} className="items-center rounded-lg bg-stone-900 py-2.5 dark:bg-blue-600">

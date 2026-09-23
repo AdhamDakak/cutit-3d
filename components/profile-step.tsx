@@ -18,7 +18,7 @@ type ProfileStepProps = {
 }
 
 const INPUT_CLASS = 'w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white'
-const CENTERED_TEXT = { textAlignVertical: 'center' as const }
+const CENTERED_TEXT = { textAlignVertical: 'center' as const, fontSize: 14, lineHeight: 18 }
 
 export function ProfileStep({ name, onNameChange, email, onEmailChange, onSubmit, isPending, gender, onGenderChange, title, buttonLabel }: ProfileStepProps) {
   const { t } = useTranslation()
