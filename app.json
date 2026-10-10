@@ -40,7 +40,38 @@
           },
           "imageWidth": 120
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cutit uses your photos so you can attach them to your reviews.",
+          "cameraPermission": "Cutit uses your camera so you can take photos to attach to your reviews.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Cutit uses your location to show salons and stylists near you.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false,
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Cutit uses your calendar to add your bookings to it.",
+          "remindersPermission": false
+        }
+      ],
+      "expo-notifications",
+      "react-native-maps",
+      "expo-font",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true
