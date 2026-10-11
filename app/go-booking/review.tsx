@@ -11,6 +11,7 @@ import type { CreateBookingInput } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
 import type { StylistServiceType } from '@/lib/data'
 import { useAddresses, useCreateBooking, useStylist, useStylistServices } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { calculateTravelFee } from '@/lib/travel-fee'
 import { useThemeColors } from '@/lib/theme'
 import { useGoBookingDraft } from './_layout'
@@ -104,7 +105,7 @@ export default function GoBookingReviewScreen() {
       ) : (
         <>
           <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
-            <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
+            <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>
               {t('goBooking.stepIndicator', { current: 4, total: 4 })}
             </Text>
 
@@ -116,7 +117,7 @@ export default function GoBookingReviewScreen() {
             </View>
 
             <View className="rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-              <Text className="mb-2 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-zinc-400">{t('venue.selectServices')}</Text>
+              <Text className={`mb-2 text-xs font-semibold uppercase ${tracking('tracking-wider')} text-stone-500 dark:text-zinc-400`}>{t('venue.selectServices')}</Text>
               <View className="gap-2">
                 {selectedServices.map((service) => (
                   <View key={service.id} className="flex-row items-center justify-between">
@@ -128,7 +129,7 @@ export default function GoBookingReviewScreen() {
             </View>
 
             <View className="rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-              <Text className="mb-1 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-zinc-400">{t('goBooking.addressStepTitle')}</Text>
+              <Text className={`mb-1 text-xs font-semibold uppercase ${tracking('tracking-wider')} text-stone-500 dark:text-zinc-400`}>{t('goBooking.addressStepTitle')}</Text>
               <Text className="text-sm text-stone-700 dark:text-zinc-200">
                 {address?.label} — {address?.area}, {address?.details}
               </Text>

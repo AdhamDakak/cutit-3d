@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { ErrorState } from '@/components/error-state'
 import type { StylistServiceType } from '@/lib/data'
 import { useStylist, useStylistServices } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 import { useGoBookingDraft } from './_layout'
 
@@ -50,7 +51,7 @@ export default function GoBookingServicesScreen() {
         <ErrorState onRetry={refetch} />
       ) : (
         <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
+          <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>
             {t('goBooking.stepIndicator', { current: 1, total: 4 })}
           </Text>
           <Text className="font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('venue.selectServices')}</Text>
@@ -88,7 +89,7 @@ export default function GoBookingServicesScreen() {
       <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="text-xs uppercase tracking-widest text-stone-500 dark:text-zinc-400">{t('goBooking.subtotal')}</Text>
+            <Text className={`text-xs uppercase ${tracking('tracking-widest')} text-stone-500 dark:text-zinc-400`}>{t('goBooking.subtotal')}</Text>
             <Text className="text-2xl font-bold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: subtotal })}</Text>
           </View>
           <Pressable

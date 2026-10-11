@@ -10,6 +10,7 @@ import { ReviewModal, type ReviewTarget } from '@/components/review-modal'
 import { getBookingDetails } from '@/lib/api'
 import type { Booking } from '@/lib/data'
 import { useAddresses, useBookings, useReviewedBookingIds } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
@@ -58,7 +59,7 @@ export default function BookingsScreen() {
       <View className="border-b border-stone-200 px-5 py-4 dark:border-zinc-800">
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('bookings.yourVisits')}</Text>
+            <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('bookings.yourVisits')}</Text>
             <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('bookings.title')}</Text>
           </View>
           <Pressable accessibilityLabel={t('bookings.notifications')} className="relative size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">

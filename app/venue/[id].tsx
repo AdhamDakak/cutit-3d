@@ -13,6 +13,7 @@ import { ReviewPhotoViewer } from '@/components/review-photo-viewer'
 import { ANY_STAFF_ID, type CreateBookingInput, type ListSlotsParams } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
 import { useCreateBooking, useFavorites, useSlots, useToggleFavorite, useVenue, useVenueReviews, useVenueServices, useVenueStaff } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'
@@ -362,7 +363,7 @@ export default function VenueScreen() {
                   if (periodSlots.length === 0) return null
                   return (
                     <View key={period}>
-                      <Text className="mb-2 text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-zinc-400">{periodLabels[period]}</Text>
+                      <Text className={`mb-2 text-xs font-medium uppercase ${tracking('tracking-wider')} text-stone-500 dark:text-zinc-400`}>{periodLabels[period]}</Text>
                       <View className="flex-row flex-wrap gap-2">
                         {periodSlots.map((slot) => {
                           const active = selectedTime === slot.startTime
@@ -417,7 +418,7 @@ export default function VenueScreen() {
         {confirmError ? <Text className="mb-2 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
         <View className="flex-row items-center justify-between">
           <View>
-            <Text className="text-xs uppercase tracking-widest text-stone-500 dark:text-zinc-400">{t('venue.total')}</Text>
+            <Text className={`text-xs uppercase ${tracking('tracking-widest')} text-stone-500 dark:text-zinc-400`}>{t('venue.total')}</Text>
             <Text className="text-2xl font-bold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: totalPrice })}</Text>
           </View>
           <Pressable disabled={!canConfirm || isConfirming} onPress={confirmBooking} className="rounded-xl bg-blue-600 px-6 py-3 disabled:opacity-50">

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Logo } from '@/components/logo'
 import { useAppState } from '@/lib/app-state'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 export function AppHeader() {
@@ -41,7 +42,7 @@ export function AppHeader() {
 
       <View className="mt-5 flex-row items-center justify-between">
         <View>
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('home.discoverIn')}</Text>
+          <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('home.discoverIn')}</Text>
           <Pressable className="mt-1 flex-row items-center gap-1.5">
             <MapPin size={14} color={colors.foreground} />
             <Text className="text-sm font-semibold text-stone-900 dark:text-white">{t('home.cairoEgypt')}</Text>

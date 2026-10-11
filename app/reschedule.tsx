@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ANY_STAFF_ID, getBookingDetails, type ListSlotsParams } from '@/lib/api'
 import { useAddresses, useBooking, useRescheduleBooking, useSlots } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 const SLOT_SKELETON_KEYS = ['s1', 's2', 's3', 's4', 's5', 's6']
@@ -112,7 +113,7 @@ export default function RescheduleScreen() {
 
       <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
         <View className="rounded-xl border border-stone-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
-          <Text className="text-[11px] font-medium uppercase tracking-wider text-stone-500 dark:text-zinc-500">{t('reschedule.currentAppointment')}</Text>
+          <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-wider')} text-stone-500 dark:text-zinc-500`}>{t('reschedule.currentAppointment')}</Text>
           <Text className="mt-1 text-sm font-medium text-stone-900 dark:text-white">
             {details.dateLabel} · {details.timeLabel}
           </Text>

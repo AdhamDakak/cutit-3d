@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { ChevronLeft, ChevronRight, DoorOpen, Sparkles } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 export default function CutitGoScreen() {
@@ -33,7 +34,7 @@ export default function CutitGoScreen() {
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
       <ScrollView className="flex-1" contentContainerClassName="gap-5 px-5 pb-10 pt-5">
         <View>
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('tabs.cutitGo')}</Text>
+          <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('tabs.cutitGo')}</Text>
           <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('cutitGo.title')}</Text>
           <Text className="mt-1 text-sm text-stone-500 dark:text-zinc-400">{t('cutitGo.subtitle')}</Text>
         </View>

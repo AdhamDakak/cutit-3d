@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/error-state'
 import type { ListSlotsParams } from '@/lib/api'
 import type { StylistServiceType } from '@/lib/data'
 import { useSlots, useStylistServices } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 import { useGoBookingDraft } from './_layout'
 
@@ -70,7 +71,7 @@ export default function GoBookingDatetimeScreen() {
         <ErrorState onRetry={refetchAll} />
       ) : (
         <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 pb-28 pt-5">
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
+          <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>
             {t('goBooking.stepIndicator', { current: 3, total: 4 })}
           </Text>
 

@@ -12,6 +12,7 @@ import { ProfileStep } from '@/components/profile-step'
 import { useSheetDismissGesture } from '@/components/useSheetDismissGesture'
 import { useAppState, type Gender } from '@/lib/app-state'
 import { useCompleteProfile, useRequestOtp, useVerifyOtp } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 type Step = 'phone' | 'otp' | 'profile'
@@ -101,7 +102,7 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated }: Checkou
                 <GestureDetector gesture={panGesture}>
                   <View className="flex-row items-start justify-between gap-3 border-b border-stone-200 px-5 pb-4 pt-5 dark:border-zinc-800">
                     <View className="min-w-0 flex-1">
-                      <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">
+                      <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>
                         {t('checkoutAuth.stepIndicator', { current: STEP_INDEX[step], total: 3 })}
                       </Text>
                       <Text className="mt-1 font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('checkoutAuth.title')}</Text>

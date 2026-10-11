@@ -13,6 +13,7 @@ import { SkeletonCard } from '@/components/skeleton-card'
 import { useAppState, type Gender } from '@/lib/app-state'
 import { serviceFilters } from '@/lib/data'
 import { useVenues } from '@/lib/hooks'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 const ForwardChevron = I18nManager.isRTL ? ChevronLeft : ChevronRight
@@ -52,7 +53,7 @@ export default function HomeScreen() {
 
         <View className="px-5 pt-7">
           <Text className="text-sm font-medium text-stone-500 dark:text-zinc-400">{t('home.greeting', { name: 'Amira' })}</Text>
-          <Text className="mt-1 font-serif text-3xl font-semibold leading-tight tracking-tight text-stone-900 dark:text-white">
+          <Text className={`mt-1 font-serif text-3xl font-semibold leading-tight ${tracking('tracking-tight')} text-stone-900 dark:text-white`}>
             {t('home.headlinePrefix')} <Text className="font-normal text-stone-500 dark:text-zinc-400">{t('home.headlineSuffix')}</Text>
           </Text>
         </View>
@@ -132,8 +133,8 @@ export default function HomeScreen() {
         <View className="px-5 pt-7">
           <View className="mb-4 flex-row items-end justify-between">
             <View>
-              <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('home.curatedForYou')}</Text>
-              <Text className="mt-1 font-serif text-2xl font-semibold tracking-tight text-stone-900 dark:text-white">
+              <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('home.curatedForYou')}</Text>
+              <Text className={`mt-1 font-serif text-2xl font-semibold ${tracking('tracking-tight')} text-stone-900 dark:text-white`}>
                 {t('home.nearYou')} <Text className="font-sans text-sm font-normal text-stone-500 dark:text-zinc-400">({filtered.length})</Text>
               </Text>
             </View>

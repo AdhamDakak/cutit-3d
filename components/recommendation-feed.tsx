@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { getVenueStartingPrice } from '@/lib/api'
 import type { Gender } from '@/lib/app-state'
 import type { Venue } from '@/lib/data'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 export function RecommendationFeed({
@@ -29,7 +30,7 @@ export function RecommendationFeed({
     <View className="px-5 pt-7">
       <View className="mb-4 flex-row items-end justify-between">
         <View>
-          <Text className="text-[11px] font-medium uppercase tracking-[3px] text-stone-500 dark:text-zinc-500">{t('home.smartPicks')}</Text>
+          <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('home.smartPicks')}</Text>
           <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('home.recommendedForYou')}</Text>
         </View>
         <Text className="text-xs text-stone-400 dark:text-zinc-500">{t(signedIn ? 'home.basedOnProfile' : 'home.exploreBoth')}</Text>

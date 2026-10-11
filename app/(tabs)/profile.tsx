@@ -33,6 +33,7 @@ import { SettingRow, ToggleRow } from '@/components/settings-rows'
 import { useAppState, type Gender } from '@/lib/app-state'
 import { useCurrentUser } from '@/lib/hooks'
 import type { AppLanguage } from '@/lib/i18n'
+import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
@@ -59,7 +60,7 @@ export default function ProfileScreen() {
     .toUpperCase()
 
   const sectionClass = 'overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'
-  const labelClass = 'mb-2 px-1 text-[11px] font-medium uppercase tracking-[2.5px] text-stone-500 dark:text-zinc-400'
+  const labelClass = `mb-2 px-1 text-[11px] font-medium uppercase ${tracking('tracking-[2.5px]')} text-stone-500 dark:text-zinc-400`
 
   const handleSignOut = () => {
     signOut()
