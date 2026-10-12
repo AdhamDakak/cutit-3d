@@ -13,6 +13,7 @@ import { SkeletonCard } from '@/components/skeleton-card'
 import { useAppState, type Gender } from '@/lib/app-state'
 import { serviceFilters } from '@/lib/data'
 import { useVenues } from '@/lib/hooks'
+import { useUserLocation } from '@/lib/location'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
@@ -26,7 +27,11 @@ export default function HomeScreen() {
   const [service, setService] = useState('All services')
   const [query, setQuery] = useState('')
 
-  const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues()
+  // Never prompts here (Explore does that); once location is granted, "Near you" is sorted by real distance.
+  const userLocation = useUserLocation({ prompt: false })
+  const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues(
+    userLocation ? { location: userLocation } : undefined,
+  )
   const venues = venuesData ?? []
 
   const filtered = useMemo(() => {

@@ -14,9 +14,12 @@ import { delay } from './_internal/delay'
 
 /**
  * Fixed mock location in New Cairo (same coordinates as currentUser's seed
- * "Home" address) — stands in for a real GPS fix until expo-location lands.
+ * "Home" address) — the distance-filter origin when the caller has no real
+ * position (location permission denied or not yet granted).
  */
 const MOCK_USER_LOCATION = { latitude: 30.03, longitude: 31.49 }
+
+export type MapBounds = { north: number; south: number; east: number; west: number }
 
 function haversineKm(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }): number {
   const R = 6371
@@ -37,8 +40,11 @@ export type VenueFilters = {
   /** Cheapest service (getVenueStartingPrice) must be ≤ this. */
   priceMax?: number
   minRating?: number
+  /** The user's real position. When set, results are also sorted nearest-first. */
   location?: { latitude: number; longitude: number }
   maxDistanceKm?: number
+  /** Only venues inside this map rectangle ("Search this area"). */
+  bounds?: MapBounds
   openNow?: boolean
   /** Day-pill selection — accepted and passed through, but has no filtering effect yet (mock). */
   day?: string
@@ -46,7 +52,11 @@ export type VenueFilters = {
 
 export async function listVenues(filters?: VenueFilters): Promise<Venue[]> {
   await delay()
-  return venues.filter((venue) => {
+  const bounds = filters?.bounds
+  const matches = venues.filter((venue) => {
+    if (bounds && (venue.latitude > bounds.north || venue.latitude < bounds.south || venue.longitude > bounds.east || venue.longitude < bounds.west)) {
+      return false
+    }
     if (filters?.gender && venue.gender !== filters.gender && venue.gender !== 'Unisex') return false
     if (filters?.categories?.length && !filters.categories.includes(venue.category)) return false
     if (filters?.query?.trim()) {
@@ -63,6 +73,8 @@ export async function listVenues(filters?: VenueFilters): Promise<Venue[]> {
     // filters?.day: intentionally not applied — see the type's doc comment.
     return true
   })
+  const origin = filters?.location
+  return origin ? matches.sort((a, b) => haversineKm(origin, a) - haversineKm(origin, b)) : matches
 }
 
 export async function getVenue(id: string): Promise<Venue | undefined> {

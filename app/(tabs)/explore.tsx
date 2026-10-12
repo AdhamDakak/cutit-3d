@@ -2,22 +2,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { ChevronDown, ListFilter, Search, SlidersHorizontal, X } from 'lucide-react-native'
+import { ChevronDown, ListFilter, LocateFixed, Search, SlidersHorizontal, X } from 'lucide-react-native'
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet'
 import { useTranslation } from 'react-i18next'
 
 import { ErrorState } from '@/components/error-state'
 import { EstablishmentCard } from '@/components/establishment-card'
-import { ExploreMap } from '@/components/explore-map'
+import { ExploreMap, type ExploreMapHandle } from '@/components/explore-map'
 import { DEFAULT_EXPLORE_FILTERS, ExploreFiltersSheet, type ExploreFiltersDraft } from '@/components/explore-filters-sheet'
 import { SkeletonCard } from '@/components/skeleton-card'
 import { StylistCard } from '@/components/stylist-card'
+import type { MapBounds } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
 import type { Stylist, Venue } from '@/lib/data'
 import { useStylists, useVenues } from '@/lib/hooks'
+import { useUserLocation } from '@/lib/location'
 import { useThemeColors } from '@/lib/theme'
 
 const SNAP_POINTS = ['14%', '50%', '92%']
+const INITIAL_SNAP_INDEX = 1
+const SNAP_FRACTIONS = SNAP_POINTS.map((point) => parseFloat(point) / 100)
 const SEARCH_DEBOUNCE_MS = 300
 const TIME_WINDOWS = ['any', 'morning', 'afternoon', 'evening'] as const
 type TimeWindow = (typeof TIME_WINDOWS)[number]
@@ -119,12 +123,22 @@ export default function ExploreScreen() {
     () => [t('explore.dayAnyDay'), t('explore.dayToday'), t('explore.dayTomorrow'), ...buildDayPills(i18n.language)],
     [t, i18n.language],
   )
+  const { theme } = useAppState()
   const bottomSheetRef = useRef<BottomSheet>(null)
+  const mapRef = useRef<ExploreMapHandle>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mode, setMode] = useState<'Venues' | 'Professionals'>('Venues')
   const [selectedDay, setSelectedDay] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [timeWindowOpen, setTimeWindowOpen] = useState(false)
+  // Only set by "Search this area" — until then the list isn't limited to the map view (a first view centred on a
+  // user far from Cairo would otherwise show an empty list).
+  const [searchBounds, setSearchBounds] = useState<MapBounds | null>(null)
+  const [containerHeight, setContainerHeight] = useState(0)
+  const [chromeHeight, setChromeHeight] = useState(0)
+  const [sheetIndex, setSheetIndex] = useState(INITIAL_SNAP_INDEX)
+  const userLocation = useUserLocation({ prompt: true })
+  const mapInsets = { top: chromeHeight, bottom: containerHeight * (SNAP_FRACTIONS[sheetIndex] ?? 0) }
 
   // Switching Venues <-> Professionals swaps the whole list underneath the
   // sheet — reset to the 50% snap point so the new list isn't left collapsed
@@ -146,12 +160,29 @@ export default function ExploreScreen() {
       maxDistanceKm: draft.maxDistanceKm ?? undefined,
       openNow: draft.openNow,
       day: dayPills[selectedDay],
+      // Denied/unknown → undefined, and listVenues falls back to its mock origin for the distance filter.
+      location: userLocation ?? undefined,
+      bounds: searchBounds ?? undefined,
     }),
-    [debouncedQuery, draft, dayPills, selectedDay],
+    [debouncedQuery, draft, dayPills, selectedDay, userLocation, searchBounds],
   )
 
   const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues(venueFilters)
   const venues = venuesData ?? []
+
+  const searchThisArea = async () => {
+    const bounds = await mapRef.current?.getVisibleBounds().catch(() => null)
+    const unchanged =
+      bounds && searchBounds && (['north', 'south', 'east', 'west'] as const).every((edge) => bounds[edge] === searchBounds[edge])
+    // No map bounds (web) or the same area again: a plain refetch, as before.
+    if (!bounds || unchanged) refetchVenues()
+    else setSearchBounds(bounds)
+  }
+
+  const resetFilters = () => {
+    setDraft(DEFAULT_EXPLORE_FILTERS)
+    setSearchBounds(null)
+  }
 
   // Stylists only take gender + rating from the shared filter set (see the
   // component-level note on why price/distance/openNow/category don't apply
@@ -171,7 +202,15 @@ export default function ExploreScreen() {
   const renderVenueItem = useCallback(
     ({ item }: { item: Venue }) => (
       <View className="px-5 pb-3">
-        <EstablishmentCard establishment={item} onPress={() => router.push(`/venue/${item.id}`)} />
+        <EstablishmentCard
+          establishment={item}
+          onPress={() => {
+            // Highlight and centre its pin, so the map shows where it is when the user comes back from its page.
+            setSelectedId(item.id)
+            mapRef.current?.centerOn(item)
+            router.push(`/venue/${item.id}`)
+          }}
+        />
       </View>
     ),
     [router],
@@ -198,13 +237,22 @@ export default function ExploreScreen() {
     mode === 'Venues' ? t('explore.venuesInMapArea', { count: venues.length }) : t('explore.professionalsInArea', { count: filteredStylists.length })
 
   return (
-    <View className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950">
-      <ExploreMap establishments={mode === 'Venues' ? venues : []} selectedId={selectedId} onSelectPin={(item) => setSelectedId(item.id)} />
+    <View className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" onLayout={(event) => setContainerHeight(event.nativeEvent.layout.height)}>
+      <ExploreMap
+        ref={mapRef}
+        establishments={mode === 'Venues' ? venues : []}
+        selectedId={selectedId}
+        onSelectPin={(item) => setSelectedId(item.id)}
+        userLocation={userLocation}
+        insets={mapInsets}
+        dark={theme === 'dark'}
+      />
 
       <SafeAreaView
         edges={['top']}
         className="absolute inset-x-0 top-0 bg-[#f7f5f1] dark:bg-zinc-950"
         style={{ zIndex: 10, elevation: 10 }}
+        onLayout={(event) => setChromeHeight(event.nativeEvent.layout.height)}
       >
         <View className="gap-3 px-5 pb-3 pt-3">
           <View className="flex-row items-center gap-2">
@@ -284,9 +332,23 @@ export default function ExploreScreen() {
         </View>
       </SafeAreaView>
 
+      {userLocation ? (
+        <Pressable
+          onPress={() => mapRef.current?.centerOnUser()}
+          accessibilityLabel={t('explore.showMyLocation')}
+          className="absolute end-5 size-11 items-center justify-center rounded-full border border-stone-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
+          style={{ top: chromeHeight + 12 }}
+        >
+          <LocateFixed size={18} color={colors.accent} />
+        </Pressable>
+      ) : null}
+
       <BottomSheet
         ref={bottomSheetRef}
-        index={1}
+        index={INITIAL_SNAP_INDEX}
+        onChange={(index) => {
+          if (index >= 0) setSheetIndex(index)
+        }}
         snapPoints={SNAP_POINTS}
         enablePanDownToClose={false}
         backgroundStyle={{ backgroundColor: colors.card }}
@@ -297,7 +359,7 @@ export default function ExploreScreen() {
             {countLabel}
           </Text>
           {mode === 'Venues' && (
-            <Pressable onPress={() => refetchVenues()}>
+            <Pressable onPress={() => void searchThisArea()}>
               <Text className="text-xs font-semibold text-blue-600 dark:text-blue-400">{t('explore.searchThisArea')}</Text>
             </Pressable>
           )}
@@ -319,7 +381,7 @@ export default function ExploreScreen() {
               ) : (
                 <View className="items-center gap-3 px-8 py-10">
                   <Text className="text-center text-sm text-stone-500 dark:text-zinc-400">{t('explore.emptyBodyVenues')}</Text>
-                  <Pressable onPress={() => setDraft(DEFAULT_EXPLORE_FILTERS)} className="rounded-xl bg-stone-900 px-4 py-2.5 dark:bg-blue-600">
+                  <Pressable onPress={resetFilters} className="rounded-xl bg-stone-900 px-4 py-2.5 dark:bg-blue-600">
                     <Text className="text-xs font-semibold text-white">{t('explore.resetFilters')}</Text>
                   </Pressable>
                 </View>

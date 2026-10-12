@@ -15,6 +15,10 @@ export function useVenues(filters?: VenueFilters) {
       filters?.maxDistanceKm,
       filters?.openNow,
       filters?.day,
+      filters?.bounds?.north,
+      filters?.bounds?.south,
+      filters?.bounds?.east,
+      filters?.bounds?.west,
     ],
   )
 }
