@@ -33,7 +33,7 @@ import { SettingRow, ToggleRow } from '@/components/settings-rows'
 import { useAppState, type Gender } from '@/lib/app-state'
 import { useCurrentUser } from '@/lib/hooks'
 import type { AppLanguage } from '@/lib/i18n'
-import { tracking } from '@/lib/rtl'
+import { startAlign, tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
@@ -119,7 +119,7 @@ export default function ProfileScreen() {
               <View className="size-8 items-center justify-center rounded-lg bg-stone-100 dark:bg-zinc-800">
                 <UsersRound size={16} color={colors.mutedStrong} />
               </View>
-              <Text className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{t('profile.smartRecommendations')}</Text>
+              <Text style={startAlign} className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{t('profile.smartRecommendations')}</Text>
               <View className="flex-row rounded-lg bg-stone-100 p-0.5 dark:bg-zinc-800">
                 {(['For Her', 'For Him'] as Gender[]).map((item) => (
                   <Pressable key={item} onPress={() => setActiveGender(item)} className={`rounded-md px-2 py-1.5 ${activeGender === item ? 'bg-blue-600' : ''}`}>
@@ -172,7 +172,7 @@ export default function ProfileScreen() {
             <ToggleRow icon={isDark ? Moon : Sun} label={t('profile.darkMode')} checked={isDark} onChange={toggleTheme} />
             <View className="min-h-14 flex-row items-center gap-3 border-b border-stone-100 px-4 py-3 dark:border-zinc-800">
               <Languages size={16} color={colors.mutedStrong} />
-              <Text className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{t('profile.language')}</Text>
+              <Text style={startAlign} className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{t('profile.language')}</Text>
               <View className="flex-row rounded-lg bg-stone-100 p-0.5 dark:bg-zinc-800">
                 {LANGUAGE_OPTIONS.map((item) => (
                   <Pressable

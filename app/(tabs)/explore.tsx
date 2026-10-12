@@ -292,8 +292,10 @@ export default function ExploreScreen() {
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.border }}
       >
-        <View className="flex-row items-center justify-between px-5 pb-3">
-          <Text className="flex-1 font-serif text-lg font-semibold text-stone-900 dark:text-white">{countLabel}</Text>
+        <View className="flex-row items-center justify-between gap-3 px-5 pb-3">
+          <Text numberOfLines={1} className="shrink font-serif text-lg font-semibold text-stone-900 dark:text-white">
+            {countLabel}
+          </Text>
           {mode === 'Venues' && (
             <Pressable onPress={() => refetchVenues()}>
               <Text className="text-xs font-semibold text-blue-600 dark:text-blue-400">{t('explore.searchThisArea')}</Text>

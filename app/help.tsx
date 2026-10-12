@@ -8,6 +8,7 @@ import { SettingRow } from '@/components/settings-rows'
 import { getBookingDetails } from '@/lib/api'
 import type { BookingStatus } from '@/lib/data'
 import { useAddresses, useBooking, useCancelBooking } from '@/lib/hooks'
+import { startAlign } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 const STATUS_PILL_CLASSES: Record<BookingStatus, { bg: string; text: string }> = {
@@ -78,7 +79,7 @@ export default function HelpScreen() {
         {booking && details ? (
           <View className="mb-1 gap-2 rounded-2xl border border-stone-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <View className="flex-row items-start justify-between gap-2">
-              <Text numberOfLines={1} className="flex-1 font-serif text-base font-semibold text-stone-900 dark:text-white">
+              <Text style={startAlign} numberOfLines={1} className="flex-1 font-serif text-base font-semibold text-stone-900 dark:text-white">
                 {title}
               </Text>
               <View className={`rounded-full px-2 py-1 ${STATUS_PILL_CLASSES[booking.status].bg}`}>

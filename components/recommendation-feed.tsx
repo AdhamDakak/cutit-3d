@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { getVenueStartingPrice } from '@/lib/api'
 import type { Gender } from '@/lib/app-state'
 import type { Venue } from '@/lib/data'
-import { tracking } from '@/lib/rtl'
+import { startAlign, tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 export function RecommendationFeed({
@@ -46,7 +46,7 @@ export function RecommendationFeed({
               <Image source={{ uri: item.coverImageUrl ?? undefined }} className="h-28 w-full" contentFit="cover" />
               <View className="p-3">
                 <View className="flex-row items-start justify-between gap-2">
-                  <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-stone-900 dark:text-white">
+                  <Text style={startAlign} numberOfLines={1} className="flex-1 text-sm font-semibold text-stone-900 dark:text-white">
                     {item.name}
                   </Text>
                   <View className="flex-row shrink-0 items-center gap-0.5">

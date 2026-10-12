@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { ChevronRight, type LucideProps } from 'lucide-react-native'
 
+import { startAlign } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 type IconType = ComponentType<LucideProps>
@@ -33,7 +34,7 @@ export function ToggleRow({ icon: Icon, label, checked, onChange }: { icon: Icon
       <View className="size-8 items-center justify-center rounded-lg bg-stone-100 dark:bg-zinc-800">
         <Icon size={16} color={colors.mutedStrong} />
       </View>
-      <Text className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{label}</Text>
+      <Text style={startAlign} className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{label}</Text>
       <View className={`h-6 w-11 justify-center rounded-full px-1 ${checked ? 'bg-blue-600' : 'bg-stone-200 dark:bg-zinc-700'}`}>
         <View className={`size-4 rounded-full bg-white shadow ${checked ? 'ml-auto' : ''}`} />
       </View>
