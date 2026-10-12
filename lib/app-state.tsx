@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Alert, I18nManager } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Updates from 'expo-updates'
 import { colorScheme } from 'nativewind'
 
 import { syncBookingReminders } from '@/lib/api'
 import i18n, { type AppLanguage } from '@/lib/i18n'
 import { setReminderPreference } from '@/lib/notifications'
+import { getItem, setItem } from '@/lib/storage'
 
 const LANGUAGE_STORAGE_KEY = 'cutit.language'
 const THEME_STORAGE_KEY = '@cutit/theme'
@@ -53,9 +53,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     ;(async () => {
       const [storedLanguage, storedTheme, storedReminders] = await Promise.all([
-        AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
-        AsyncStorage.getItem(THEME_STORAGE_KEY),
-        AsyncStorage.getItem(REMINDERS_STORAGE_KEY),
+        getItem(LANGUAGE_STORAGE_KEY),
+        getItem(THEME_STORAGE_KEY),
+        getItem(REMINDERS_STORAGE_KEY),
       ])
       if (!cancelled && (storedLanguage === 'en' || storedLanguage === 'ar')) {
         await i18n.changeLanguage(storedLanguage)
@@ -86,7 +86,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const setLanguage = async (next: AppLanguage) => {
     await i18n.changeLanguage(next)
     setLanguageState(next)
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, next)
+    setItem(LANGUAGE_STORAGE_KEY, next)
 
     // I18nManager.forceRTL only takes effect after the native root view is
     // recreated (a full app reload), not on the currently mounted tree —
@@ -110,14 +110,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
     colorScheme.set(next)
     setThemeState(next)
-    AsyncStorage.setItem(THEME_STORAGE_KEY, next).catch(() => {})
+    setItem(THEME_STORAGE_KEY, next)
   }
 
   const toggleReminders = () => {
     const next = !remindersEnabled
     setRemindersEnabled(next)
     setReminderPreference(next)
-    AsyncStorage.setItem(REMINDERS_STORAGE_KEY, String(next)).catch(() => {})
+    setItem(REMINDERS_STORAGE_KEY, String(next))
     // Off cancels every scheduled reminder; back on restores them for upcoming bookings.
     syncBookingReminders().catch(() => {})
   }

@@ -13,7 +13,7 @@ const ADDRESSES_STORAGE_KEY = '@cutit/addresses'
 let userStore: User = { ...currentUser }
 let addressStore: Address[] = [...currentUser.addresses]
 
-// Hydrates both stores from AsyncStorage once at import time, falling back
+// Hydrates both stores from storage once at import time, falling back
 // to the seed above on a first-ever launch. Every exported function below
 // awaits this before touching either store.
 const ready: Promise<void> = Promise.all([

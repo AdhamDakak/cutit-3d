@@ -14,7 +14,7 @@ const REMINDERS_STORAGE_KEY = '@cutit/booking-reminders'
 // will eventually become real HTTP calls against it.
 let store: Booking[] = [...seedBookings]
 
-// Hydrates `store` from AsyncStorage once at import time, falling back to
+// Hydrates `store` from storage once at import time, falling back to
 // the seed above on a first-ever launch. Every exported function below
 // awaits this before touching `store`, so a call is never served from stale
 // seed data while the persisted value is still loading.

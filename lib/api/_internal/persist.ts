@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/lib/storage'
 
 /**
- * Reads a persisted JSON value for `key`, falling back to `seed()` on a
+ * Reads a persisted JSON value (MMKV, see lib/storage.ts) for `key`, falling back to `seed()` on a
  * first-ever launch (nothing stored yet) or a corrupt/failed read. Every
  * lib/api/* store awaits this once at module load before any exported
  * function touches its in-memory copy — the data-layer equivalent of
@@ -13,7 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
  */
 export async function hydrate<T>(key: string, seed: () => T): Promise<T> {
   try {
-    const raw = await AsyncStorage.getItem(key)
+    const raw = await getItem(key)
     return raw != null ? (JSON.parse(raw) as T) : seed()
   } catch {
     return seed()
@@ -21,11 +21,13 @@ export async function hydrate<T>(key: string, seed: () => T): Promise<T> {
 }
 
 /**
- * Fire-and-forget mirror of an in-memory store to AsyncStorage after a
+ * Fire-and-forget mirror of an in-memory store to storage after a
  * mutation. Never awaited by callers — a write failure here shouldn't block
  * or surface as a mutation error, only the in-memory store is the source of
  * truth for the running session.
  */
 export function persist<T>(key: string, value: T): void {
-  AsyncStorage.setItem(key, JSON.stringify(value)).catch(() => {})
+  try {
+    setItem(key, JSON.stringify(value))
+  } catch {}
 }
