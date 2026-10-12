@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { I18nManager, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useNavigation, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
@@ -21,25 +21,8 @@ export default function ChatSupportScreen() {
   const [messages, setMessages] = useState<Message[]>([{ id: 1, from: 'support', text: t('chatSupport.greeting') }])
   const [draft, setDraft] = useState('')
   const scrollRef = useRef<ScrollView>(null)
-  const rootRef = useRef<View>(null)
-  const navigation = useNavigation()
   const insets = useSafeAreaInsets()
-  const [windowOffsetY, setWindowOffsetY] = useState(0)
   const [keyboardShown, setKeyboardShown] = useState(false)
-
-  // This screen is an iOS modal sheet, which starts below the top of the window, but KeyboardAvoidingView compares
-  // its own layout y (relative to its parent) against the keyboard's *window* y. Passing the sheet's window y as
-  // keyboardVerticalOffset closes that gap. Measured on layout and again once the open transition settles, since a
-  // measurement taken mid-slide would be off and KAV doesn't recompute when only this prop changes.
-  const measureWindowOffset = useCallback(() => {
-    rootRef.current?.measureInWindow((_x, y) => setWindowOffsetY(Math.max(0, Math.round(y))))
-  }, [])
-
-  useEffect(() => {
-    // 'transitionEnd' is a native-stack event; expo-router's useNavigation() is typed for the generic navigator, so cast.
-    const unsubscribe = navigation.addListener('transitionEnd' as never, measureWindowOffset)
-    return unsubscribe
-  }, [navigation, measureWindowOffset])
 
   const send = () => {
     const text = draft.trim()
@@ -71,9 +54,10 @@ export default function ChatSupportScreen() {
   return (
     // Bottom inset is applied by hand on the composer (below) so it can drop to 0 while the keyboard is up — otherwise a
     // home-indicator-sized gap sits between the text field and the keyboard.
-    <SafeAreaView ref={rootRef} onLayout={measureWindowOffset} className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
-      {/* Wraps the header too, so KAV is the root's direct child and its layout y is relative to the measured root. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={windowOffsetY}>
+    <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
+      {/* Presented full-screen (see app/_layout.tsx), so this starts at the top of the window and KAV's maths holds
+          without any keyboardVerticalOffset. Wraps the header too so nothing above it shifts its frame. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
           <Pressable
             onPress={() => router.back()}
