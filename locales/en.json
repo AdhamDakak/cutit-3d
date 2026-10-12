@@ -101,7 +101,9 @@
     "title": "Booking Confirmed",
     "subtitle": "You're all set — we'll see you soon.",
     "addToCalendar": "Add to Calendar",
-    "comingSoon": "Coming soon",
+    "addedToCalendar": "Added to Calendar",
+    "calendarDenied": "Calendar access is off. You can turn it on in Settings.",
+    "calendarFailed": "Couldn't add this booking to your calendar.",
     "viewInBookings": "View in Bookings",
     "notFound": "This booking couldn't be found."
   },

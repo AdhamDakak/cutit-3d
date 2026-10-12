@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BackHandler, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -6,6 +6,7 @@ import { CalendarCheck, CheckCircle2, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { getBookingDetails } from '@/lib/api'
+import { addToCalendar, type AddToCalendarResult } from '@/lib/calendar'
 import { useAddresses, useBooking } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
@@ -16,6 +17,7 @@ export default function BookingConfirmationScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>()
   const { data: booking, isLoading } = useBooking(bookingId)
   const { data: addresses } = useAddresses()
+  const [calendarStatus, setCalendarStatus] = useState<AddToCalendarResult | 'adding' | null>(null)
 
   // This is a terminal screen after a completed booking — swipe-to-dismiss
   // is disabled at the route level (app/_layout.tsx), and Android's
@@ -59,6 +61,20 @@ export default function BookingConfirmationScreen() {
   // is tuned for compact list rows, not this screen's original wording.
   const dateLabel = new Date(booking.startTime).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })
   const timeLabel = new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  const handleAddToCalendar = async () => {
+    setCalendarStatus('adding')
+    setCalendarStatus(
+      await addToCalendar({
+        title: `Cutit · ${(isSalon ? venue?.name : stylist?.name) ?? ''}`,
+        startDate: new Date(booking.startTime),
+        endDate: new Date(booking.endTime),
+        location: isSalon ? (venue ? `${venue.address}, ${venue.city}` : undefined) : address ? `${address.area}, ${address.details}` : undefined,
+        notes: bookedServices.map((service) => service.name).join('\n'),
+      }),
+    )
+  }
+  const calendarAdded = calendarStatus === 'added'
 
   const goToBookings = () => {
     router.dismissAll()
@@ -129,13 +145,22 @@ export default function BookingConfirmationScreen() {
       <View className="gap-3 border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
         <View>
           <Pressable
-            disabled
-            className="flex-row items-center justify-center gap-2 rounded-xl border border-stone-300 py-3.5 opacity-50 dark:border-zinc-700"
+            onPress={handleAddToCalendar}
+            disabled={calendarAdded || calendarStatus === 'adding'}
+            className={`flex-row items-center justify-center gap-2 rounded-xl border py-3.5 ${
+              calendarAdded ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20' : 'border-stone-300 dark:border-zinc-700'
+            }`}
           >
-            <CalendarCheck size={18} color={colors.muted} />
-            <Text className="font-semibold text-stone-500 dark:text-zinc-400">{t('bookingConfirmation.addToCalendar')}</Text>
+            {calendarAdded ? <CheckCircle2 size={18} color="#059669" /> : <CalendarCheck size={18} color={colors.foreground} />}
+            <Text className={`font-semibold ${calendarAdded ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-900 dark:text-white'}`}>
+              {t(calendarAdded ? 'bookingConfirmation.addedToCalendar' : 'bookingConfirmation.addToCalendar')}
+            </Text>
           </Pressable>
-          <Text className="mt-1.5 text-center text-xs text-stone-400 dark:text-zinc-500">{t('bookingConfirmation.comingSoon')}</Text>
+          {calendarStatus === 'denied' || calendarStatus === 'failed' ? (
+            <Text className="mt-1.5 text-center text-xs text-stone-500 dark:text-zinc-400">
+              {t(calendarStatus === 'denied' ? 'bookingConfirmation.calendarDenied' : 'bookingConfirmation.calendarFailed')}
+            </Text>
+          ) : null}
         </View>
         <Pressable onPress={goToBookings} className="items-center rounded-xl bg-blue-600 py-3.5">
           <Text className="font-semibold text-white">{t('bookingConfirmation.viewInBookings')}</Text>
