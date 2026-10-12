@@ -43,11 +43,10 @@ const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
 
 export default function ProfileScreen() {
   const { t } = useTranslation()
-  const { activeGender, setActiveGender, signOut, language, setLanguage, theme, toggleTheme } = useAppState()
+  const { activeGender, setActiveGender, signOut, language, setLanguage, theme, toggleTheme, remindersEnabled, toggleReminders } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
   const isDark = theme === 'dark'
-  const [reminders, setReminders] = useState(true)
   const [offers, setOffers] = useState(false)
   const { data: user } = useCurrentUser()
   const fullName = user?.fullName ?? ''
@@ -187,7 +186,7 @@ export default function ProfileScreen() {
                 ))}
               </View>
             </View>
-            <ToggleRow icon={Bell} label={t('profile.appointmentReminders')} checked={reminders} onChange={() => setReminders(!reminders)} />
+            <ToggleRow icon={Bell} label={t('profile.appointmentReminders')} checked={remindersEnabled} onChange={toggleReminders} />
             <ToggleRow icon={Sparkles} label={t('profile.exclusiveOffers')} checked={offers} onChange={() => setOffers(!offers)} />
           </View>
         </View>

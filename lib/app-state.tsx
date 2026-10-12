@@ -4,10 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Updates from 'expo-updates'
 import { colorScheme } from 'nativewind'
 
+import { syncBookingReminders } from '@/lib/api'
 import i18n, { type AppLanguage } from '@/lib/i18n'
+import { setReminderPreference } from '@/lib/notifications'
 
 const LANGUAGE_STORAGE_KEY = 'cutit.language'
 const THEME_STORAGE_KEY = '@cutit/theme'
+const REMINDERS_STORAGE_KEY = '@cutit/reminders-enabled'
 
 export type Theme = 'light' | 'dark'
 
@@ -29,6 +32,8 @@ type AppState = {
   setLanguage: (value: AppLanguage) => Promise<void>
   theme: Theme
   toggleTheme: () => void
+  remindersEnabled: boolean
+  toggleReminders: () => void
   /** True once the persisted language and theme have been read and applied at startup. */
   isHydrated: boolean
 }
@@ -41,14 +46,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [activeGender, setActiveGender] = useState<Gender>('For Her')
   const [language, setLanguageState] = useState<AppLanguage>(i18n.language as AppLanguage)
   const [theme, setThemeState] = useState<Theme>(colorScheme.get() ?? 'light')
+  const [remindersEnabled, setRemindersEnabled] = useState(true)
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [storedLanguage, storedTheme] = await Promise.all([
+      const [storedLanguage, storedTheme, storedReminders] = await Promise.all([
         AsyncStorage.getItem(LANGUAGE_STORAGE_KEY),
         AsyncStorage.getItem(THEME_STORAGE_KEY),
+        AsyncStorage.getItem(REMINDERS_STORAGE_KEY),
       ])
       if (!cancelled && (storedLanguage === 'en' || storedLanguage === 'ar')) {
         await i18n.changeLanguage(storedLanguage)
@@ -64,6 +71,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (!cancelled && (storedTheme === 'light' || storedTheme === 'dark')) {
         colorScheme.set(storedTheme)
         setThemeState(storedTheme)
+      }
+      if (!cancelled && storedReminders === 'false') {
+        setReminderPreference(false)
+        setRemindersEnabled(false)
       }
       if (!cancelled) setIsHydrated(true)
     })()
@@ -102,6 +113,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(THEME_STORAGE_KEY, next).catch(() => {})
   }
 
+  const toggleReminders = () => {
+    const next = !remindersEnabled
+    setRemindersEnabled(next)
+    setReminderPreference(next)
+    AsyncStorage.setItem(REMINDERS_STORAGE_KEY, String(next)).catch(() => {})
+    // Off cancels every scheduled reminder; back on restores them for upcoming bookings.
+    syncBookingReminders().catch(() => {})
+  }
+
   const value = useMemo<AppState>(
     () => ({
       hasOnboarded,
@@ -118,9 +138,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setLanguage,
       theme,
       toggleTheme,
+      remindersEnabled,
+      toggleReminders,
       isHydrated,
     }),
-    [hasOnboarded, isSignedIn, activeGender, language, theme, isHydrated],
+    [hasOnboarded, isSignedIn, activeGender, language, theme, remindersEnabled, isHydrated],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

@@ -351,5 +351,10 @@
     "privacyPolicy": "Privacy Policy",
     "logOut": "Log Out",
     "deleteAccount": "Delete Account"
+  },
+  "notifications": {
+    "channelName": "Appointment reminders",
+    "reminderTitle": "Appointment reminder",
+    "reminderBody": "Your appointment at {{name}} is in 1 hour"
   }
 }

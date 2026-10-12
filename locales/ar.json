@@ -363,5 +363,10 @@
     "privacyPolicy": "سياسة الخصوصية",
     "logOut": "تسجيل الخروج",
     "deleteAccount": "حذف الحساب"
+  },
+  "notifications": {
+    "channelName": "تذكيرات المواعيد",
+    "reminderTitle": "تذكير بالموعد",
+    "reminderBody": "موعدك في {{name}} بعد ساعة"
   }
 }

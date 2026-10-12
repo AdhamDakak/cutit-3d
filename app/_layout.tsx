@@ -4,9 +4,11 @@ import '@/lib/nativewind-interop'
 
 import { Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces'
 import { Inter_400Regular } from '@expo-google-fonts/inter'
+import * as Notifications from 'expo-notifications'
 import * as SplashScreen from 'expo-splash-screen'
-import { Stack } from 'expo-router'
+import { router, Stack, type Href } from 'expo-router'
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
@@ -35,6 +37,30 @@ function SplashGate({ fontsLoaded }: { fontsLoaded: boolean }) {
   return null
 }
 
+/**
+ * Renders nothing — opens the deep link carried by a tapped reminder (cutit://bookings). Covers both a tap while the
+ * app is running and the tap that cold-launched it, the latter only once hydration settles so the link lands after
+ * index.tsx's startup <Redirect> rather than racing it.
+ */
+function NotificationObserver() {
+  const { isHydrated } = useAppState()
+
+  useEffect(() => {
+    if (!isHydrated || Platform.OS === 'web') return
+    const open = (response: Notifications.NotificationResponse | null) => {
+      const url = response?.notification.request.content.data?.url
+      if (typeof url !== 'string') return
+      Notifications.clearLastNotificationResponse()
+      router.push(url as Href)
+    }
+    open(Notifications.getLastNotificationResponse())
+    const subscription = Notifications.addNotificationResponseReceivedListener(open)
+    return () => subscription.remove()
+  }, [isHydrated])
+
+  return null
+}
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Fraunces_600SemiBold,
@@ -46,6 +72,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AppStateProvider>
           <SplashGate fontsLoaded={fontsLoaded} />
+          <NotificationObserver />
           <StatusBar style="auto" />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
