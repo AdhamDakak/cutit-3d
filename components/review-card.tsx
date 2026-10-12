@@ -4,17 +4,8 @@ import { Star } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import type { Review } from '@/lib/data'
+import { getInitials } from '@/lib/format'
 import { useThemeColors } from '@/lib/theme'
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .filter(Boolean)
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-}
 
 export function ReviewCard({ review, onOpenPhoto }: { review: Review; onOpenPhoto: (photos: string[], index: number) => void }) {
   const { i18n } = useTranslation()

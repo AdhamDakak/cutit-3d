@@ -22,19 +22,30 @@ type CheckoutAuthSheetProps = {
   visible: boolean
   /** Dismissed without finishing — the caller keeps its selections and creates nothing. */
   onClose: () => void
-  /** Account created and session signed in — the caller continues its own Confirm. */
+  /** Account created and session signed in — the caller continues its own Confirm (or, in 'signup', just carries on). */
   onAuthenticated: () => void
+  /**
+   * 'checkout' (default): the copy for creating an account at Confirm, used by venue/[id].tsx and go-booking/review.tsx.
+   * 'signup': standalone account creation from Home's avatar or the guest Profile card — same three steps, own copy.
+   */
+  mode?: 'checkout' | 'signup'
 }
+
+const COPY_KEYS = {
+  checkout: { title: 'checkoutAuth.title', subtitle: 'checkoutAuth.subtitle', phoneSubtitle: 'checkoutAuth.phoneSubtitle', button: 'checkoutAuth.createAndConfirm' },
+  signup: { title: 'checkoutAuth.signupTitle', subtitle: 'checkoutAuth.signupSubtitle', phoneSubtitle: 'checkoutAuth.signupPhoneSubtitle', button: 'checkoutAuth.createAccount' },
+} as const
 
 /**
  * In-flow phone → OTP → profile sign-up, presented over the venue/review
  * screen so the booking draft underneath is never unmounted. Composes the
  * same three step components app/auth.tsx uses.
  */
-export function CheckoutAuthSheet({ visible, onClose, onAuthenticated }: CheckoutAuthSheetProps) {
+export function CheckoutAuthSheet({ visible, onClose, onAuthenticated, mode = 'checkout' }: CheckoutAuthSheetProps) {
   const { t } = useTranslation()
   const colors = useThemeColors()
   const { activeGender } = useAppState()
+  const copy = COPY_KEYS[mode]
 
   const [step, setStep] = useState<Step>('phone')
   const [country, setCountry] = useState<CountryCode>(COUNTRY_CODES[0])
@@ -105,8 +116,8 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated }: Checkou
                       <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>
                         {t('checkoutAuth.stepIndicator', { current: STEP_INDEX[step], total: 3 })}
                       </Text>
-                      <Text className="mt-1 font-serif text-xl font-semibold text-stone-900 dark:text-white">{t('checkoutAuth.title')}</Text>
-                      <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{t('checkoutAuth.subtitle')}</Text>
+                      <Text className="mt-1 font-serif text-xl font-semibold text-stone-900 dark:text-white">{t(copy.title)}</Text>
+                      <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{t(copy.subtitle)}</Text>
                     </View>
                     <Pressable
                       onPress={handleClose}
@@ -128,7 +139,7 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated }: Checkou
                       onSubmit={handlePhone}
                       isPending={requestOtp.isPending}
                       title={t('checkoutAuth.phoneTitle')}
-                      subtitle={t('checkoutAuth.phoneSubtitle')}
+                      subtitle={t(copy.phoneSubtitle)}
                     />
                   )}
                   {step === 'otp' && <OtpStep countryCode={country.code} phone={phone} onComplete={handleOtp} isPending={verifyOtp.isPending} />}
@@ -143,7 +154,7 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated }: Checkou
                       onSubmit={handleProfile}
                       isPending={completeProfile.isPending}
                       title={t('checkoutAuth.profileTitle')}
-                      buttonLabel={t('checkoutAuth.createAndConfirm')}
+                      buttonLabel={t(copy.button)}
                     />
                   )}
                   {error ? <Text className="mt-3 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}

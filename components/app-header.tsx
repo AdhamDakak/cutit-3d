@@ -1,16 +1,25 @@
+import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Bell, ChevronRight, MapPin, Menu, Moon, Sun } from 'lucide-react-native'
+import { ChevronRight, MapPin, Menu, Moon, Sun, UserRound } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
 import { Logo } from '@/components/logo'
+import { NotificationBell } from '@/components/notification-bell'
 import { useAppState } from '@/lib/app-state'
+import { getInitials } from '@/lib/format'
+import { useCurrentUser } from '@/lib/hooks'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 export function AppHeader() {
   const { t } = useTranslation()
-  const { isSignedIn, signIn, signOut, theme, toggleTheme } = useAppState()
+  const { isSignedIn, theme, toggleTheme } = useAppState()
+  // Same source as Profile's avatar, so the two always match and both update after a name edit.
+  const { data: user } = useCurrentUser()
+  const [showSignup, setShowSignup] = useState(false)
+  const initials = getInitials(user?.fullName ?? '')
   const colors = useThemeColors()
   const router = useRouter()
   const isDark = theme === 'dark'
@@ -27,9 +36,7 @@ export function AppHeader() {
           >
             {isDark ? <Sun size={16} color="#facc15" /> : <Moon size={16} color={colors.muted} />}
           </Pressable>
-          <Pressable accessibilityLabel={t('home.notifications')} className="size-9 items-center justify-center rounded-full active:opacity-80">
-            <Bell size={16} color={colors.muted} />
-          </Pressable>
+          <NotificationBell label={t('home.notifications')} iconColor={colors.muted} className="size-9 items-center justify-center rounded-full active:opacity-80" />
           <Pressable
             onPress={() => router.push('/menu')}
             accessibilityLabel={t('home.openMenu')}
@@ -50,13 +57,23 @@ export function AppHeader() {
           </Pressable>
         </View>
         <Pressable
-          onPress={() => (isSignedIn ? signOut() : signIn())}
-          accessibilityLabel={t('home.toggleSignedInProfile')}
+          onPress={() => (isSignedIn ? router.navigate('/(tabs)/profile') : setShowSignup(true))}
+          accessibilityRole="button"
+          accessibilityLabel={t(isSignedIn ? 'home.openProfile' : 'home.createAccount')}
           className="size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800"
         >
-          <Text className="text-sm font-semibold text-stone-900 dark:text-white">{isSignedIn ? 'AN' : 'G'}</Text>
+          {!isSignedIn ? (
+            <Text className="text-sm font-semibold text-stone-900 dark:text-white">G</Text>
+          ) : initials ? (
+            <Text className="text-sm font-semibold text-stone-900 dark:text-white">{initials}</Text>
+          ) : (
+            <UserRound size={18} color={colors.foreground} />
+          )}
         </Pressable>
       </View>
+
+      {/* Guest sign-up stays on the current screen; the avatar re-renders with the new initials on success. */}
+      <CheckoutAuthSheet mode="signup" visible={showSignup} onClose={() => setShowSignup(false)} onAuthenticated={() => setShowSignup(false)} />
     </View>
   )
 }

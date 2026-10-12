@@ -5,6 +5,9 @@ export * from './bookings'
 export * from './user'
 export * from './favorites'
 export * from './reviews'
+export * from './payments'
+export * from './support'
+export * from './notifications'
 
 // ANY_STAFF_ID (a client-side selection sentinel, translated to
 // { staffId: null, anyStaff: true } by createBooking) and getBookingDetails

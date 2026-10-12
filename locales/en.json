@@ -24,13 +24,26 @@
     "profileTitle": "Almost done",
     "createAndConfirm": "Create account & confirm",
     "genderLabel": "Recommendations for",
-    "close": "Close"
+    "close": "Close",
+    "signupTitle": "Create your account",
+    "signupSubtitle": "Save your bookings, addresses and favorites.",
+    "signupPhoneSubtitle": "We'll text you a code to verify your number.",
+    "createAccount": "Create account"
   },
   "onboarding": {
     "slides": [
-      { "title": "Your next signature look", "body": "Discover trusted salons and barbershops across Egypt, all in one place." },
-      { "title": "In-salon or at home", "body": "Book your preferred service, stylist, date, and time in just a few taps." },
-      { "title": "Beauty, made personal", "body": "Get thoughtful recommendations built around your style and routine." }
+      {
+        "title": "Your next signature look",
+        "body": "Discover trusted salons and barbershops across Egypt, all in one place."
+      },
+      {
+        "title": "In-salon or at home",
+        "body": "Book your preferred service, stylist, date, and time in just a few taps."
+      },
+      {
+        "title": "Beauty, made personal",
+        "body": "Get thoughtful recommendations built around your style and routine."
+      }
     ],
     "getStarted": "Get Started",
     "goToSlide": "Go to slide {{number}}"
@@ -67,7 +80,9 @@
     "cancelConfirmTitle": "Cancel this booking?",
     "cancelConfirmMessage": "This can't be undone.",
     "keepBooking": "Keep Booking",
-    "confirmCancelBooking": "Yes, Cancel Booking"
+    "confirmCancelBooking": "Yes, Cancel Booking",
+    "reportIssue": "Report an issue",
+    "reportIssueHint": "Something went wrong with this booking"
   },
   "reschedule": {
     "title": "Reschedule Booking",
@@ -185,7 +200,8 @@
     "openMenu": "Open menu",
     "discoverIn": "Discover in",
     "cairoEgypt": "Cairo, Egypt",
-    "toggleSignedInProfile": "Toggle signed in recommendation profile",
+    "openProfile": "Open profile",
+    "createAccount": "Create an account",
     "smartPicks": "Smart picks",
     "recommendedForYou": "Recommended for You",
     "basedOnProfile": "Based on your profile",
@@ -350,11 +366,196 @@
     "termsOfService": "Terms of Service",
     "privacyPolicy": "Privacy Policy",
     "logOut": "Log Out",
-    "deleteAccount": "Delete Account"
+    "deleteAccount": "Delete Account",
+    "guestTitle": "You're browsing as a guest",
+    "guestBody": "Create an account to manage your bookings, addresses and payments.",
+    "guestCta": "Create account"
   },
   "notifications": {
     "channelName": "Appointment reminders",
     "reminderTitle": "Appointment reminder",
-    "reminderBody": "Your appointment at {{name}} is in 1 hour"
+    "reminderBody": "Your appointment at {{name}} is in 1 hour",
+    "title": "Notifications",
+    "markAll": "Mark all as read",
+    "today": "Today",
+    "earlier": "Earlier",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "Booking updates and reminders will show up here.",
+    "guest": "Create an account to get booking updates",
+    "justNow": "Now",
+    "minutesAgo": "{{n}}m",
+    "hoursAgo": "{{n}}h",
+    "daysAgo": "{{n}}d",
+    "unread": "Unread",
+    "unreadLabel": "{{n}} unread",
+    "items": {
+      "booking_pending": {
+        "title": "Booking request sent",
+        "body": "{{name}} will confirm your {{date}} appointment soon."
+      },
+      "booking_confirmed": {
+        "title": "Booking confirmed",
+        "body": "{{name}} confirmed your appointment on {{date}} at {{time}}."
+      },
+      "booking_cancelled": {
+        "title": "Booking cancelled",
+        "body": "Your appointment with {{name}} on {{date}} was cancelled."
+      },
+      "booking_rescheduled": {
+        "title": "Booking rescheduled",
+        "body": "Your appointment with {{name}} moved to {{date}} at {{time}}."
+      },
+      "reminder": {
+        "title": "Appointment in 1 hour",
+        "body": "Your appointment at {{name}} starts at {{time}}."
+      },
+      "review_prompt": {
+        "title": "How was your visit?",
+        "body": "Rate your visit to {{name}}."
+      },
+      "ticket_created": {
+        "title": "Issue reported",
+        "body": "We received report {{ticket}}. Our team will contact you."
+      },
+      "wallet_topup": {
+        "title": "Wallet topped up",
+        "body": "EGP {{amount}} was added to your Cutit Wallet."
+      }
+    }
+  },
+  "account": {
+    "editNameTitle": "Edit name",
+    "editEmailTitle": "Edit email",
+    "optional": "Optional",
+    "nameTooShort": "Name must be at least 2 characters.",
+    "emailInvalid": "Enter a valid email address, or leave it empty.",
+    "save": "Save",
+    "saving": "Saving…",
+    "labelHome": "Home",
+    "labelWork": "Work",
+    "labelOther": "Other",
+    "addressRequired": "Area and details are both required.",
+    "addressesTitle": "Saved addresses",
+    "addAddressTitle": "Add address",
+    "editAddressTitle": "Edit address",
+    "addressNotFound": "This address couldn't be found.",
+    "seeAllAddresses": "See all addresses ({{count}})",
+    "noAddressesTitle": "No saved addresses",
+    "noAddressesBody": "Save your home or work address to book Cutit Go faster.",
+    "deleteAddress": "Delete address",
+    "deleteAddressTitle": "Delete this address?",
+    "deleteAddressBody": "\"{{label}}\" will be removed from your saved addresses.",
+    "delete": "Delete",
+    "addressInUse": "This address is used by an upcoming booking. Cancel or finish that booking before deleting it."
+  },
+  "payments": {
+    "topUp": "Top up",
+    "chooseAmount": "Choose an amount",
+    "customAmount": "Custom",
+    "customAmountPlaceholder": "Amount in EGP (up to {{max}})",
+    "amountInvalid": "Enter a whole amount between 1 and {{max}}.",
+    "topUpAmount": "Top up {{amount}}",
+    "topUpDone": "{{amount}} added to your wallet.",
+    "mockNotice": "Demo only: no money is charged. Real top-ups arrive with online payments.",
+    "history": "Transaction history",
+    "noTransactions": "No transactions yet.",
+    "transaction": {
+      "topup": "Top-up",
+      "payment": "Booking payment",
+      "refund": "Refund"
+    },
+    "addCard": "Add card",
+    "addCardTitle": "Adding cards is coming soon",
+    "addCardBody": "You'll be able to add a card once online payments launch. For your security, card details will be entered on our payment partner's secure form — never stored by Cutit.",
+    "noCards": "No saved cards.",
+    "expires": "Expires {{date}}",
+    "default": "Default",
+    "setDefault": "Set as default",
+    "remove": "Remove",
+    "removeCardTitle": "Remove this card?",
+    "removeCardBody": "{{card}} will be removed from your saved cards.",
+    "none": "None",
+    "method": {
+      "card": "Card",
+      "cash": "Cash",
+      "wallet": "Cutit Wallet"
+    },
+    "cashDetail": "Pay at your appointment",
+    "walletDetail": "Balance: {{balance}}",
+    "cardDisabledHint": "Add a card first",
+    "walletDisabledHint": "Top up your wallet first",
+    "methodFootnote": "Used by default when you book. You'll still see the total before you confirm."
+  },
+  "faqs": {
+    "items": [
+      {
+        "q": "How do I book an appointment?",
+        "a": "Find a salon from Home or Explore, choose your services, a stylist (or Any Stylist) and a time, then tap Confirm Booking."
+      },
+      {
+        "q": "What is Cutit Go?",
+        "a": "Cutit Go brings a barber, hairstylist or makeup artist to your home or event. Pick the professional, services, address and time — the travel fee is shown before you confirm."
+      },
+      {
+        "q": "Why is my booking \"Pending\"?",
+        "a": "The salon or stylist hasn't accepted it yet. It changes to Confirmed as soon as they do."
+      },
+      {
+        "q": "How do I cancel or reschedule?",
+        "a": "Open the booking in Bookings, tap \"Need Help with this Booking?\", then choose Cancel Booking or Reschedule Booking."
+      },
+      {
+        "q": "How can I pay?",
+        "a": "Pay in cash at your appointment, by card, or from your Cutit Wallet. Set your preferred method in Profile → Default payment."
+      },
+      {
+        "q": "Is there an extra fee for at-home services?",
+        "a": "Yes. Cutit Go bookings include a travel fee based on your area, shown on its own line before you confirm."
+      },
+      {
+        "q": "What if my stylist is late or doesn't show up?",
+        "a": "Report it from Profile → Report a booking issue, and our team will follow up with you."
+      },
+      {
+        "q": "How do I leave a review?",
+        "a": "After your visit is completed, go to Bookings → Past and tap Leave a Review. Add a rating, and a comment or photos if you like."
+      },
+      {
+        "q": "Can I book without an account?",
+        "a": "Yes. You can browse and set up a booking as a guest; when you confirm, we verify your phone number and create your account."
+      },
+      {
+        "q": "How do I change the language?",
+        "a": "Go to Profile → Language. The app restarts to switch between English and Arabic."
+      }
+    ],
+    "stillNeedHelp": "Still need help?"
+  },
+  "support": {
+    "reportTitle": "Report a booking issue",
+    "whichBooking": "Which booking?",
+    "noBookings": "You don't have any bookings to report yet. For anything else, chat with our team.",
+    "pickBooking": "Choose the booking this is about.",
+    "whatHappened": "What happened?",
+    "category": {
+      "late-no-show": "Stylist late or no-show",
+      "service-quality": "Service quality",
+      "wrong-charge": "Wrong price or charge",
+      "venue-behavior": "Venue or staff behavior",
+      "other": "Other"
+    },
+    "pickCategory": "Choose what happened.",
+    "describe": "Tell us more",
+    "describePlaceholder": "What happened, and when?",
+    "describeTooShort": "Please write at least {{count}} characters.",
+    "photosHint": "Photos (optional, up to {{count}})",
+    "submit": "Send report",
+    "sending": "Sending…",
+    "sentTitle": "Report sent",
+    "sentBody": "Our team will review it and get back to you. Keep this reference in case you contact us.",
+    "ticketNumber": "Reference number"
+  },
+  "legal": {
+    "draftUpdated": "Draft — last updated {{date}}"
   }
 }

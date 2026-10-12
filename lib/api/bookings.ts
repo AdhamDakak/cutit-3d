@@ -3,6 +3,7 @@ import { areRemindersEnabled, cancelAllReminders, cancelReminder, scheduleBookin
 import { delay } from './_internal/delay'
 import { createInvalidationBus } from './_internal/bus'
 import { hydrate, persist } from './_internal/persist'
+import { addNotification } from './notifications'
 import { getCurrentUser } from './user'
 
 const STORAGE_KEY = '@cutit/bookings'
@@ -48,11 +49,20 @@ async function clearReminder(bookingId: string) {
   await cancelReminder(notificationId)
 }
 
+/** The venue's or stylist's name — what reminders and inbox items call the booking. */
+function bookingName(booking: Booking) {
+  return (booking.venueId ? venues.find((item) => item.id === booking.venueId)?.name : stylists.find((item) => item.id === booking.stylistId)?.name) ?? 'Cutit'
+}
+
+/** Writes an inbox item for a booking event. Fire-and-forget, like reminders: it must never fail the mutation. */
+function notifyBooking(type: 'booking_pending' | 'booking_confirmed' | 'booking_cancelled' | 'booking_rescheduled', booking: Booking) {
+  addNotification({ type, bookingId: booking.id, params: { name: bookingName(booking), at: booking.startTime } }).catch(() => {})
+}
+
 /** Replaces any existing reminder for `booking` with a fresh one 1 hour before its (possibly new) start time. */
 async function setReminder(booking: Booking, options: { prompt: boolean }) {
   await clearReminder(booking.id)
-  const name = (booking.venueId ? venues.find((item) => item.id === booking.venueId)?.name : stylists.find((item) => item.id === booking.stylistId)?.name) ?? 'Cutit'
-  const notificationId = await scheduleBookingReminder({ name, startTime: booking.startTime }, options)
+  const notificationId = await scheduleBookingReminder({ bookingId: booking.id, name: bookingName(booking), startTime: booking.startTime }, options)
   if (notificationId) setReminderIds({ ...reminderIds, [booking.id]: notificationId })
 }
 
@@ -89,8 +99,12 @@ const MOCK_AUTO_CONFIRM_DELAY_MS = 5000
 
 function scheduleMockAutoConfirm(bookingId: string) {
   setTimeout(() => {
-    setStore(store.map((item) => (item.id === bookingId && item.status === 'pending' ? { ...item, status: 'confirmed' } : item)))
+    const target = store.find((item) => item.id === bookingId && item.status === 'pending')
+    if (!target) return
+    const confirmed: Booking = { ...target, status: 'confirmed' }
+    setStore(store.map((item) => (item.id === bookingId ? confirmed : item)))
     bus.invalidate()
+    notifyBooking('booking_confirmed', confirmed)
   }, MOCK_AUTO_CONFIRM_DELAY_MS)
 }
 
@@ -142,6 +156,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   // Fire-and-forget: the first booking is where notification permission gets asked, and neither the prompt nor a
   // scheduling failure should hold up or fail the booking itself.
   void setReminder(booking, { prompt: true })
+  notifyBooking('booking_pending', booking)
   return booking
 }
 
@@ -151,6 +166,8 @@ export async function cancelBooking(id: string): Promise<void> {
   setStore(store.map((item) => (item.id === id ? { ...item, status: 'cancelled' } : item)))
   bus.invalidate()
   void clearReminder(id)
+  const cancelled = store.find((item) => item.id === id)
+  if (cancelled) notifyBooking('booking_cancelled', cancelled)
 }
 
 export async function rescheduleBooking(id: string, startTime: string, endTime: string): Promise<void> {
@@ -160,5 +177,8 @@ export async function rescheduleBooking(id: string, startTime: string, endTime: 
   bus.invalidate()
   scheduleMockAutoConfirm(id)
   const booking = store.find((item) => item.id === id)
-  if (booking) void setReminder(booking, { prompt: false })
+  if (booking) {
+    void setReminder(booking, { prompt: false })
+    notifyBooking('booking_rescheduled', booking)
+  }
 }

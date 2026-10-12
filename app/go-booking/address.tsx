@@ -5,6 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Plus } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { AddressForm } from '@/components/address-form'
+import type { AddressInput } from '@/lib/api'
 import type { StylistServiceType } from '@/lib/data'
 import { useAddAddress, useAddresses } from '@/lib/hooks'
 import { tracking } from '@/lib/rtl'
@@ -22,22 +24,16 @@ export default function GoBookingAddressScreen() {
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
   const [showAddForm, setShowAddForm] = useState(false)
-  const [newLabel, setNewLabel] = useState('')
-  const [newArea, setNewArea] = useState('')
-  const [newDetails, setNewDetails] = useState('')
 
   const isEvents = type === 'events-bridal'
   const canContinue = !!addressId
 
-  const saveNewAddress = async () => {
-    if (!newArea.trim() || !newDetails.trim()) return
+  // AddressForm only calls this with area + details filled; closing the form unmounts it, which clears its fields.
+  const saveNewAddress = async (input: AddressInput) => {
     try {
-      const created = await addAddress({ label: newLabel.trim() || 'Address', area: newArea.trim(), details: newDetails.trim() })
+      const created = await addAddress(input)
       setAddressId(created.id)
       setShowAddForm(false)
-      setNewLabel('')
-      setNewArea('')
-      setNewDetails('')
     } catch {
       // form stays open with the entered values so the user can retry
     }
@@ -85,38 +81,7 @@ export default function GoBookingAddressScreen() {
           </View>
 
           {showAddForm ? (
-            <View className="gap-3 rounded-xl border border-stone-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-              <TextInput
-                value={newLabel}
-                onChangeText={setNewLabel}
-                placeholder={t('goBooking.addressLabelPlaceholder')}
-                placeholderTextColor={colors.muted}
-                textAlignVertical="center"
-                style={{ fontSize: 14, lineHeight: 18 }}
-                className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-              />
-              <TextInput
-                value={newArea}
-                onChangeText={setNewArea}
-                placeholder={t('goBooking.addressAreaPlaceholder')}
-                placeholderTextColor={colors.muted}
-                textAlignVertical="center"
-                style={{ fontSize: 14, lineHeight: 18 }}
-                className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-              />
-              <TextInput
-                value={newDetails}
-                onChangeText={setNewDetails}
-                placeholder={t('goBooking.addressDetailsPlaceholder')}
-                placeholderTextColor={colors.muted}
-                textAlignVertical="center"
-                style={{ fontSize: 14, lineHeight: 18 }}
-                className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-              />
-              <Pressable onPress={saveNewAddress} className="items-center rounded-lg bg-stone-900 py-2.5 dark:bg-blue-600">
-                <Text className="text-sm font-semibold text-white">{t('goBooking.saveAddress')}</Text>
-              </Pressable>
-            </View>
+            <AddressForm submitLabel={t('goBooking.saveAddress')} onSubmit={saveNewAddress} />
           ) : (
             <Pressable
               onPress={() => setShowAddForm(true)}

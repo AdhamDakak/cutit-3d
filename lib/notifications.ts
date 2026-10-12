@@ -2,6 +2,7 @@ import { Platform } from 'react-native'
 import * as Linking from 'expo-linking'
 import * as Notifications from 'expo-notifications'
 
+import { recordReminder } from '@/lib/api/notifications'
 import i18n from '@/lib/i18n'
 
 // Local reminders only — server push arrives with the backend. Every call here swallows errors (web has no local
@@ -47,7 +48,7 @@ async function ensurePermission(prompt: boolean): Promise<boolean> {
  * reminders are off, permission isn't granted, or the reminder time has already passed.
  */
 export async function scheduleBookingReminder(
-  { name, startTime }: { name: string; startTime: string },
+  { bookingId, name, startTime }: { bookingId: string; name: string; startTime: string },
   { prompt }: { prompt: boolean },
 ): Promise<string | null> {
   if (!remindersEnabled) return null
@@ -58,14 +59,63 @@ export async function scheduleBookingReminder(
       content: {
         title: i18n.t('notifications.reminderTitle'),
         body: i18n.t('notifications.reminderBody', { name }),
-        // createURL resolves to cutit://bookings in builds (and Expo Go's own scheme in development).
-        data: { url: Linking.createURL('/bookings') },
+        // `path` drives in-app routing (reminderPath); `url` is the same target as a deep link — cutit://bookings in
+        // builds, Expo Go's own scheme in development. bookingId/name/startTime let the inbox record it (inboxReminder).
+        data: { path: '/bookings', url: Linking.createURL('/bookings'), bookingId, name, startTime },
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt, channelId: REMINDER_CHANNEL_ID },
     })
   } catch {
     return null
   }
+}
+
+/**
+ * The in-app path a tapped reminder points at ('/bookings'), so navigation stays in-app rather than a round trip
+ * through the OS. Read from the reminder's `path`, falling back to parsing its `url` for reminders scheduled before
+ * `path` existed — note a custom-scheme URL's first segment parses as the *hostname* (cutit://bookings →
+ * hostname 'bookings', path null), so both are joined. Null for anything that isn't a Cutit reminder.
+ */
+export function reminderPath(response: Notifications.NotificationResponse | null): string | null {
+  const data = response?.notification.request.content.data
+  if (typeof data?.path === 'string') return data.path
+  if (typeof data?.url !== 'string') return null
+  const { hostname, path } = Linking.parse(data.url)
+  const joined = [hostname, path].filter(Boolean).join('/').replace(/^\/+/, '')
+  return joined ? `/${joined}` : null
+}
+
+/**
+ * Mirrors a reminder into the in-app inbox: unread when it's delivered while the app is open, read when it's tapped
+ * (created already-read if it arrived while the app was closed). Ignores anything that isn't a Cutit reminder.
+ */
+export function inboxReminder(notification: Notifications.Notification | undefined, { read }: { read: boolean }) {
+  const data = notification?.request.content.data
+  if (typeof data?.bookingId !== 'string' || typeof data.startTime !== 'string') return
+  recordReminder({ bookingId: data.bookingId, name: typeof data.name === 'string' ? data.name : '', at: data.startTime }, { read }).catch(() => {})
+}
+
+/** The reminder whose tap cold-launched the app, if any. Read-only — call clearLaunchReminder() once it's handled. */
+export function getLaunchReminderPath(): string | null {
+  return reminderPath(getLaunchResponse())
+}
+
+function getLaunchResponse(): Notifications.NotificationResponse | null {
+  if (Platform.OS === 'web') return null
+  try {
+    return Notifications.getLastNotificationResponse()
+  } catch {
+    return null
+  }
+}
+
+/** Marks the cold-launching reminder read in the inbox, then forgets it so it isn't handled twice. */
+export function clearLaunchReminder() {
+  if (Platform.OS === 'web') return
+  inboxReminder(getLaunchResponse()?.notification, { read: true })
+  try {
+    Notifications.clearLastNotificationResponse()
+  } catch {}
 }
 
 export async function cancelReminder(notificationId: string) {

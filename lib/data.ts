@@ -192,6 +192,76 @@ export type User = {
   walletBalance: number
 }
 
+// --- Payments ----------------------------------------------------------------
+// SECURITY: the app never collects, stores, or logs a full card number or CVV — not even in mock data. Real cards
+// will be added through Paymob's hosted card form / tokenization; all we ever keep is the saved-card token (a real
+// card's `id` will be Paymob's token) plus brand, last4, and expiry.
+
+export type PaymentMethodType = 'card' | 'cash' | 'wallet'
+
+export type SavedCard = {
+  id: string
+  brand: 'visa' | 'mastercard' | 'meeza'
+  last4: string
+  expMonth: number
+  expYear: number
+  isDefault: boolean
+}
+
+export type WalletTransaction = {
+  id: string
+  type: 'topup' | 'payment' | 'refund'
+  /** Always positive — `type` says which direction it moved the balance. */
+  amountEGP: number
+  createdAt: string
+  bookingId?: string
+}
+
+// --- Support -------------------------------------------------------------------
+
+export type SupportCategory = 'late-no-show' | 'service-quality' | 'wrong-charge' | 'venue-behavior' | 'other'
+
+export type SupportTicket = {
+  id: string
+  /** Human-facing reference shown to the user, e.g. "CT-1042". */
+  number: string
+  userId: string
+  bookingId: string | null
+  category: SupportCategory
+  description: string
+  /** Local file URIs from the picker, as with Review.photoUrls — a real backend uploads them first. */
+  photoUrls: string[]
+  status: 'open'
+  createdAt: string
+}
+
+// --- In-app notifications --------------------------------------------------------
+
+export type AppNotificationType =
+  | 'booking_pending'
+  | 'booking_confirmed'
+  | 'booking_cancelled'
+  | 'booking_rescheduled'
+  | 'reminder'
+  | 'ticket_created'
+  | 'wallet_topup'
+  | 'review_prompt'
+
+/**
+ * An inbox item. Only the type + params are stored; the title/body are rendered from i18n at display time so old
+ * items follow a language switch. Dates go in `params.at` as an ISO string (formatted into {{date}}/{{time}} at display
+ * time for the same reason), alongside `name`, `ticket`, and `amount` where they apply.
+ */
+export type AppNotification = {
+  id: string
+  type: AppNotificationType
+  createdAt: string
+  readAt: string | null
+  bookingId?: string
+  ticketId?: string
+  params: Record<string, string | number>
+}
+
 // ---------------------------------------------------------------------------
 // Mock tables
 // ---------------------------------------------------------------------------
@@ -863,3 +933,29 @@ export function generateStylistTimeSlots({
 
   return slots
 }
+
+// Seeded so the wallet's history adds up to currentUser.walletBalance (500 − 200 + 50 = 350).
+export const savedCards: SavedCard[] = [
+  { id: 'card-1', brand: 'visa', last4: '4242', expMonth: 8, expYear: 2028, isDefault: true },
+  { id: 'card-2', brand: 'meeza', last4: '1029', expMonth: 3, expYear: 2027, isDefault: false },
+]
+
+export const walletTransactions: WalletTransaction[] = [
+  { id: 'wt-1', type: 'topup', amountEGP: 500, createdAt: '2026-08-02T12:30:00' },
+  { id: 'wt-2', type: 'payment', amountEGP: 200, createdAt: '2026-08-14T18:05:00', bookingId: 'bk2' },
+  { id: 'wt-3', type: 'refund', amountEGP: 50, createdAt: '2026-08-15T10:00:00', bookingId: 'bk2' },
+]
+
+export const defaultPaymentMethod: PaymentMethodType = 'card'
+
+// One review prompt for the seeded completed booking bk2, so a first launch has something in the inbox.
+export const notifications: AppNotification[] = [
+  {
+    id: 'nt-seed-review-bk2',
+    type: 'review_prompt',
+    createdAt: '2024-06-14T15:00:00',
+    readAt: null,
+    bookingId: 'bk2',
+    params: { name: venues.find((venue) => venue.id === 'v2')?.name ?? '' },
+  },
+]

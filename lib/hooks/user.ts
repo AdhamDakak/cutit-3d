@@ -1,13 +1,18 @@
 import {
   addAddress,
   completeProfile,
+  deleteAddress,
   getCurrentUser,
   listAddresses,
   requestOtp,
   subscribeAddresses,
   subscribeUser,
+  updateAddress,
+  updateProfile,
   verifyOtp,
+  type AddressInput,
   type CompleteProfileInput,
+  type UpdateProfileInput,
 } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
 import { useAsync } from './useAsync'
@@ -25,6 +30,15 @@ export function useAddAddress() {
   return useMutation(addAddress)
 }
 
+export function useUpdateAddress() {
+  return useMutation((id: string, input: Partial<AddressInput>) => updateAddress(id, input))
+}
+
+/** Rejects with AddressInUseError (from lib/api) while a pending/confirmed booking uses the address. */
+export function useDeleteAddress() {
+  return useMutation((id: string) => deleteAddress(id))
+}
+
 export function useRequestOtp() {
   return useMutation((phone: string) => requestOtp(phone))
 }
@@ -40,4 +54,8 @@ export function useVerifyOtp() {
 
 export function useCompleteProfile() {
   return useMutation((input: CompleteProfileInput) => completeProfile(input))
+}
+
+export function useUpdateProfile() {
+  return useMutation((input: UpdateProfileInput) => updateProfile(input))
 }

@@ -11,6 +11,10 @@ import { getItem, setItem } from '@/lib/storage'
 const LANGUAGE_STORAGE_KEY = 'cutit.language'
 const THEME_STORAGE_KEY = '@cutit/theme'
 const REMINDERS_STORAGE_KEY = '@cutit/reminders-enabled'
+const ONBOARDED_STORAGE_KEY = '@cutit/onboarded'
+// MOCK session: a bare "signed in" flag. The real session will be a Supabase session token kept in
+// expo-secure-store (not plain storage) once the backend lands — replace this key, signIn and signOut then.
+const SIGNED_IN_STORAGE_KEY = '@cutit/signed-in'
 
 export type Theme = 'light' | 'dark'
 
@@ -34,7 +38,7 @@ type AppState = {
   toggleTheme: () => void
   remindersEnabled: boolean
   toggleReminders: () => void
-  /** True once the persisted language and theme have been read and applied at startup. */
+  /** True once every persisted value above (onboarding, session, language, theme, reminders) has been read and applied at startup. */
   isHydrated: boolean
 }
 
@@ -52,11 +56,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [storedLanguage, storedTheme, storedReminders] = await Promise.all([
+      const [storedLanguage, storedTheme, storedReminders, storedOnboarded, storedSignedIn] = await Promise.all([
         getItem(LANGUAGE_STORAGE_KEY),
         getItem(THEME_STORAGE_KEY),
         getItem(REMINDERS_STORAGE_KEY),
+        getItem(ONBOARDED_STORAGE_KEY),
+        getItem(SIGNED_IN_STORAGE_KEY),
       ])
+      if (!cancelled) {
+        setHasOnboarded(storedOnboarded === 'true')
+        setIsSignedIn(storedSignedIn === 'true')
+      }
       if (!cancelled && (storedLanguage === 'en' || storedLanguage === 'ar')) {
         await i18n.changeLanguage(storedLanguage)
         setLanguageState(storedLanguage)
@@ -125,12 +135,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppState>(
     () => ({
       hasOnboarded,
-      completeOnboarding: () => setHasOnboarded(true),
+      completeOnboarding: () => {
+        setHasOnboarded(true)
+        setItem(ONBOARDED_STORAGE_KEY, 'true')
+      },
       isSignedIn,
-      signIn: () => setIsSignedIn(true),
+      signIn: () => {
+        setIsSignedIn(true)
+        setItem(SIGNED_IN_STORAGE_KEY, 'true')
+      },
+      // Clears only the session. Onboarding stays done, and bookings/favorites/etc. stay put — they belong to the
+      // device until a backend scopes them to an account.
       signOut: () => {
         setIsSignedIn(false)
-        setHasOnboarded(false)
+        setItem(SIGNED_IN_STORAGE_KEY, 'false')
       },
       activeGender,
       setActiveGender,

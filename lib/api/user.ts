@@ -46,6 +46,14 @@ export async function getCurrentUser(): Promise<User> {
   return userStore
 }
 
+/** Internal — lets lib/api/payments.ts move the wallet balance (which lives on User) without a public mutation surface. */
+export async function adjustWalletBalance(deltaEGP: number): Promise<number> {
+  await ready
+  setUserStore({ ...userStore, walletBalance: userStore.walletBalance + deltaEGP })
+  userBus.invalidate()
+  return userStore.walletBalance
+}
+
 // --- Phone auth ------------------------------------------------------------
 // Mock: any well-formed phone gets a "code", any 6 digits verify. A real
 // backend (Supabase phone OTP via Twilio/Vonage) replaces these two bodies
@@ -90,7 +98,35 @@ export async function completeProfile(input: CompleteProfileInput): Promise<User
   return userStore
 }
 
+export type UpdateProfileInput = { fullName?: string; email?: string }
+
+/**
+ * Edits the signed-in user's name and/or email in place. Phone is deliberately not editable here: once real auth
+ * exists, changing it has to go through OTP re-verification of the new number, not a plain field update.
+ */
+export async function updateProfile(input: UpdateProfileInput): Promise<User> {
+  await ready
+  await delay()
+  setUserStore({
+    ...userStore,
+    ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : null),
+    ...(input.email !== undefined ? { email: input.email.trim() } : null),
+  })
+  userBus.invalidate()
+  return userStore
+}
+
 // --- Addresses -------------------------------------------------------------
+
+/** Thrown by deleteAddress when a pending/confirmed booking still points at the address. */
+export class AddressInUseError extends Error {
+  constructor() {
+    super('This address is used by an upcoming booking')
+    this.name = 'AddressInUseError'
+  }
+}
+
+export type AddressInput = Omit<Address, 'id'>
 
 export async function listAddresses(): Promise<Address[]> {
   await ready
@@ -98,11 +134,35 @@ export async function listAddresses(): Promise<Address[]> {
   return addressStore
 }
 
-export async function addAddress(input: Omit<Address, 'id'>): Promise<Address> {
+export async function addAddress(input: AddressInput): Promise<Address> {
   await ready
   await delay()
   const newAddress: Address = { ...input, id: `addr-${Date.now()}` }
   setAddressStore([...addressStore, newAddress])
   addressBus.invalidate()
   return newAddress
+}
+
+export async function updateAddress(id: string, input: Partial<AddressInput>): Promise<Address> {
+  await ready
+  await delay()
+  const existing = addressStore.find((address) => address.id === id)
+  if (!existing) throw new Error('Address not found')
+  const updated: Address = { ...existing, ...input, id }
+  setAddressStore(addressStore.map((address) => (address.id === id ? updated : address)))
+  addressBus.invalidate()
+  return updated
+}
+
+export async function deleteAddress(id: string): Promise<void> {
+  await ready
+  await delay()
+  // Loaded lazily: bookings.ts already imports this module, so a top-level import would be a require cycle.
+  const { getBookingsSnapshot } = await import('./bookings')
+  const bookings = await getBookingsSnapshot()
+  if (bookings.some((booking) => booking.addressId === id && (booking.status === 'pending' || booking.status === 'confirmed'))) {
+    throw new AddressInUseError()
+  }
+  setAddressStore(addressStore.filter((address) => address.id !== id))
+  addressBus.invalidate()
 }

@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FlatList, Pressable, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
-import { Bell, CalendarDays, CalendarX2, Clock3 } from 'lucide-react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { CalendarDays, CalendarX2, Clock3 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { BookingCard } from '@/components/booking-card'
+import { NotificationBell } from '@/components/notification-bell'
 import { ReviewModal, type ReviewTarget } from '@/components/review-modal'
 import { getBookingDetails } from '@/lib/api'
 import type { Booking } from '@/lib/data'
@@ -21,6 +22,13 @@ const PAST_STATUSES: Booking['status'][] = ['completed', 'cancelled']
 export default function BookingsScreen() {
   const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('Upcoming')
+  // The inbox links here with ?tab=past|upcoming; `at` changes on every link so a repeat tap re-selects the tab even
+  // if the user switched tabs by hand in between (this tab screen stays mounted, so its params just update).
+  const { tab: tabParam, at: linkedAt } = useLocalSearchParams<{ tab?: string; at?: string }>()
+  useEffect(() => {
+    if (tabParam === 'past') setTab('Past History')
+    else if (tabParam === 'upcoming') setTab('Upcoming')
+  }, [tabParam, linkedAt])
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null)
   const colors = useThemeColors()
   const router = useRouter()
@@ -62,10 +70,11 @@ export default function BookingsScreen() {
             <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('bookings.yourVisits')}</Text>
             <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('bookings.title')}</Text>
           </View>
-          <Pressable accessibilityLabel={t('bookings.notifications')} className="relative size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-            <Bell size={16} color={colors.foreground} />
-            <View className="absolute end-2 top-2 size-1.5 rounded-full bg-blue-600" />
-          </Pressable>
+          <NotificationBell
+            label={t('bookings.notifications')}
+            iconColor={colors.foreground}
+            className="size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
+          />
         </View>
         <View className="mt-5 flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-900">
           {(['Upcoming', 'Past History'] as Tab[]).map((item) => (

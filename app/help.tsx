@@ -1,7 +1,7 @@
 import { Alert, I18nManager, Pressable, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, ArrowRight, MessageCircle } from 'lucide-react-native'
+import { ArrowLeft, ArrowRight, Flag, MessageCircle } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { SettingRow } from '@/components/settings-rows'
@@ -108,6 +108,14 @@ export default function HelpScreen() {
         ) : null}
 
         <View className="mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          {booking ? (
+            <SettingRow
+              icon={Flag}
+              label={t('help.reportIssue')}
+              value={t('help.reportIssueHint')}
+              onPress={() => router.push({ pathname: '/support/report-issue', params: { bookingId: booking.id } })}
+            />
+          ) : null}
           <SettingRow
             icon={MessageCircle}
             label={t('help.chatSupport')}

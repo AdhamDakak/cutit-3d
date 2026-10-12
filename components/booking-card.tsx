@@ -7,18 +7,9 @@ import { useTranslation } from 'react-i18next'
 import { BookingTimeline } from '@/components/booking-timeline'
 import { getBookingDetails } from '@/lib/api'
 import type { Booking } from '@/lib/data'
+import { getInitials } from '@/lib/format'
 import { useAddresses } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .filter(Boolean)
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-}
 
 type BookingCardProps = {
   booking: Booking

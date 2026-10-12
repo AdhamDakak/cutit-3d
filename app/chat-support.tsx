@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { I18nManager, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useNavigation, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
@@ -21,6 +21,25 @@ export default function ChatSupportScreen() {
   const [messages, setMessages] = useState<Message[]>([{ id: 1, from: 'support', text: t('chatSupport.greeting') }])
   const [draft, setDraft] = useState('')
   const scrollRef = useRef<ScrollView>(null)
+  const rootRef = useRef<View>(null)
+  const navigation = useNavigation()
+  const insets = useSafeAreaInsets()
+  const [windowOffsetY, setWindowOffsetY] = useState(0)
+  const [keyboardShown, setKeyboardShown] = useState(false)
+
+  // This screen is an iOS modal sheet, which starts below the top of the window, but KeyboardAvoidingView compares
+  // its own layout y (relative to its parent) against the keyboard's *window* y. Passing the sheet's window y as
+  // keyboardVerticalOffset closes that gap. Measured on layout and again once the open transition settles, since a
+  // measurement taken mid-slide would be off and KAV doesn't recompute when only this prop changes.
+  const measureWindowOffset = useCallback(() => {
+    rootRef.current?.measureInWindow((_x, y) => setWindowOffsetY(Math.max(0, Math.round(y))))
+  }, [])
+
+  useEffect(() => {
+    // 'transitionEnd' is a native-stack event; expo-router's useNavigation() is typed for the generic navigator, so cast.
+    const unsubscribe = navigation.addListener('transitionEnd' as never, measureWindowOffset)
+    return unsubscribe
+  }, [navigation, measureWindowOffset])
 
   const send = () => {
     const text = draft.trim()
@@ -38,27 +57,35 @@ export default function ChatSupportScreen() {
   }, [messages])
 
   useEffect(() => {
-    const subscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
+    const showSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
+      setKeyboardShown(true)
       scrollRef.current?.scrollToEnd({ animated: true })
     })
-    return () => subscription.remove()
+    const hideSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardShown(false))
+    return () => {
+      showSubscription.remove()
+      hideSubscription.remove()
+    }
   }, [])
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
-      <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityLabel={t('common.close')}
-          className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800"
-        >
-          <BackIcon size={18} color={colors.foreground} />
-        </Pressable>
-        <Text className="flex-1 text-center font-serif text-lg font-semibold text-stone-900 dark:text-white">{t('chatSupport.title')}</Text>
-        <View className="size-9" />
-      </View>
+    // Bottom inset is applied by hand on the composer (below) so it can drop to 0 while the keyboard is up — otherwise a
+    // home-indicator-sized gap sits between the text field and the keyboard.
+    <SafeAreaView ref={rootRef} onLayout={measureWindowOffset} className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
+      {/* Wraps the header too, so KAV is the root's direct child and its layout y is relative to the measured root. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={windowOffsetY}>
+        <View className="flex-row items-center justify-between border-b border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityLabel={t('common.close')}
+            className="size-9 items-center justify-center rounded-full border border-stone-300 bg-white/80 dark:border-zinc-700 dark:bg-zinc-800"
+          >
+            <BackIcon size={18} color={colors.foreground} />
+          </Pressable>
+          <Text className="flex-1 text-center font-serif text-lg font-semibold text-stone-900 dark:text-white">{t('chatSupport.title')}</Text>
+          <View className="size-9" />
+        </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} className="flex-1" contentContainerClassName="gap-3 px-5 py-5" keyboardShouldPersistTaps="handled">
           {messages.map((message) => {
             // alignSelf doesn't auto-flip under RTL the way flexDirection: row
@@ -83,7 +110,10 @@ export default function ChatSupportScreen() {
           })}
         </ScrollView>
 
-        <View className="flex-row items-end gap-2 border-t border-stone-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+        <View
+          style={{ paddingBottom: 12 + (keyboardShown ? 0 : insets.bottom) }}
+          className="flex-row items-end gap-2 border-t border-stone-200 bg-white px-4 pt-3 dark:border-zinc-800 dark:bg-zinc-900"
+        >
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -99,7 +129,11 @@ export default function ChatSupportScreen() {
             accessibilityLabel={t('chatSupport.sendMessage')}
             className="size-11 items-center justify-center rounded-full bg-blue-600 disabled:opacity-40"
           >
-            <Send size={18} color="#ffffff" style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined} />
+            {/* Mirror on a wrapping View, not the SVG: a View flips around its centre, while a transform on the lucide
+                SVG flips around its top-left corner and pushes the glyph out of the button. */}
+            <View style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+              <Send size={18} color="#ffffff" />
+            </View>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
