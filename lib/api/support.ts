@@ -58,3 +58,9 @@ export async function getSupportTicket(id: string): Promise<SupportTicket | unde
   await delay()
   return store.find((ticket) => ticket.id === id)
 }
+
+/** Internal — part of deleteAccount (lib/api/user.ts). */
+export async function deleteTicketsForUser(userId: string): Promise<void> {
+  await ready
+  setStore(store.filter((ticket) => ticket.userId !== userId))
+}

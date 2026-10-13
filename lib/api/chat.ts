@@ -69,3 +69,10 @@ export async function setDraft(text: string): Promise<void> {
   if (store.draft === text) return
   setStore({ ...store, draft: text })
 }
+
+/** Internal — part of deleteAccount (lib/api/user.ts). Back to just the greeting, with no draft and a fresh auto-reply. */
+export async function clearChat(): Promise<void> {
+  await ready
+  setStore(emptyStore())
+  bus.invalidate()
+}

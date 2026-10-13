@@ -78,3 +78,10 @@ export async function recordReminder({ bookingId, name, at }: { bookingId: strin
   }
   if (read) await markRead(existing.id)
 }
+
+/** Internal — part of deleteAccount (lib/api/user.ts). Run last, after the cancellations it would otherwise record. */
+export async function clearNotifications(): Promise<void> {
+  await ready
+  setStore([])
+  bus.invalidate()
+}

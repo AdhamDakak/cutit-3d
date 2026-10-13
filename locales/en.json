@@ -281,7 +281,8 @@
     "emptyUpcomingTitle": "No upcoming bookings",
     "emptyUpcomingBody": "When you book a salon or a Cutit Go stylist, it'll show up here.",
     "findASalon": "Find a Salon",
-    "emptyPastTitle": "No past bookings yet"
+    "emptyPastTitle": "No past bookings yet",
+    "guestTitle": "Sign in to see your bookings"
   },
   "review": {
     "closeReview": "Close review",
@@ -447,7 +448,13 @@
     "deleteAddressTitle": "Delete this address?",
     "deleteAddressBody": "\"{{label}}\" will be removed from your saved addresses.",
     "delete": "Delete",
-    "addressInUse": "This address is used by an upcoming booking. Cancel or finish that booking before deleting it."
+    "addressInUse": "This address is used by an upcoming booking. Cancel or finish that booking before deleting it.",
+    "deleteTitle": "Delete your account?",
+    "deleteBody": "This permanently deletes your profile, addresses, saved cards, favorites, reviews and booking history, and cancels your upcoming bookings. This can't be undone.",
+    "deleteButton": "Delete my account",
+    "deleteWalletBlocked": "Your wallet still has a balance. Contact support before deleting your account.",
+    "contactSupport": "Contact support",
+    "deleting": "Deleting…"
   },
   "payments": {
     "topUp": "Top up",

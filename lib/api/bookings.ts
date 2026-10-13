@@ -182,3 +182,17 @@ export async function rescheduleBooking(id: string, startTime: string, endTime: 
     notifyBooking('booking_rescheduled', booking)
   }
 }
+
+/**
+ * Internal — part of deleteAccount (lib/api/user.ts). Cancels the user's upcoming bookings first (which also cancels
+ * their reminders, and is what a venue would see), then drops all of the user's bookings and any leftover reminder ids.
+ */
+export async function deleteBookingsForUser(userId: string): Promise<void> {
+  await ready
+  const upcoming = store.filter((booking) => booking.userId === userId && (booking.status === 'pending' || booking.status === 'confirmed'))
+  for (const booking of upcoming) await cancelBooking(booking.id)
+  await Promise.all(Object.values(reminderIds).map((notificationId) => cancelReminder(notificationId)))
+  setReminderIds({})
+  setStore(store.filter((booking) => booking.userId !== userId))
+  bus.invalidate()
+}

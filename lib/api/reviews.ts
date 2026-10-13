@@ -77,3 +77,10 @@ export async function createReview(input: CreateReviewInput): Promise<Review> {
   bus.invalidate()
   return review
 }
+
+/** Internal — part of deleteAccount (lib/api/user.ts). Only the user's own reviews; other customers' reviews stay. */
+export async function deleteReviewsForUser(userId: string): Promise<void> {
+  await ready
+  setStore(store.filter((review) => review.userId !== userId))
+  bus.invalidate()
+}

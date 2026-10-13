@@ -115,3 +115,12 @@ export async function setDefaultPaymentMethod(type: PaymentMethodType): Promise<
   setMethod(type)
   bus.invalidate()
 }
+
+/** Internal — part of deleteAccount (lib/api/user.ts). Cards and history are this device's single user's; the preference resets to cash. */
+export async function deletePaymentData(): Promise<void> {
+  await ready
+  setCards([])
+  setTransactions([])
+  setMethod('cash')
+  bus.invalidate()
+}

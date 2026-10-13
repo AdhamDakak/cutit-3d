@@ -32,6 +32,7 @@ import { useTranslation } from 'react-i18next'
 
 import { addressIcon, addressLabelText } from '@/components/address-form'
 import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
+import { DeleteAccountSheet } from '@/components/delete-account-sheet'
 import { maskedCard } from '@/components/card-brand-badge'
 import { SettingRow, ToggleRow } from '@/components/settings-rows'
 import { useAppState, type Gender } from '@/lib/app-state'
@@ -54,6 +55,7 @@ export default function ProfileScreen() {
   const isDark = theme === 'dark'
   const [offers, setOffers] = useState(false)
   const [showSignup, setShowSignup] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
   // Guests see none of the account data below (until sign-up it's the seeded mock user's). Every value comes from lib/hooks, so edits made on the account/* screens show up here as soon as they save.
   const { data: user } = useCurrentUser()
   const { data: addresses } = useAddresses()
@@ -288,7 +290,7 @@ export default function ProfileScreen() {
               <LogOut size={16} color={colors.mutedStrong} />
               <Text className="text-sm font-semibold text-stone-800 dark:text-zinc-200">{t('profile.logOut')}</Text>
             </Pressable>
-            <Pressable className="flex-row items-center justify-center py-2">
+            <Pressable accessibilityRole="button" onPress={() => setShowDelete(true)} className="flex-row items-center justify-center py-2">
               <Trash2 size={14} color="#ef4444" />
               <Text className="ms-1 text-xs text-red-500">{t('profile.deleteAccount')}</Text>
             </Pressable>
@@ -296,6 +298,14 @@ export default function ProfileScreen() {
         ) : null}
       </ScrollView>
       <CheckoutAuthSheet mode="signup" visible={showSignup} onClose={() => setShowSignup(false)} onAuthenticated={() => setShowSignup(false)} />
+      <DeleteAccountSheet
+        visible={showDelete}
+        onClose={() => setShowDelete(false)}
+        onDeleted={() => {
+          setShowDelete(false)
+          router.navigate('/(tabs)')
+        }}
+      />
     </SafeAreaView>
   )
 }

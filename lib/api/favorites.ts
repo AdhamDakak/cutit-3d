@@ -36,3 +36,10 @@ export async function toggleFavorite(userId: string, venueId: string): Promise<v
   )
   bus.invalidate()
 }
+
+/** Internal — part of deleteAccount (lib/api/user.ts). Writes the filtered list, so the seed doesn't come back on relaunch. */
+export async function deleteFavoritesForUser(userId: string): Promise<void> {
+  await ready
+  setStore(store.filter((favorite) => favorite.userId !== userId))
+  bus.invalidate()
+}

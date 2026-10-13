@@ -6,12 +6,14 @@ import { CalendarDays, CalendarX2, Clock3 } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { BookingCard } from '@/components/booking-card'
+import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
 import { NotificationBell } from '@/components/notification-bell'
 import { ReviewModal, type ReviewTarget } from '@/components/review-modal'
 import { getBookingDetails } from '@/lib/api'
+import { useAppState } from '@/lib/app-state'
 import type { Booking } from '@/lib/data'
 import { useAddresses, useBookings, useReviewedBookingIds } from '@/lib/hooks'
-import { tracking } from '@/lib/rtl'
+import { startAlign, tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
 type Tab = 'Upcoming' | 'Past History'
@@ -30,6 +32,8 @@ export default function BookingsScreen() {
     else if (tabParam === 'upcoming') setTab('Upcoming')
   }, [tabParam, linkedAt])
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null)
+  const [showSignup, setShowSignup] = useState(false)
+  const { isSignedIn } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
   const { data: bookings, isLoading: bookingsLoading } = useBookings()
@@ -76,18 +80,38 @@ export default function BookingsScreen() {
             className="size-10 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
           />
         </View>
-        <View className="mt-5 flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-900">
-          {(['Upcoming', 'Past History'] as Tab[]).map((item) => (
-            <Pressable key={item} onPress={() => setTab(item)} className={`flex-1 items-center rounded-lg py-2.5 ${tab === item ? 'bg-white dark:bg-zinc-800' : ''}`}>
-              <Text className={`text-sm font-semibold ${tab === item ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
-                {item === 'Upcoming' ? t('bookings.tabUpcoming') : t('bookings.tabPastHistory')}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {isSignedIn ? (
+          <View className="mt-5 flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-900">
+            {(['Upcoming', 'Past History'] as Tab[]).map((item) => (
+              <Pressable key={item} onPress={() => setTab(item)} className={`flex-1 items-center rounded-lg py-2.5 ${tab === item ? 'bg-white dark:bg-zinc-800' : ''}`}>
+                <Text className={`text-sm font-semibold ${tab === item ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
+                  {item === 'Upcoming' ? t('bookings.tabUpcoming') : t('bookings.tabPastHistory')}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
 
-      {bookingsLoading ? (
+      {/* Guests don't see the seeded demo bookings — only an invitation to sign up or start browsing. */}
+      {!isSignedIn ? (
+        <View className="px-5 pt-5">
+          <View className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <View className="size-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950">
+              <CalendarDays size={22} color={colors.accent} />
+            </View>
+            <Text style={startAlign} className="mt-4 font-serif text-xl font-semibold text-stone-900 dark:text-white">
+              {t('bookings.guestTitle')}
+            </Text>
+            <Pressable onPress={() => setShowSignup(true)} className="mt-4 items-center rounded-xl bg-blue-600 py-3">
+              <Text className="text-sm font-semibold text-white">{t('profile.guestCta')}</Text>
+            </Pressable>
+            <Pressable onPress={() => router.navigate('/(tabs)/explore')} className="mt-2 items-center rounded-xl border border-stone-200 py-3 dark:border-zinc-700">
+              <Text className="text-sm font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.findASalon')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : bookingsLoading ? (
         <View className="flex-1 items-center justify-center">
           <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.loading')}</Text>
         </View>
@@ -155,6 +179,7 @@ export default function BookingsScreen() {
         />
       )}
 
+      <CheckoutAuthSheet mode="signup" visible={showSignup} onClose={() => setShowSignup(false)} onAuthenticated={() => setShowSignup(false)} />
       <ReviewModal
         visible={reviewBookingId !== null}
         target={reviewTarget}

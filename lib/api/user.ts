@@ -116,6 +116,58 @@ export async function updateProfile(input: UpdateProfileInput): Promise<User> {
   return userStore
 }
 
+// --- Account deletion ------------------------------------------------------
+
+/** Thrown by deleteAccount while the wallet still holds money — real refunds only arrive with payments. */
+export class WalletNotEmptyError extends Error {
+  constructor() {
+    super('Wallet balance must be 0 before deleting the account')
+    this.name = 'WalletNotEmptyError'
+  }
+}
+
+/**
+ * MOCK account deletion (Apple requires it for any app with in-app sign-up). Cancels the user's upcoming bookings
+ * (and their reminders), then empties every user-data store — bookings, reminder ids, addresses, the user record,
+ * favorites, reviews, cards, wallet history, payment method, support tickets, chat, notifications — by writing empty
+ * values rather than removing keys, so the seed data doesn't come back on the next launch. Device preferences
+ * (language, theme, reminders toggle, onboarded) live in app-state and are untouched; the caller signs out.
+ *
+ * The real version is a backend function: it deletes the auth user and their personal data, and anonymises the
+ * venue's copy of past bookings instead of deleting them.
+ *
+ * The other stores are loaded lazily because each of them already imports this module.
+ */
+export async function deleteAccount(): Promise<void> {
+  await ready
+  await delay()
+  if (userStore.walletBalance > 0) throw new WalletNotEmptyError()
+  const userId = userStore.id
+  const [bookings, favorites, reviews, payments, support, chat, notifications] = await Promise.all([
+    import('./bookings'),
+    import('./favorites'),
+    import('./reviews'),
+    import('./payments'),
+    import('./support'),
+    import('./chat'),
+    import('./notifications'),
+  ])
+  await bookings.deleteBookingsForUser(userId)
+  await Promise.all([
+    favorites.deleteFavoritesForUser(userId),
+    reviews.deleteReviewsForUser(userId),
+    payments.deletePaymentData(),
+    support.deleteTicketsForUser(userId),
+    chat.clearChat(),
+  ])
+  setAddressStore([])
+  // Same id, so a later sign-up on this device starts from an empty record rather than the seeded demo user.
+  setUserStore({ ...userStore, fullName: '', email: '', phone: '', avatarUrl: null, addresses: [], walletBalance: 0 })
+  addressBus.invalidate()
+  userBus.invalidate()
+  await notifications.clearNotifications()
+}
+
 // --- Addresses -------------------------------------------------------------
 
 /** Thrown by deleteAddress when a pending/confirmed booking still points at the address. */

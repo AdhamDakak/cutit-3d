@@ -1,6 +1,7 @@
 import {
   addAddress,
   completeProfile,
+  deleteAccount,
   deleteAddress,
   getCurrentUser,
   listAddresses,
@@ -58,4 +59,13 @@ export function useCompleteProfile() {
 
 export function useUpdateProfile() {
   return useMutation((input: UpdateProfileInput) => updateProfile(input))
+}
+
+/** Deleting the account ends the session too, so — like useVerifyOtp's signIn — this owns the app-state signOut. */
+export function useDeleteAccount() {
+  const { signOut } = useAppState()
+  return useMutation(async () => {
+    await deleteAccount()
+    signOut()
+  })
 }
