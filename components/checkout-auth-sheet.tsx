@@ -1,107 +1,75 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated from 'react-native-reanimated'
 import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
-import { COUNTRY_CODES, type CountryCode } from '@/components/country-code-picker'
+import { AccountNotFoundStep, AuthSwitchLink, WelcomeBackStep } from '@/components/auth-flow-steps'
 import { OtpStep } from '@/components/otp-step'
 import { PhoneStep } from '@/components/phone-step'
 import { ProfileStep } from '@/components/profile-step'
+import { usePhoneAuthFlow, type AuthStep } from '@/components/usePhoneAuthFlow'
 import { useSheetDismissGesture } from '@/components/useSheetDismissGesture'
-import { useAppState, type Gender } from '@/lib/app-state'
-import { useCompleteProfile, useRequestOtp, useVerifyOtp } from '@/lib/hooks'
+import { useAppState } from '@/lib/app-state'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
-type Step = 'phone' | 'otp' | 'profile'
-const STEP_INDEX: Record<Step, number> = { phone: 1, otp: 2, profile: 3 }
+const STEP_INDEX: Record<AuthStep, number> = { phone: 1, otp: 2, profile: 3, 'not-found': 2, 'welcome-back': 3 }
 
 type CheckoutAuthSheetProps = {
   visible: boolean
   /** Dismissed without finishing — the caller keeps its selections and creates nothing. */
   onClose: () => void
-  /** Account created and session signed in — the caller continues its own Confirm (or, in 'signup', just carries on). */
+  /** Signed in (new account or a returning one) — the caller continues its own Confirm, or just carries on. */
   onAuthenticated: () => void
   /**
-   * 'checkout' (default): the copy for creating an account at Confirm, used by venue/[id].tsx and go-booking/review.tsx.
-   * 'signup': standalone account creation from Home's avatar or the guest Profile card — same three steps, own copy.
+   * 'checkout' (default): creating an account at Confirm, used by venue/[id].tsx and go-booking/review.tsx.
+   * 'signup': standalone account creation (Home's avatar, the guest cards).
+   * 'login': a returning user logging in. Every mode can switch between signing up and logging in.
    */
-  mode?: 'checkout' | 'signup'
+  mode?: 'checkout' | 'signup' | 'login'
 }
 
 const COPY_KEYS = {
   checkout: { title: 'checkoutAuth.title', subtitle: 'checkoutAuth.subtitle', phoneSubtitle: 'checkoutAuth.phoneSubtitle', button: 'checkoutAuth.createAndConfirm' },
   signup: { title: 'checkoutAuth.signupTitle', subtitle: 'checkoutAuth.signupSubtitle', phoneSubtitle: 'checkoutAuth.signupPhoneSubtitle', button: 'checkoutAuth.createAccount' },
+  login: { title: 'auth.loginTitle', subtitle: 'auth.loginSubtitle', phoneSubtitle: 'checkoutAuth.signupPhoneSubtitle', button: 'checkoutAuth.createAccount' },
 } as const
 
 /**
- * In-flow phone → OTP → profile sign-up, presented over the venue/review
- * screen so the booking draft underneath is never unmounted. Composes the
- * same three step components app/auth.tsx uses.
+ * In-flow phone → OTP (→ profile) sign-up or log-in, presented over the current screen so whatever is underneath (a
+ * booking draft, Home) is never unmounted. Runs the same usePhoneAuthFlow as app/auth.tsx.
  */
 export function CheckoutAuthSheet({ visible, onClose, onAuthenticated, mode = 'checkout' }: CheckoutAuthSheetProps) {
   const { t } = useTranslation()
   const colors = useThemeColors()
   const { activeGender } = useAppState()
-  const copy = COPY_KEYS[mode]
 
-  const [step, setStep] = useState<Step>('phone')
-  const [country, setCountry] = useState<CountryCode>(COUNTRY_CODES[0])
-  const [phone, setPhone] = useState('')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [gender, setGender] = useState<Gender>(activeGender)
-
-  const requestOtp = useRequestOtp()
-  const verifyOtp = useVerifyOtp()
-  const completeProfile = useCompleteProfile()
-  const error = requestOtp.error || verifyOtp.error || completeProfile.error
-  const fullPhone = `${country.code} ${phone}`
-
-  const reset = () => {
-    setStep('phone')
-    setPhone('')
-    setName('')
-    setEmail('')
-    setGender(activeGender)
-  }
+  const auth = usePhoneAuthFlow({
+    initialFlow: mode === 'login' ? 'login' : 'signup',
+    defaultGender: activeGender,
+    onAuthenticated: () => {
+      auth.reset()
+      onAuthenticated()
+    },
+  })
+  // Copy follows the current flow: switching a checkout sheet to log in shows the log-in copy, and back.
+  const copy = COPY_KEYS[auth.flow === 'login' ? 'login' : mode === 'login' ? 'signup' : mode]
 
   const handleClose = () => {
-    reset()
+    auth.reset()
     onClose()
   }
 
   const { panGesture, animatedStyle } = useSheetDismissGesture(visible, handleClose)
 
-  const handlePhone = async () => {
-    try {
-      await requestOtp.mutate(fullPhone)
-      setStep('otp')
-    } catch {
-      // surfaced below
-    }
-  }
-
-  const handleOtp = async (code: string) => {
-    try {
-      await verifyOtp.mutate(fullPhone, code)
-      setStep('profile')
-    } catch {
-      // surfaced below
-    }
-  }
-
-  const handleProfile = async () => {
-    try {
-      await completeProfile.mutate({ fullName: name, email: email || undefined, gender, phone: fullPhone })
-      reset()
-      onAuthenticated()
-    } catch {
-      // surfaced below
-    }
-  }
+  // The sheet stays mounted between opens (and one screen can open it as signup or login), so start each opening
+  // fresh in the current `mode`.
+  useEffect(() => {
+    if (visible) auth.reset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, mode])
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
@@ -114,7 +82,7 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated, mode = 'c
                   <View className="flex-row items-start justify-between gap-3 border-b border-stone-200 px-5 pb-4 pt-5 dark:border-zinc-800">
                     <View className="min-w-0 flex-1">
                       <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>
-                        {t('checkoutAuth.stepIndicator', { current: STEP_INDEX[step], total: 3 })}
+                        {t('checkoutAuth.stepIndicator', { current: STEP_INDEX[auth.step], total: auth.flow === 'login' ? 2 : 3 })}
                       </Text>
                       <Text className="mt-1 font-serif text-xl font-semibold text-stone-900 dark:text-white">{t(copy.title)}</Text>
                       <Text className="mt-1 text-xs text-stone-500 dark:text-zinc-400">{t(copy.subtitle)}</Text>
@@ -130,34 +98,45 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated, mode = 'c
                 </GestureDetector>
 
                 <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="px-5 pb-10 pt-6">
-                  {step === 'phone' && (
+                  {auth.step === 'phone' && (
                     <PhoneStep
-                      country={country}
-                      onCountryChange={setCountry}
-                      phone={phone}
-                      onPhoneChange={setPhone}
-                      onSubmit={handlePhone}
-                      isPending={requestOtp.isPending}
+                      country={auth.country}
+                      onCountryChange={auth.setCountry}
+                      phone={auth.phone}
+                      onPhoneChange={auth.setPhone}
+                      onSubmit={auth.submitPhone}
+                      isPending={auth.isRequestingOtp}
                       title={t('checkoutAuth.phoneTitle')}
                       subtitle={t(copy.phoneSubtitle)}
                     />
                   )}
-                  {step === 'otp' && <OtpStep countryCode={country.code} phone={phone} onComplete={handleOtp} isPending={verifyOtp.isPending} />}
-                  {step === 'profile' && (
+                  {auth.step === 'otp' && <OtpStep countryCode={auth.country.code} phone={auth.phone} onComplete={auth.submitOtp} isPending={auth.isVerifying} />}
+                  {auth.step === 'profile' && (
                     <ProfileStep
-                      name={name}
-                      onNameChange={setName}
-                      email={email}
-                      onEmailChange={setEmail}
-                      gender={gender}
-                      onGenderChange={setGender}
-                      onSubmit={handleProfile}
-                      isPending={completeProfile.isPending}
+                      name={auth.name}
+                      onNameChange={auth.setName}
+                      email={auth.email}
+                      onEmailChange={auth.setEmail}
+                      gender={auth.gender}
+                      onGenderChange={auth.setGender}
+                      onSubmit={auth.submitProfile}
+                      isPending={auth.isCreating}
                       title={t('checkoutAuth.profileTitle')}
-                      buttonLabel={t(copy.button)}
+                      buttonLabel={t(mode === 'checkout' ? COPY_KEYS.checkout.button : COPY_KEYS.signup.button)}
                     />
                   )}
-                  {error ? <Text className="mt-3 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
+                  {auth.step === 'not-found' && <AccountNotFoundStep onCreate={auth.createInsteadOfLogin} onUseAnotherNumber={auth.startOver} />}
+                  {auth.step === 'welcome-back' && (
+                    <WelcomeBackStep
+                      name={auth.welcomeName}
+                      onContinue={() => {
+                        auth.reset()
+                        onAuthenticated()
+                      }}
+                    />
+                  )}
+                  {auth.error ? <Text className="mt-3 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
+                  {auth.step === 'phone' || auth.step === 'otp' ? <AuthSwitchLink flow={auth.flow} onPress={auth.switchFlow} /> : null}
                 </ScrollView>
               </View>
             </Animated.View>

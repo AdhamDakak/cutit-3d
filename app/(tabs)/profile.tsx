@@ -54,7 +54,7 @@ export default function ProfileScreen() {
   const router = useRouter()
   const isDark = theme === 'dark'
   const [offers, setOffers] = useState(false)
-  const [showSignup, setShowSignup] = useState(false)
+  const [authMode, setAuthMode] = useState<'signup' | 'login' | null>(null)
   const [showDelete, setShowDelete] = useState(false)
   // Guests see none of the account data below (until sign-up it's the seeded mock user's). Every value comes from lib/hooks, so edits made on the account/* screens show up here as soon as they save.
   const { data: user } = useCurrentUser()
@@ -236,9 +236,14 @@ export default function ProfileScreen() {
             <Text style={startAlign} className="mt-1 text-sm leading-6 text-stone-500 dark:text-zinc-400">
               {t('profile.guestBody')}
             </Text>
-            <Pressable onPress={() => setShowSignup(true)} className="mt-4 items-center rounded-xl bg-blue-600 py-3">
-              <Text className="text-sm font-semibold text-white">{t('profile.guestCta')}</Text>
-            </Pressable>
+            <View className="mt-4 flex-row gap-2">
+              <Pressable onPress={() => setAuthMode('signup')} className="flex-1 items-center rounded-xl bg-blue-600 py-3">
+                <Text className="text-sm font-semibold text-white">{t('profile.guestCta')}</Text>
+              </Pressable>
+              <Pressable onPress={() => setAuthMode('login')} className="flex-1 items-center rounded-xl border border-stone-300 py-3 dark:border-zinc-700">
+                <Text className="text-sm font-semibold text-stone-800 dark:text-zinc-200">{t('auth.logIn')}</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -297,7 +302,7 @@ export default function ProfileScreen() {
           </View>
         ) : null}
       </ScrollView>
-      <CheckoutAuthSheet mode="signup" visible={showSignup} onClose={() => setShowSignup(false)} onAuthenticated={() => setShowSignup(false)} />
+      <CheckoutAuthSheet mode={authMode ?? 'signup'} visible={authMode !== null} onClose={() => setAuthMode(null)} onAuthenticated={() => setAuthMode(null)} />
       <DeleteAccountSheet
         visible={showDelete}
         onClose={() => setShowDelete(false)}

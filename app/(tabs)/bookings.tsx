@@ -32,7 +32,7 @@ export default function BookingsScreen() {
     else if (tabParam === 'upcoming') setTab('Upcoming')
   }, [tabParam, linkedAt])
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null)
-  const [showSignup, setShowSignup] = useState(false)
+  const [authMode, setAuthMode] = useState<'signup' | 'login' | null>(null)
   const { isSignedIn } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
@@ -103,9 +103,14 @@ export default function BookingsScreen() {
             <Text style={startAlign} className="mt-4 font-serif text-xl font-semibold text-stone-900 dark:text-white">
               {t('bookings.guestTitle')}
             </Text>
-            <Pressable onPress={() => setShowSignup(true)} className="mt-4 items-center rounded-xl bg-blue-600 py-3">
-              <Text className="text-sm font-semibold text-white">{t('profile.guestCta')}</Text>
-            </Pressable>
+            <View className="mt-4 flex-row gap-2">
+              <Pressable onPress={() => setAuthMode('signup')} className="flex-1 items-center rounded-xl bg-blue-600 py-3">
+                <Text className="text-sm font-semibold text-white">{t('profile.guestCta')}</Text>
+              </Pressable>
+              <Pressable onPress={() => setAuthMode('login')} className="flex-1 items-center rounded-xl border border-stone-300 py-3 dark:border-zinc-700">
+                <Text className="text-sm font-semibold text-stone-800 dark:text-zinc-200">{t('auth.logIn')}</Text>
+              </Pressable>
+            </View>
             <Pressable onPress={() => router.navigate('/(tabs)/explore')} className="mt-2 items-center rounded-xl border border-stone-200 py-3 dark:border-zinc-700">
               <Text className="text-sm font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.findASalon')}</Text>
             </Pressable>
@@ -179,7 +184,7 @@ export default function BookingsScreen() {
         />
       )}
 
-      <CheckoutAuthSheet mode="signup" visible={showSignup} onClose={() => setShowSignup(false)} onAuthenticated={() => setShowSignup(false)} />
+      <CheckoutAuthSheet mode={authMode ?? 'signup'} visible={authMode !== null} onClose={() => setAuthMode(null)} onAuthenticated={() => setAuthMode(null)} />
       <ReviewModal
         visible={reviewBookingId !== null}
         target={reviewTarget}

@@ -6,12 +6,33 @@ import { hydrate, persist } from './_internal/persist'
 
 const USER_STORAGE_KEY = '@cutit/user'
 const ADDRESSES_STORAGE_KEY = '@cutit/addresses'
+const ACCOUNTS_STORAGE_KEY = '@cutit/mock-accounts'
 
 // There's only ever one mock user in this app, so every hook here can call
 // this instead of taking a userId param — the seam is still real (a
 // multi-user backend just fills in a different id per session).
 let userStore: User = { ...currentUser }
 let addressStore: Address[] = [...currentUser.addresses]
+
+// MOCK "server" account registry: who has signed up, keyed by E.164 phone. Stands in for Supabase Auth's users table.
+// It lives on this device, so an uninstall wipes it — a true "reinstall and log in" only works once the backend
+// exists. signOut keeps it (the account still exists); deleteAccount removes the entry.
+export type RegisteredAccount = { fullName: string; email: string; gender: Gender }
+
+/**
+ * "+20 100 123 4567" / "+20 01001234567" → "+201001234567": the dial code plus the national number's digits, with a
+ * leading trunk 0 dropped. Inputs without a "+CC " prefix are just reduced to their digits.
+ */
+export function toE164(phone: string): string {
+  const match = phone.trim().match(/^\+(\d{1,4})\s+(.*)$/)
+  if (!match) return `+${phone.replace(/\D/g, '')}`
+  return `+${match[1]}${match[2].replace(/\D/g, '').replace(/^0+/, '')}`
+}
+
+const seedAccounts = (): Record<string, RegisteredAccount> => ({
+  [toE164(currentUser.phone)]: { fullName: currentUser.fullName, email: currentUser.email, gender: currentUser.gender },
+})
+let accountStore: Record<string, RegisteredAccount> = seedAccounts()
 
 // Hydrates both stores from storage once at import time, falling back
 // to the seed above on a first-ever launch. Every exported function below
@@ -23,7 +44,15 @@ const ready: Promise<void> = Promise.all([
   hydrate(ADDRESSES_STORAGE_KEY, () => addressStore).then((loaded) => {
     addressStore = loaded
   }),
+  hydrate(ACCOUNTS_STORAGE_KEY, seedAccounts).then((loaded) => {
+    accountStore = loaded
+  }),
 ]).then(() => undefined)
+
+function setAccountStore(next: Record<string, RegisteredAccount>) {
+  accountStore = next
+  persist(ACCOUNTS_STORAGE_KEY, accountStore)
+}
 
 function setUserStore(next: User) {
   userStore = next
@@ -64,10 +93,36 @@ export async function requestOtp(phone: string): Promise<void> {
   if (phone.replace(/\D/g, '').length < 10) throw new Error('Invalid phone number')
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<void> {
+/** `isNewUser` tells the flow whether to ask for a profile (sign-up) or log the existing account in. */
+export async function verifyOtp(phone: string, code: string): Promise<{ isNewUser: boolean }> {
+  await ready
   await delay()
   if (phone.replace(/\D/g, '').length < 10) throw new Error('Invalid phone number')
   if (!/^\d{6}$/.test(code)) throw new Error('Invalid code')
+  return { isNewUser: !accountStore[toE164(phone)] }
+}
+
+/** Thrown by logIn for a phone with no registered account. */
+export class AccountNotFoundError extends Error {
+  constructor() {
+    super('No account found for this number')
+    this.name = 'AccountNotFoundError'
+  }
+}
+
+/**
+ * Logs a returning user in (after a verified OTP): restores their name, email, and gender from the registry into the
+ * current user record. The caller (useLogIn) flips the session. Same single mock record as completeProfile, so the
+ * device's bookings/favorites stay attached.
+ */
+export async function logIn(phone: string): Promise<User> {
+  await ready
+  await delay()
+  const account = accountStore[toE164(phone)]
+  if (!account) throw new AccountNotFoundError()
+  setUserStore({ ...userStore, ...account, phone: phone.trim() })
+  userBus.invalidate()
+  return userStore
 }
 
 export type CompleteProfileInput = {
@@ -94,6 +149,9 @@ export async function completeProfile(input: CompleteProfileInput): Promise<User
     gender: input.gender,
     phone: input.phone?.trim() || userStore.phone,
   })
+  // Registers the account, so this number can log back in later instead of signing up again.
+  const phone = input.phone?.trim() || userStore.phone
+  if (phone) setAccountStore({ ...accountStore, [toE164(phone)]: { fullName: userStore.fullName, email: userStore.email, gender: userStore.gender } })
   userBus.invalidate()
   return userStore
 }
@@ -112,13 +170,15 @@ export async function updateProfile(input: UpdateProfileInput): Promise<User> {
     ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : null),
     ...(input.email !== undefined ? { email: input.email.trim() } : null),
   })
+  const key = userStore.phone ? toE164(userStore.phone) : null
+  if (key && accountStore[key]) setAccountStore({ ...accountStore, [key]: { ...accountStore[key], fullName: userStore.fullName, email: userStore.email } })
   userBus.invalidate()
   return userStore
 }
 
 // --- Account deletion ------------------------------------------------------
 
-/** Thrown by deleteAccount while the wallet still holds money — real refunds only arrive with payments. */
+/** Thrown by deleteAccount while the wallet still holds money and the user hasn't agreed to forfeit it. */
 export class WalletNotEmptyError extends Error {
   constructor() {
     super('Wallet balance must be 0 before deleting the account')
@@ -138,10 +198,12 @@ export class WalletNotEmptyError extends Error {
  *
  * The other stores are loaded lazily because each of them already imports this module.
  */
-export async function deleteAccount(): Promise<void> {
+export async function deleteAccount({ forfeitWalletBalance = false }: { forfeitWalletBalance?: boolean } = {}): Promise<void> {
   await ready
   await delay()
-  if (userStore.walletBalance > 0) throw new WalletNotEmptyError()
+  // A remaining balance is lost on deletion, so it needs explicit consent. The real backend must enforce the same rule
+  // server-side and record the forfeit consent (amount + timestamp), not just trust the client's flag.
+  if (userStore.walletBalance > 0 && !forfeitWalletBalance) throw new WalletNotEmptyError()
   const userId = userStore.id
   const [bookings, favorites, reviews, payments, support, chat, notifications] = await Promise.all([
     import('./bookings'),
@@ -161,6 +223,10 @@ export async function deleteAccount(): Promise<void> {
     chat.clearChat(),
   ])
   setAddressStore([])
+  if (userStore.phone) {
+    const { [toE164(userStore.phone)]: _, ...remaining } = accountStore
+    setAccountStore(remaining)
+  }
   // Same id, so a later sign-up on this device starts from an empty record rather than the seeded demo user.
   setUserStore({ ...userStore, fullName: '', email: '', phone: '', avatarUrl: null, addresses: [], walletBalance: 0 })
   addressBus.invalidate()

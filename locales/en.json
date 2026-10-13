@@ -61,7 +61,16 @@
     "fullNamePlaceholder": "Full name",
     "emailPlaceholder": "Email address (optional)",
     "chooseCountryCode": "Choose country code",
-    "countryCodeTitle": "Country code"
+    "countryCodeTitle": "Country code",
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Log in with your phone number.",
+    "noAccountFound": "No account found for this number.",
+    "createAnAccount": "Create an account",
+    "useAnotherNumber": "Use a different number",
+    "welcomeBackLoggedIn": "Welcome back, {{name}}! You're logged in.",
+    "switchToLogin": "Already have an account? Log in",
+    "switchToSignup": "New to Cutit? Create an account",
+    "logIn": "Log in"
   },
   "menu": {
     "title": "Menu",
@@ -452,7 +461,9 @@
     "deleteTitle": "Delete your account?",
     "deleteBody": "This permanently deletes your profile, addresses, saved cards, favorites, reviews and booking history, and cancels your upcoming bookings. This can't be undone.",
     "deleteButton": "Delete my account",
-    "deleteWalletBlocked": "Your wallet still has a balance. Contact support before deleting your account.",
+    "deleteWalletWarning": "You have EGP {{amount}} in your Cutit Wallet. If you delete your account, this balance is lost and can't be refunded.",
+    "deleteWalletHint": "To get your balance back, contact support before deleting.",
+    "deleteAnyway": "Delete anyway",
     "contactSupport": "Contact support",
     "deleting": "Deleting…"
   },

@@ -5,6 +5,7 @@ import {
   deleteAddress,
   getCurrentUser,
   listAddresses,
+  logIn,
   requestOtp,
   subscribeAddresses,
   subscribeUser,
@@ -44,17 +45,29 @@ export function useRequestOtp() {
   return useMutation((phone: string) => requestOtp(phone))
 }
 
-/** A verified code is the moment the session becomes signed-in, so this owns the app-state flip. */
+/** Resolves to `{ isNewUser }`. Doesn't sign in — that happens once the flow ends in logIn or completeProfile. */
 export function useVerifyOtp() {
+  return useMutation((phone: string, code: string) => verifyOtp(phone, code))
+}
+
+/** Logs a registered number back in and owns the app-state signIn (rejects with AccountNotFoundError otherwise). */
+export function useLogIn() {
   const { signIn } = useAppState()
-  return useMutation(async (phone: string, code: string) => {
-    await verifyOtp(phone, code)
+  return useMutation(async (phone: string) => {
+    const user = await logIn(phone)
     signIn()
+    return user
   })
 }
 
+/** Creates (registers) the account and owns the app-state signIn, the same way useLogIn does. */
 export function useCompleteProfile() {
-  return useMutation((input: CompleteProfileInput) => completeProfile(input))
+  const { signIn } = useAppState()
+  return useMutation(async (input: CompleteProfileInput) => {
+    const user = await completeProfile(input)
+    signIn()
+    return user
+  })
 }
 
 export function useUpdateProfile() {
@@ -64,8 +77,8 @@ export function useUpdateProfile() {
 /** Deleting the account ends the session too, so — like useVerifyOtp's signIn — this owns the app-state signOut. */
 export function useDeleteAccount() {
   const { signOut } = useAppState()
-  return useMutation(async () => {
-    await deleteAccount()
+  return useMutation(async (options?: { forfeitWalletBalance?: boolean }) => {
+    await deleteAccount(options)
     signOut()
   })
 }

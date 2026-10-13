@@ -61,7 +61,16 @@
     "fullNamePlaceholder": "الاسم الكامل",
     "emailPlaceholder": "البريد الإلكتروني (اختياري)",
     "chooseCountryCode": "اختر رمز الدولة",
-    "countryCodeTitle": "رمز الدولة"
+    "countryCodeTitle": "رمز الدولة",
+    "loginTitle": "أهلاً بعودتك",
+    "loginSubtitle": "سجّل الدخول برقم هاتفك.",
+    "noAccountFound": "لا يوجد حساب مسجّل بهذا الرقم.",
+    "createAnAccount": "إنشاء حساب",
+    "useAnotherNumber": "استخدم رقماً آخر",
+    "welcomeBackLoggedIn": "أهلاً بعودتك يا {{name}}! تم تسجيل دخولك.",
+    "switchToLogin": "لديك حساب بالفعل؟ سجّل الدخول",
+    "switchToSignup": "جديد على Cutit؟ أنشئ حساباً",
+    "logIn": "تسجيل الدخول"
   },
   "menu": {
     "title": "القائمة",
@@ -455,7 +464,9 @@
     "deleteTitle": "حذف حسابك؟",
     "deleteBody": "سيؤدي هذا إلى حذف ملفك الشخصي وعناوينك وبطاقاتك المحفوظة ومفضلتك وتقييماتك وسجل حجوزاتك نهائياً، وإلغاء حجوزاتك القادمة. لا يمكن التراجع عن ذلك.",
     "deleteButton": "حذف حسابي",
-    "deleteWalletBlocked": "لا يزال في محفظتك رصيد. تواصل مع الدعم قبل حذف حسابك.",
+    "deleteWalletWarning": "لديك {{amount}} جنيه في محفظة Cutit. إذا حذفت حسابك، سيضيع هذا الرصيد ولا يمكن استرداده.",
+    "deleteWalletHint": "لاسترداد رصيدك، تواصل مع الدعم قبل حذف الحساب.",
+    "deleteAnyway": "حذف الحساب على أي حال",
     "contactSupport": "تواصل مع الدعم",
     "deleting": "جارٍ الحذف…"
   },
