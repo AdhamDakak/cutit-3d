@@ -262,6 +262,17 @@ export type AppNotification = {
   params: Record<string, string | number>
 }
 
+// --- Chat support ---------------------------------------------------------------
+
+export type ChatMessage = {
+  id: string
+  from: 'user' | 'support'
+  /** The user's own words. Empty for `kind` messages, whose text comes from i18n at display time (follows language). */
+  text: string
+  createdAt: string
+  kind?: 'greeting' | 'auto-reply'
+}
+
 // ---------------------------------------------------------------------------
 // Mock tables
 // ---------------------------------------------------------------------------

@@ -126,7 +126,8 @@
     "title": "Chat Support",
     "greeting": "Hi! I'm here to help with bookings, payments, or anything else. What's up?",
     "placeholder": "Type a message...",
-    "sendMessage": "Send message"
+    "sendMessage": "Send message",
+    "autoReply": "Thanks! A member of our team will reply shortly."
   },
   "tabs": {
     "home": "Home",

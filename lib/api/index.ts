@@ -8,6 +8,7 @@ export * from './reviews'
 export * from './payments'
 export * from './support'
 export * from './notifications'
+export * from './chat'
 
 // ANY_STAFF_ID (a client-side selection sentinel, translated to
 // { staffId: null, anyStaff: true } by createBooking) and getBookingDetails

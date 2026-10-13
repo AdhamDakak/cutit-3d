@@ -82,10 +82,9 @@ export default function RootLayout() {
             <Stack.Screen name="auth" />
             <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
             <Stack.Screen name="venue/[id]" options={{ presentation: 'modal' }} />
-            {/* Full-screen, not a sheet: an iOS sheet's offset from the window top is applied natively and invisible to
-                RN layout, so chat-support's KeyboardAvoidingView lifted its composer too little. No swipe-down here —
-                the screen's own back arrow (router.back()) is the way out. */}
-            <Stack.Screen name="chat-support" options={{ presentation: 'fullScreenModal' }} />
+            {/* A sheet again: chat-support pads itself by the keyboard's height instead of using KeyboardAvoidingView,
+                which can't see a sheet's native offset from the window top. */}
+            <Stack.Screen name="chat-support" options={{ presentation: 'modal' }} />
             <Stack.Screen name="help" options={{ presentation: 'modal' }} />
             <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
             <Stack.Screen name="favorites" options={{ presentation: 'modal' }} />
