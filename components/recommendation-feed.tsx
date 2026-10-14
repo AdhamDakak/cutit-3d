@@ -5,26 +5,16 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 
 import { getVenueStartingPrice } from '@/lib/api'
-import type { Gender } from '@/lib/app-state'
 import type { Venue } from '@/lib/data'
 import { startAlign, tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
-export function RecommendationFeed({
-  establishments,
-  signedIn,
-  gender,
-}: {
-  establishments: Venue[]
-  signedIn: boolean
-  gender: Gender
-}) {
+/** `establishments` arrive already matched to the viewer's content gender (Home queries them that way). */
+export function RecommendationFeed({ establishments, signedIn }: { establishments: Venue[]; signedIn: boolean }) {
   const { t } = useTranslation()
   const colors = useThemeColors()
   const router = useRouter()
-  const recommendations = establishments.filter(
-    (item) => !signedIn || item.gender === (gender === 'For Her' ? 'Women' : 'Men') || item.gender === 'Unisex',
-  )
+  const recommendations = establishments
 
   return (
     <View className="px-5 pt-7">
@@ -33,7 +23,7 @@ export function RecommendationFeed({
           <Text className={`text-[11px] font-medium uppercase ${tracking('tracking-[3px]')} text-stone-500 dark:text-zinc-500`}>{t('home.smartPicks')}</Text>
           <Text className="mt-1 font-serif text-2xl font-semibold text-stone-900 dark:text-white">{t('home.recommendedForYou')}</Text>
         </View>
-        <Text className="text-xs text-stone-400 dark:text-zinc-500">{t(signedIn ? 'home.basedOnProfile' : 'home.exploreBoth')}</Text>
+        {signedIn ? <Text className="text-xs text-stone-400 dark:text-zinc-500">{t('home.basedOnProfile')}</Text> : null}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-3 pb-1">

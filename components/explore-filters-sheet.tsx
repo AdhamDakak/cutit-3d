@@ -7,21 +7,23 @@ import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { useSheetDismissGesture } from '@/components/useSheetDismissGesture'
-import type { VenueCategory, VenueGender } from '@/lib/data'
+import type { Gender, VenueCategory } from '@/lib/data'
 import { useThemeColors } from '@/lib/theme'
 
 export type ExploreFiltersDraft = {
   categories: VenueCategory[]
-  gender: VenueGender | null
+  /** Men's or women's venues — Explore starts it on the content gender; there's no "any" (one gender per venue). */
+  gender: Gender
   priceMax: number | null
   minRating: number | null
   maxDistanceKm: number | null
   openNow: boolean
 }
 
+/** Explore overrides `gender` with the content gender (resetExploreFilters / its own state); 'female' is only a placeholder. */
 export const DEFAULT_EXPLORE_FILTERS: ExploreFiltersDraft = {
   categories: [],
-  gender: null,
+  gender: 'female',
   priceMax: null,
   minRating: null,
   maxDistanceKm: null,
@@ -29,7 +31,8 @@ export const DEFAULT_EXPLORE_FILTERS: ExploreFiltersDraft = {
 }
 
 const CATEGORIES: VenueCategory[] = ['Barbershop', 'Beauty Salon']
-const GENDERS: VenueGender[] = ['Men', 'Women', 'Unisex']
+const GENDERS: Gender[] = ['male', 'female']
+const GENDER_LABEL_KEYS: Record<Gender, string> = { male: 'exploreFilters.genderMen', female: 'exploreFilters.genderWomen' }
 const RATING_STEPS = [3.5, 4, 4.5]
 const DISTANCE_STEPS_KM = [2, 5, 10]
 
@@ -125,12 +128,9 @@ export function ExploreFiltersSheet({ visible, initial, onClose, onApply, onRese
                 <View className="gap-3">
                   <Text className="text-sm font-semibold text-stone-900 dark:text-white">{t('exploreFilters.genderLabel')}</Text>
                   <View className="flex-row flex-wrap gap-2">
-                    <Pressable onPress={() => setDraft((prev) => ({ ...prev, gender: null }))} className={chipClass(draft.gender === null)}>
-                      <Text className={chipTextClass(draft.gender === null)}>{t('exploreFilters.genderAny')}</Text>
-                    </Pressable>
                     {GENDERS.map((gender) => (
                       <Pressable key={gender} onPress={() => setDraft((prev) => ({ ...prev, gender }))} className={chipClass(draft.gender === gender)}>
-                        <Text className={chipTextClass(draft.gender === gender)}>{t(`exploreFilters.gender${gender}`)}</Text>
+                        <Text className={chipTextClass(draft.gender === gender)}>{t(GENDER_LABEL_KEYS[gender])}</Text>
                       </Pressable>
                     ))}
                   </View>

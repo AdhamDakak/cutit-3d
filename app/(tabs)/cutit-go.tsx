@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { ChevronLeft, ChevronRight, DoorOpen, Sparkles } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { useContentGender } from '@/lib/hooks'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
@@ -12,20 +13,23 @@ export default function CutitGoScreen() {
   const router = useRouter()
   const colors = useThemeColors()
   const ForwardChevron = I18nManager.isRTL ? ChevronLeft : ChevronRight
+  // Copy follows the content gender (i18next context → e.g. cutitGo.eventsTitle_male): "Events & Grooms" for men,
+  // "Events & Bridal" for women.
+  const gender = useContentGender()
 
   const options = [
     {
       key: 'at-home',
       icon: DoorOpen,
       title: t('cutitGo.atHomeTitle'),
-      description: t('cutitGo.atHomeDescription'),
+      description: t('cutitGo.atHomeDescription', { context: gender }),
       onPress: () => router.push('/booking-flow?type=at-home'),
     },
     {
       key: 'events-bridal',
       icon: Sparkles,
-      title: t('cutitGo.eventsTitle'),
-      description: t('cutitGo.eventsDescription'),
+      title: t('cutitGo.eventsTitle', { context: gender }),
+      description: t('cutitGo.eventsDescription', { context: gender }),
       onPress: () => router.push('/booking-flow?type=events-bridal'),
     },
   ] as const

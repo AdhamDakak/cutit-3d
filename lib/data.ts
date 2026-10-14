@@ -1,4 +1,8 @@
-import type { Gender } from '@/lib/app-state'
+/**
+ * A person's gender as stored on their profile. It decides which venues/stylists/services the app shows
+ * (see lib/api/venues.ts's mapping helpers). "For Her" / "For Him" are display labels only, via i18n.
+ */
+export type Gender = 'male' | 'female'
 
 // ---------------------------------------------------------------------------
 // GUARDRAIL: the mock tables below (venues, staff, stylists, services,
@@ -6,7 +10,7 @@ import type { Gender } from '@/lib/app-state'
 // for this app. lib/api/* is the only code allowed to import them — every
 // screen and component goes through lib/api's functions/hooks instead, so
 // swapping mock data for real Supabase calls later only touches that one
-// folder. Only the *types* and `serviceFilters` on this file are meant to be
+// folder. Only the *types* on this file are meant to be
 // imported elsewhere (ANY_STAFF_ID, getBookingDetails, getVenueStartingPrice,
 // and isVenueOpenNow are re-exported through lib/api/index.ts for
 // convenience, but are still defined here). If you're adding a new screen
@@ -32,7 +36,6 @@ export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'frida
 export type OpeningHours = Record<DayOfWeek, { open: string; close: string } | null>
 
 export type VenueCategory = 'Barbershop' | 'Beauty Salon'
-export type VenueGender = 'Men' | 'Women' | 'Unisex'
 
 export type Venue = {
   id: string
@@ -47,7 +50,7 @@ export type Venue = {
   reviewCount: number
   category: VenueCategory
   /** Clientele the venue serves — drives the "For Her" / "For Him" home filter. */
-  gender: VenueGender
+  gender: Gender
   /** Loose marketing tags shown as badges and matched against home-screen service filters. */
   servicesOffered: string[]
   description: string
@@ -59,6 +62,8 @@ export type Staff = {
   venueId: string
   name: string
   role: string
+  /** The one gender this staff member serves — always the venue's own gender (same rule as Stylist.serves). */
+  serves: Gender
   photoUrl: string | null
   rating?: number
 }
@@ -79,8 +84,12 @@ export type Stylist = {
   isFreelancer: boolean
   venueId: string | null
   serviceTypes: StylistServiceType[]
-  /** Which clients this stylist serves — a barber might be ['male'], a bridal makeup artist ['female'], a unisex coiffeur both. */
-  servesGender: ('male' | 'female')[]
+  /**
+   * The one gender this professional serves — a barber 'male', a bridal makeup artist or coiffeuse 'female'. All of
+   * their services are for that gender; there's no per-service gender. Matched only via lib/api/venues.ts's
+   * professionalServesGender.
+   */
+  serves: Gender
   specialties: string[]
   rating: number
   reviewCount: number
@@ -183,7 +192,8 @@ export type Favorite = {
 
 export type User = {
   id: string
-  fullName: string
+  firstName: string
+  lastName: string
   email: string
   phone: string
   avatarUrl: string | null
@@ -282,16 +292,6 @@ function dailyHours(open: string, close: string): OpeningHours {
   return Object.fromEntries(days.map((day) => [day, { open, close }])) as OpeningHours
 }
 
-const CLOSED_ALL_WEEK: OpeningHours = {
-  monday: null,
-  tuesday: null,
-  wednesday: null,
-  thursday: null,
-  friday: null,
-  saturday: null,
-  sunday: null,
-}
-
 export const venues: Venue[] = [
   {
     id: 'v1',
@@ -305,7 +305,7 @@ export const venues: Venue[] = [
     rating: 4.9,
     reviewCount: 128,
     category: 'Barbershop',
-    gender: 'Men',
+    gender: 'male',
     servicesOffered: ['Haircut', 'Beard trim', 'Hot towel'],
     description: 'A modern barbershop in New Cairo known for precision fades and a relaxing hot towel finish.',
     openingHours: dailyHours('10:00', '22:00'),
@@ -322,7 +322,7 @@ export const venues: Venue[] = [
     rating: 4.8,
     reviewCount: 96,
     category: 'Beauty Salon',
-    gender: 'Women',
+    gender: 'female',
     servicesOffered: ['Blow dry', 'Hair color', 'Manicure'],
     description: 'A calm, light-filled salon in Zamalek specializing in color work and styling.',
     openingHours: dailyHours('10:00', '21:00'),
@@ -339,10 +339,10 @@ export const venues: Venue[] = [
     rating: 4.7,
     reviewCount: 74,
     category: 'Beauty Salon',
-    gender: 'Unisex',
+    gender: 'female',
     servicesOffered: ['Hair styling', 'Nails', 'Facials'],
-    description: 'A unisex studio in Maadi offering styling, nails, and facials. Temporarily closed for renovation.',
-    openingHours: CLOSED_ALL_WEEK,
+    description: 'A women\'s studio in Maadi offering styling, nails, and facials.',
+    openingHours: dailyHours('10:00', '21:00'),
   },
   {
     id: 'v4',
@@ -356,10 +356,10 @@ export const venues: Venue[] = [
     rating: 4.6,
     reviewCount: 51,
     category: 'Barbershop',
-    gender: 'Men',
+    gender: 'male',
     servicesOffered: ['Haircut', 'Beard trim', 'Kids cut'],
     description: 'A no-frills neighborhood barbershop in Heliopolis, good with kids and quick fades alike.',
-    openingHours: dailyHours('09:00', '21:00'),
+    openingHours: { ...dailyHours('09:00', '21:00'), friday: null }, // weekly day off: Closed badge + no slots on Fridays
   },
   {
     id: 'v5',
@@ -373,7 +373,7 @@ export const venues: Venue[] = [
     rating: 4.9,
     reviewCount: 112,
     category: 'Beauty Salon',
-    gender: 'Women',
+    gender: 'female',
     servicesOffered: ['Hair color', 'Balayage', 'Bridal'],
     description: 'A luxury color and bridal atelier in Sheikh Zayed, worth the drive from anywhere in Cairo.',
     openingHours: dailyHours('11:00', '23:00'),
@@ -384,14 +384,17 @@ export const venues: Venue[] = [
 // option itself, keyed by the shared ANY_STAFF_ID sentinel above, so there's
 // one convention instead of a mock Staff row per venue plus a state sentinel.
 export const staff: Staff[] = [
-  { id: 'v1-kareem', venueId: 'v1', name: 'Kareem', role: 'Master Barber', photoUrl: 'https://i.pravatar.cc/80?img=10', rating: 4.9 },
-  { id: 'v1-omar', venueId: 'v1', name: 'Omar', role: 'Barber', photoUrl: 'https://i.pravatar.cc/80?img=11', rating: 4.7 },
+  { id: 'v1-kareem', venueId: 'v1', name: 'Kareem', role: 'Master Barber', serves: 'male', photoUrl: 'https://i.pravatar.cc/80?img=10', rating: 4.9 },
+  { id: 'v1-omar', venueId: 'v1', name: 'Omar', role: 'Barber', serves: 'male', photoUrl: 'https://i.pravatar.cc/80?img=11', rating: 4.7 },
 
-  { id: 'v2-noor', venueId: 'v2', name: 'Noor', role: 'Lead Stylist', photoUrl: 'https://i.pravatar.cc/80?img=50', rating: 4.8 },
+  { id: 'v2-noor', venueId: 'v2', name: 'Noor', role: 'Lead Stylist', serves: 'female', photoUrl: 'https://i.pravatar.cc/80?img=50', rating: 4.8 },
 
-  { id: 'v4-ahmed', venueId: 'v4', name: 'Ahmed', role: 'Senior Barber', photoUrl: 'https://i.pravatar.cc/80?img=12', rating: 4.6 },
+  { id: 'v3-hana', venueId: 'v3', name: 'Hana', role: 'Senior Stylist', serves: 'female', photoUrl: 'https://i.pravatar.cc/80?img=47', rating: 4.8 },
+  { id: 'v3-mariam', venueId: 'v3', name: 'Mariam', role: 'Nail Artist', serves: 'female', photoUrl: 'https://i.pravatar.cc/80?img=45', rating: 4.7 },
 
-  { id: 'v5-layla', venueId: 'v5', name: 'Layla', role: 'Master Colorist', photoUrl: 'https://i.pravatar.cc/80?img=51', rating: 4.9 },
+  { id: 'v4-ahmed', venueId: 'v4', name: 'Ahmed', role: 'Senior Barber', serves: 'male', photoUrl: 'https://i.pravatar.cc/80?img=12', rating: 4.6 },
+
+  { id: 'v5-layla', venueId: 'v5', name: 'Layla', role: 'Master Colorist', serves: 'female', photoUrl: 'https://i.pravatar.cc/80?img=51', rating: 4.9 },
 ]
 
 export const stylists: Stylist[] = [
@@ -401,7 +404,7 @@ export const stylists: Stylist[] = [
     isFreelancer: true,
     venueId: null,
     serviceTypes: ['at-home'],
-    servesGender: ['male'],
+    serves: 'male',
     specialties: ['Barbering', 'Beard Grooming'],
     rating: 4.8,
     reviewCount: 62,
@@ -418,7 +421,7 @@ export const stylists: Stylist[] = [
     isFreelancer: true,
     venueId: null,
     serviceTypes: ['events-bridal'],
-    servesGender: ['female'],
+    serves: 'female',
     specialties: ['Bridal Makeup', 'Hairstyling'],
     rating: 4.9,
     reviewCount: 88,
@@ -435,7 +438,7 @@ export const stylists: Stylist[] = [
     isFreelancer: false,
     venueId: 'v1',
     serviceTypes: ['at-home'],
-    servesGender: ['male'],
+    serves: 'male',
     specialties: ['Barbering', 'Beard Grooming'],
     rating: 4.9,
     reviewCount: 21,
@@ -452,7 +455,7 @@ export const stylists: Stylist[] = [
     isFreelancer: false,
     venueId: 'v2',
     serviceTypes: ['events-bridal'],
-    servesGender: ['female'],
+    serves: 'female',
     specialties: ['Bridal Hair', 'Blow Dry'],
     rating: 4.8,
     reviewCount: 34,
@@ -469,7 +472,7 @@ export const stylists: Stylist[] = [
     isFreelancer: true,
     venueId: null,
     serviceTypes: ['at-home', 'events-bridal'],
-    servesGender: ['male', 'female'],
+    serves: 'female',
     specialties: ['Hair Styling', 'Makeup'],
     rating: 4.7,
     reviewCount: 45,
@@ -486,7 +489,7 @@ export const stylists: Stylist[] = [
     isFreelancer: true,
     venueId: null,
     serviceTypes: ['events-bridal'],
-    servesGender: ['male'],
+    serves: 'male',
     specialties: ['Groom Grooming', 'Barbering'],
     rating: 4.6,
     reviewCount: 19,
@@ -503,7 +506,7 @@ export const stylists: Stylist[] = [
     isFreelancer: true,
     venueId: null,
     serviceTypes: ['at-home'],
-    servesGender: ['female'],
+    serves: 'female',
     specialties: ['Hair Styling', 'Blow Dry'],
     rating: 4.9,
     reviewCount: 51,
@@ -598,7 +601,7 @@ export const reviews: Review[] = [
   { id: 'v2-rv-3', bookingId: 'bk-legacy-6', venueId: 'v2', userId: 'u-guest-6', rating: 4, text: 'Loved my blow dry, will be back for the manicure next time.', photoUrls: [], authorName: 'Dina Kamal', createdAt: '2024-02-27T10:00:00' },
 
   { id: 'v3-rv-1', bookingId: 'bk-legacy-7', venueId: 'v3', userId: 'u-guest-7', rating: 5, text: 'The facial was so relaxing, my skin has never looked better.', photoUrls: [], authorName: 'Heba Younes', createdAt: '2024-03-30T10:00:00' },
-  { id: 'v3-rv-2', bookingId: 'bk-legacy-8', venueId: 'v3', userId: 'u-guest-8', rating: 4, text: 'Unisex spot in Maadi is rare, glad I found this one.', photoUrls: [], authorName: 'Karim Fouad', createdAt: '2024-02-14T10:00:00' },
+  { id: 'v3-rv-2', bookingId: 'bk-legacy-8', venueId: 'v3', userId: 'u-guest-8', rating: 4, text: 'A calm little studio in Maadi, glad I found this one.', photoUrls: [], authorName: 'Rasha Fouad', createdAt: '2024-02-14T10:00:00' },
 
   { id: 'v4-rv-1', bookingId: 'bk-legacy-9', venueId: 'v4', userId: 'u-guest-9', rating: 5, text: 'Ahmed is great with kids, my son actually enjoys his haircuts now.', photoUrls: [], authorName: 'Tarek Ibrahim', createdAt: '2024-05-05T10:00:00' },
   { id: 'v4-rv-2', bookingId: 'bk-legacy-10', venueId: 'v4', userId: 'u-guest-10', rating: 4, text: 'Solid, no-frills barbershop. Good prices for Heliopolis.', photoUrls: [], authorName: 'Sherif Nabil', createdAt: '2024-03-22T10:00:00' },
@@ -639,11 +642,12 @@ export const reviews: Review[] = [
 
 export const currentUser: User = {
   id: 'u1',
-  fullName: 'Amira Nabil',
+  firstName: 'Amira',
+  lastName: 'Nabil',
   email: 'amira.nabil@email.com',
   phone: '+20 100 123 4567',
   avatarUrl: null,
-  gender: 'For Her',
+  gender: 'female',
   addresses: [
     { id: 'a1', label: 'Home', area: 'New Cairo', details: '5th Settlement, Building 12, Apt 4', latitude: 30.03, longitude: 31.49 },
     { id: 'a2', label: 'Work', area: 'Zamalek', details: '26th of July Street, Floor 3', latitude: 30.0616, longitude: 31.2197 },
@@ -719,8 +723,6 @@ export const favorites: Favorite[] = [
   { id: 'fav1', userId: currentUser.id, venueId: 'v1', createdAt: '2024-05-10T09:00:00' },
   { id: 'fav2', userId: currentUser.id, venueId: 'v5', createdAt: '2024-05-18T09:00:00' },
 ]
-
-export const serviceFilters = ['All services', 'Haircut', 'Beard trim', 'Hair color', 'Manicure', 'Facials']
 
 // ---------------------------------------------------------------------------
 // Derived-data helpers — this is the shape a Supabase query layer would take
@@ -810,6 +812,7 @@ export function generateTimeSlots({
   serviceId,
   date,
   durationMinutes,
+  anyStaffPool,
 }: {
   venueId: string
   staffId: string
@@ -817,6 +820,11 @@ export function generateTimeSlots({
   date: Date
   /** Overrides the service's own duration, e.g. when multiple services are selected. */
   durationMinutes?: number
+  /**
+   * For ANY_STAFF_ID: the staff who can take the booking (lib/api/slots.ts passes the venue's staff who serve the
+   * viewer's gender). Defaults to all of the venue's staff.
+   */
+  anyStaffPool?: string[]
 }): TimeSlot[] {
   const venue = venues.find((item) => item.id === venueId)
   const service = services.find((item) => item.id === serviceId)
@@ -834,13 +842,17 @@ export function generateTimeSlots({
   const dayEnd = new Date(date)
   dayEnd.setHours(closeH, closeM, 0, 0)
 
-  // ANY_STAFF_ID means "no staff preference" — treat the slot as taken if
-  // *any* of the venue's staff has a conflicting booking, rather than
-  // filtering to one specific staffId.
-  const staffBookings =
-    staffId === ANY_STAFF_ID
-      ? bookings.filter((booking) => booking.venueId === venueId && booking.status !== 'cancelled')
-      : bookings.filter((booking) => booking.staffId === staffId && booking.status !== 'cancelled')
+  // ANY_STAFF_ID means "no staff preference": the slot is open while at least one staff member in the pool is free.
+  // A pool booking blocks its own staff member; an unassigned ("any stylist") booking at the venue is counted as
+  // taking one pool member too, since we can't tell whose it is — a conservative stand-in for real assignment.
+  const isAny = staffId === ANY_STAFF_ID
+  const pool = isAny ? (anyStaffPool ?? staff.filter((member) => member.venueId === venueId).map((member) => member.id)) : [staffId]
+  if (pool.length === 0) return []
+  const staffBookings = bookings.filter(
+    (booking) =>
+      booking.status !== 'cancelled' &&
+      (pool.includes(booking.staffId ?? '') || (isAny && booking.venueId === venueId && booking.anyStaff === true)),
+  )
 
   const slots: TimeSlot[] = []
   for (let start = new Date(dayStart); start.getTime() + step * 60_000 <= dayEnd.getTime(); start = new Date(start.getTime() + step * 60_000)) {
@@ -849,11 +861,12 @@ export function generateTimeSlots({
     // Simplified lunch-break rule standing in for a real staff schedule exception.
     const isLunchBreak = start.getHours() === 13
 
-    const overlapsBooking = staffBookings.some((booking) => {
+    const busyCount = staffBookings.filter((booking) => {
       const bookingStart = new Date(booking.startTime).getTime()
       const bookingEnd = new Date(booking.endTime).getTime()
       return start.getTime() < bookingEnd && end.getTime() > bookingStart
-    })
+    }).length
+    const overlapsBooking = busyCount >= pool.length
 
     const status: TimeSlotStatus = isLunchBreak ? 'blocked' : overlapsBooking ? 'booked' : 'available'
 

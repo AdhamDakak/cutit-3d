@@ -17,6 +17,7 @@ import {
   type UpdateProfileInput,
 } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
+import type { Gender } from '@/lib/data'
 import { useAsync } from './useAsync'
 import { useMutation } from './useMutation'
 
@@ -81,4 +82,14 @@ export function useDeleteAccount() {
     await deleteAccount(options)
     signOut()
   })
+}
+
+/**
+ * The gender every screen's content follows: the profile's gender when signed in, Home's guest toggle otherwise.
+ * Map it onto venues/stylists only through lib/api/venues.ts's helpers.
+ */
+export function useContentGender(): Gender {
+  const { isSignedIn, guestGender } = useAppState()
+  const { data: user } = useCurrentUser()
+  return isSignedIn && user ? user.gender : guestGender
 }

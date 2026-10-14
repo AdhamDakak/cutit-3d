@@ -14,7 +14,7 @@ import { useAppState } from '@/lib/app-state'
 export default function AuthScreen() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { completeOnboarding, activeGender } = useAppState()
+  const { completeOnboarding, guestGender } = useAppState()
 
   const finish = () => {
     completeOnboarding()
@@ -22,7 +22,7 @@ export default function AuthScreen() {
   }
 
   // Defaults to sign-up (this follows onboarding); the switch link flips to log in for returning users.
-  const auth = usePhoneAuthFlow({ initialFlow: 'signup', defaultGender: activeGender, onAuthenticated: finish })
+  const auth = usePhoneAuthFlow({ initialFlow: 'signup', defaultGender: guestGender, onAuthenticated: finish })
   const isLogin = auth.flow === 'login'
 
   return (
@@ -47,10 +47,14 @@ export default function AuthScreen() {
             {auth.step === 'otp' && <OtpStep countryCode={auth.country.code} phone={auth.phone} onComplete={auth.submitOtp} isPending={auth.isVerifying} />}
             {auth.step === 'profile' && (
               <ProfileStep
-                name={auth.name}
-                onNameChange={auth.setName}
+                firstName={auth.firstName}
+                onFirstNameChange={auth.setFirstName}
+                lastName={auth.lastName}
+                onLastNameChange={auth.setLastName}
                 email={auth.email}
                 onEmailChange={auth.setEmail}
+                gender={auth.gender}
+                onGenderChange={auth.setGender}
                 onSubmit={auth.submitProfile}
                 isPending={auth.isCreating}
               />

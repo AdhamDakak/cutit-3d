@@ -1,57 +1,107 @@
 import { Pressable, Text, TextInput, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
-import type { Gender } from '@/lib/app-state'
+import { GenderOptions } from '@/components/gender-options'
+import type { Gender } from '@/lib/data'
+import { startAlign } from '@/lib/rtl'
+import { useThemeColors } from '@/lib/theme'
 
 type ProfileStepProps = {
-  name: string
-  onNameChange: (name: string) => void
+  firstName: string
+  onFirstNameChange: (value: string) => void
+  lastName: string
+  onLastNameChange: (value: string) => void
   email: string
   onEmailChange: (email: string) => void
+  /** Required: drives which salons and services the app shows. Prefilled from the guest toggle by the flow. */
+  gender: Gender | null
+  onGenderChange: (gender: Gender) => void
   onSubmit: () => void
   isPending?: boolean
-  /** Pass both to show the For Her / For Him toggle (the checkout sheet does; the sign-in screen doesn't). */
-  gender?: Gender
-  onGenderChange?: (gender: Gender) => void
   title?: string
   buttonLabel?: string
 }
 
-const INPUT_CLASS = 'w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white'
-const CENTERED_TEXT = { textAlignVertical: 'center' as const, fontSize: 14, lineHeight: 18 }
+export const INPUT_CLASS = 'w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white'
+export const CENTERED_TEXT = { textAlignVertical: 'center' as const, fontSize: 14, lineHeight: 18 }
 
-export function ProfileStep({ name, onNameChange, email, onEmailChange, onSubmit, isPending, gender, onGenderChange, title, buttonLabel }: ProfileStepProps) {
+/** Both names must be non-empty after trimming. Shared with app/account/edit-field.tsx. */
+export function areNamesValid(firstName: string, lastName: string) {
+  return firstName.trim().length > 0 && lastName.trim().length > 0
+}
+
+export function ProfileStep({
+  firstName,
+  onFirstNameChange,
+  lastName,
+  onLastNameChange,
+  email,
+  onEmailChange,
+  gender,
+  onGenderChange,
+  onSubmit,
+  isPending,
+  title,
+  buttonLabel,
+}: ProfileStepProps) {
   const { t } = useTranslation()
-  const showGender = gender !== undefined && onGenderChange !== undefined
+  const colors = useThemeColors()
+  const canSubmit = areNamesValid(firstName, lastName) && gender !== null && !isPending
+  const label = 'mb-1.5 text-sm font-medium text-stone-700 dark:text-zinc-200'
 
   return (
     <View>
       <Text className="font-serif text-3xl font-semibold text-stone-900 dark:text-white">{title ?? t('auth.createProfileTitle')}</Text>
-      <TextInput value={name} onChangeText={onNameChange} placeholder={t('auth.fullNamePlaceholder')} style={CENTERED_TEXT} className={`${INPUT_CLASS} mt-8`} />
-      <TextInput
-        value={email}
-        onChangeText={onEmailChange}
-        placeholder={t('auth.emailPlaceholder')}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={CENTERED_TEXT}
-        className={`${INPUT_CLASS} mt-3`}
-      />
-
-      {showGender && (
-        <View className="mt-4 flex-row items-center justify-between gap-3">
-          <Text className="text-sm font-medium text-stone-700 dark:text-zinc-200">{t('checkoutAuth.genderLabel')}</Text>
-          <View className="flex-row rounded-lg bg-stone-100 p-0.5 dark:bg-zinc-800">
-            {(['For Her', 'For Him'] as Gender[]).map((item) => (
-              <Pressable key={item} onPress={() => onGenderChange(item)} className={`rounded-md px-3 py-1.5 ${gender === item ? 'bg-blue-600' : ''}`}>
-                <Text className={`text-xs font-semibold ${gender === item ? 'text-white' : 'text-stone-500 dark:text-zinc-400'}`}>{t(`gender.${item}`)}</Text>
-              </Pressable>
-            ))}
-          </View>
+      <View className="mt-8 gap-3">
+        <View>
+          <Text style={startAlign} className={label}>
+            {t('auth.firstName')}
+          </Text>
+          <TextInput
+            value={firstName}
+            onChangeText={onFirstNameChange}
+            placeholder={t('auth.firstNamePlaceholder')}
+            placeholderTextColor={colors.muted}
+            autoCapitalize="words"
+            autoComplete="given-name"
+            textContentType="givenName"
+            style={CENTERED_TEXT}
+            className={INPUT_CLASS}
+          />
         </View>
-      )}
+        <View>
+          <Text style={startAlign} className={label}>
+            {t('auth.lastName')}
+          </Text>
+          <TextInput
+            value={lastName}
+            onChangeText={onLastNameChange}
+            placeholder={t('auth.lastNamePlaceholder')}
+            placeholderTextColor={colors.muted}
+            autoCapitalize="words"
+            autoComplete="family-name"
+            textContentType="familyName"
+            style={CENTERED_TEXT}
+            className={INPUT_CLASS}
+          />
+        </View>
+        <TextInput
+          value={email}
+          onChangeText={onEmailChange}
+          placeholder={t('auth.emailPlaceholder')}
+          placeholderTextColor={colors.muted}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          style={CENTERED_TEXT}
+          className={INPUT_CLASS}
+        />
+      </View>
 
-      <Pressable onPress={onSubmit} disabled={!name.trim() || isPending} className="mt-6 w-full items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-40">
+      <View className="mt-5">
+        <GenderOptions value={gender} onChange={onGenderChange} />
+      </View>
+
+      <Pressable onPress={onSubmit} disabled={!canSubmit} className="mt-6 w-full items-center rounded-xl bg-blue-600 py-3.5 disabled:opacity-40">
         <Text className="text-sm font-semibold text-white">{buttonLabel ?? t('common.continue')}</Text>
       </Pressable>
     </View>

@@ -19,7 +19,7 @@ export function AppHeader() {
   // Same source as Profile's avatar, so the two always match and both update after a name edit.
   const { data: user } = useCurrentUser()
   const [showSignup, setShowSignup] = useState(false)
-  const initials = getInitials(user?.fullName ?? '')
+  const initials = user ? getInitials(user) : ''
   const colors = useThemeColors()
   const router = useRouter()
   const isDark = theme === 'dark'

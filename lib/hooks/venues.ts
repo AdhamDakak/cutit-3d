@@ -1,4 +1,5 @@
-import { getVenue, getVenueServices, getVenueStaff, listVenues, type VenueFilters } from '@/lib/api'
+import { getVenue, getVenueServices, getVenueStaff, listVenues, listVenueServiceCategories, type VenueFilters } from '@/lib/api'
+import type { Gender } from '@/lib/data'
 import { useAsync } from './useAsync'
 
 export function useVenues(filters?: VenueFilters) {
@@ -27,10 +28,17 @@ export function useVenue(id: string | undefined) {
   return useAsync(() => (id ? getVenue(id) : Promise.resolve(undefined)), [id])
 }
 
-export function useVenueStaff(venueId: string | undefined) {
-  return useAsync(() => (venueId ? getVenueStaff(venueId) : Promise.resolve([])), [venueId])
+/** Pass the content gender: the picker only offers staff who serve it. */
+export function useVenueStaff(venueId: string | undefined, gender?: Gender) {
+  return useAsync(() => (venueId ? getVenueStaff(venueId, gender) : Promise.resolve([])), [venueId, gender])
 }
 
 export function useVenueServices(venueId: string | undefined) {
   return useAsync(() => (venueId ? getVenueServices(venueId) : Promise.resolve([])), [venueId])
+}
+
+/** Home's service chips for the venues currently shown (see listVenueServiceCategories). */
+export function useVenueServiceCategories(venueIds: string[]) {
+  const key = [...venueIds].sort().join(',')
+  return useAsync(() => listVenueServiceCategories(venueIds), [key])
 }

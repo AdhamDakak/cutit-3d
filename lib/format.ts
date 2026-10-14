@@ -1,12 +1,31 @@
+import type { User } from '@/lib/data'
+
+type Named = Pick<User, 'firstName' | 'lastName'>
+
+/** "Omar Khaled". */
+export function getFullName(user: Named): string {
+  return [user.firstName, user.lastName].map((part) => part.trim()).filter(Boolean).join(' ')
+}
+
 /**
- * Avatar initials: first letter of the first and last words, uppercased, at most 2 characters — "Amira Nabil" → "AN",
- * "Mostafa" → "M". Works for Arabic names too ("أمينة نبيل" → "أن"; uppercasing is a no-op there). Array.from keeps
- * a letter outside the BMP (e.g. some emoji-like characters) from being split in half. Returns '' for an empty name.
+ * "Omar K." — first name + last initial, for anywhere other people can see it (e.g. a review's author), so a full
+ * surname isn't shown publicly. Falls back to just the first name.
  */
-export function getInitials(fullName: string): string {
-  const words = fullName.trim().split(/\s+/).filter(Boolean)
+export function getDisplayName(user: Named): string {
+  const first = user.firstName.trim()
+  const lastInitial = Array.from(user.lastName.trim())[0]
+  return lastInitial ? `${first} ${lastInitial}.` : first
+}
+
+/**
+ * Avatar initials, at most 2 characters, uppercased (a no-op for Arabic, where "أمينة نبيل" → "أن"). A user uses
+ * their first + last name; a plain string (staff, review authors) uses its first and last words — "Amira Nabil" →
+ * "AN", "Mostafa" → "M". Array.from keeps a letter outside the BMP from being split in half. '' for an empty name.
+ */
+export function getInitials(nameOrUser: string | Named): string {
+  const first = (word: string) => Array.from(word.trim())[0] ?? ''
+  if (typeof nameOrUser !== 'string') return (first(nameOrUser.firstName) + first(nameOrUser.lastName)).toUpperCase()
+  const words = nameOrUser.trim().split(/\s+/).filter(Boolean)
   if (words.length === 0) return ''
-  const first = Array.from(words[0])[0] ?? ''
-  const last = words.length > 1 ? (Array.from(words[words.length - 1])[0] ?? '') : ''
-  return (first + last).toUpperCase()
+  return (first(words[0]) + (words.length > 1 ? first(words[words.length - 1]) : '')).toUpperCase()
 }

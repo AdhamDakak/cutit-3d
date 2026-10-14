@@ -15,7 +15,7 @@ import { StylistCard } from '@/components/stylist-card'
 import type { MapBounds } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
 import type { Stylist, Venue } from '@/lib/data'
-import { useStylists, useVenues } from '@/lib/hooks'
+import { useContentGender, useStylists, useVenues } from '@/lib/hooks'
 import { useUserLocation } from '@/lib/location'
 import { useThemeColors } from '@/lib/theme'
 
@@ -48,13 +48,15 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 /** Owns every Explore filter/search control's state, scoped to this screen only. */
 function useExploreFilters() {
-  const { activeGender } = useAppState()
+  const contentGender = useContentGender()
   const [searchInput, setSearchInput] = useState('')
   const debouncedQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
-  const [draft, setDraft] = useState<ExploreFiltersDraft>({
-    ...DEFAULT_EXPLORE_FILTERS,
-    gender: activeGender === 'For Her' ? 'Women' : 'Men',
-  })
+  // The Men / Women chip starts on the content gender; the filter sheet can switch it for this search.
+  const [draft, setDraft] = useState<ExploreFiltersDraft>({ ...DEFAULT_EXPLORE_FILTERS, gender: contentGender })
+  // This tab stays mounted, so follow a profile-gender change (or the guest toggle) by resetting the chip to it.
+  useEffect(() => {
+    setDraft((prev) => ({ ...prev, gender: contentGender }))
+  }, [contentGender])
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('any')
   const [day, setDay] = useState<string | null>(null)
 
@@ -65,7 +67,10 @@ function useExploreFilters() {
     (draft.maxDistanceKm != null ? 1 : 0) +
     (draft.openNow ? 1 : 0)
 
-  return { searchInput, setSearchInput, debouncedQuery, draft, setDraft, timeWindow, setTimeWindow, day, setDay, activeCount }
+  // "Reset" goes back to the defaults, including the content gender's chip.
+  const resetDraft = () => setDraft({ ...DEFAULT_EXPLORE_FILTERS, gender: contentGender })
+
+  return { searchInput, setSearchInput, debouncedQuery, draft, setDraft, resetDraft, timeWindow, setTimeWindow, day, setDay, activeCount }
 }
 
 function TimeWindowModal({
@@ -148,7 +153,7 @@ export default function ExploreScreen() {
     bottomSheetRef.current?.snapToIndex(1)
   }
 
-  const { searchInput, setSearchInput, debouncedQuery, draft, setDraft, timeWindow, setTimeWindow, activeCount } = useExploreFilters()
+  const { searchInput, setSearchInput, debouncedQuery, draft, setDraft, resetDraft, timeWindow, setTimeWindow, activeCount } = useExploreFilters()
 
   const venueFilters = useMemo(
     () => ({
@@ -180,16 +185,15 @@ export default function ExploreScreen() {
   }
 
   const resetFilters = () => {
-    setDraft(DEFAULT_EXPLORE_FILTERS)
+    resetDraft()
     setSearchBounds(null)
   }
 
   // Stylists only take gender + rating from the shared filter set (see the
   // component-level note on why price/distance/openNow/category don't apply
   // to Cutit Go professionals in this mock).
-  const stylistGender = draft.gender === 'Men' ? 'male' : draft.gender === 'Women' ? 'female' : undefined
   const { data: stylistsData, isLoading: stylistsLoading, error: stylistsError, refetch: refetchStylists } = useStylists({
-    gender: stylistGender,
+    gender: draft.gender,
     minRating: draft.minRating ?? undefined,
   })
   const filteredStylists = useMemo(() => {
@@ -405,7 +409,7 @@ export default function ExploreScreen() {
               ) : (
                 <View className="items-center gap-3 px-8 py-10">
                   <Text className="text-center text-sm text-stone-500 dark:text-zinc-400">{t('explore.emptyBodyProfessionals')}</Text>
-                  <Pressable onPress={() => setDraft(DEFAULT_EXPLORE_FILTERS)} className="rounded-xl bg-stone-900 px-4 py-2.5 dark:bg-blue-600">
+                  <Pressable onPress={resetDraft} className="rounded-xl bg-stone-900 px-4 py-2.5 dark:bg-blue-600">
                     <Text className="text-xs font-semibold text-white">{t('explore.resetFilters')}</Text>
                   </Pressable>
                 </View>
@@ -424,7 +428,7 @@ export default function ExploreScreen() {
           setFiltersOpen(false)
         }}
         onReset={() => {
-          setDraft(DEFAULT_EXPLORE_FILTERS)
+          resetDraft()
           setFiltersOpen(false)
         }}
       />

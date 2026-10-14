@@ -9,8 +9,6 @@
     "done": "Done",
     "addToFavorites": "Add {{name}} to favorites",
     "removeFromFavorites": "Remove {{name}} from favorites",
-    "him": "Him",
-    "her": "Her",
     "somethingWentWrong": "Something went wrong. Please try again.",
     "loading": "Loading...",
     "retry": "Retry"
@@ -23,7 +21,6 @@
     "phoneSubtitle": "We'll text you a code to confirm this booking.",
     "profileTitle": "Almost done",
     "createAndConfirm": "Create account & confirm",
-    "genderLabel": "Recommendations for",
     "close": "Close",
     "signupTitle": "Create your account",
     "signupSubtitle": "Save your bookings, addresses and favorites.",
@@ -58,7 +55,6 @@
     "resendCode": "Resend code in 30s",
     "verifyContinue": "Verify & Continue",
     "createProfileTitle": "Create your profile",
-    "fullNamePlaceholder": "Full name",
     "emailPlaceholder": "Email address (optional)",
     "chooseCountryCode": "Choose country code",
     "countryCodeTitle": "Country code",
@@ -70,7 +66,15 @@
     "welcomeBackLoggedIn": "Welcome back, {{name}}! You're logged in.",
     "switchToLogin": "Already have an account? Log in",
     "switchToSignup": "New to Cutit? Create an account",
-    "logIn": "Log in"
+    "logIn": "Log in",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "firstNamePlaceholder": "Enter your first name",
+    "lastNamePlaceholder": "Enter your last name",
+    "gender": "Gender",
+    "genderHint": "We use this to show you the right salons and services.",
+    "male": "Male",
+    "female": "Female"
   },
   "menu": {
     "title": "Menu",
@@ -149,17 +153,18 @@
     "title": "How would you like to book?",
     "subtitle": "Choose a mobile or event service.",
     "atHomeTitle": "At Home",
-    "atHomeDescription": "A barber or stylist comes to you",
-    "eventsTitle": "Events & Bridal",
-    "eventsDescription": "Professional glam for your big day",
+    "atHomeDescription_male": "A barber comes to you",
+    "atHomeDescription_female": "A stylist or makeup artist comes to you",
+    "eventsTitle_male": "Events & Grooms",
+    "eventsTitle_female": "Events & Bridal",
+    "eventsDescription_male": "Look sharp for your big day",
+    "eventsDescription_female": "Professional glam for your big day",
     "noStylists": "No stylists available for this selection yet."
   },
   "atHome": {
-    "title": "At Home",
     "subtitle": "Pick a stylist to continue."
   },
   "eventsBridal": {
-    "title": "Events & Bridal",
     "subtitle": "Pick a stylist to continue."
   },
   "bookingFlow": {
@@ -179,16 +184,20 @@
     "bookButton": "Book {{name}}"
   },
   "gender": {
-    "For Her": "For Her",
-    "For Him": "For Him"
+    "female": "For Her",
+    "male": "For Him"
   },
-  "serviceFilterLabels": {
-    "All services": "All services",
-    "Haircut": "Haircut",
-    "Beard trim": "Beard trim",
-    "Hair color": "Hair color",
-    "Manicure": "Manicure",
-    "Facials": "Facials"
+  "serviceCategoryLabels": {
+    "all": "All services",
+    "Hair": "Haircut",
+    "Beard": "Beard",
+    "Styling": "Styling",
+    "Color": "Hair color",
+    "Nails": "Nails",
+    "Facial": "Facials",
+    "Makeup": "Makeup",
+    "Bridal": "Bridal",
+    "Combo": "Packages"
   },
   "home": {
     "greeting": "Good afternoon, {{name}}",
@@ -215,7 +224,7 @@
     "smartPicks": "Smart picks",
     "recommendedForYou": "Recommended for You",
     "basedOnProfile": "Based on your profile",
-    "exploreBoth": "Explore both"
+    "greetingGuest": "Good afternoon"
   },
   "explore": {
     "allTreatments": "All treatments",
@@ -252,10 +261,8 @@
     "distanceUpTo": "Within {{km}} km",
     "openNowLabel": "Open now",
     "genderLabel": "Gender",
-    "genderAny": "Any",
     "genderMen": "Men",
     "genderWomen": "Women",
-    "genderUnisex": "Unisex",
     "categoryLabel": "Category",
     "apply": "Apply Filters",
     "reset": "Reset",
@@ -353,7 +360,6 @@
     "personalInformation": "Personal information",
     "fullName": "Full Name",
     "emailAddress": "Email Address",
-    "smartRecommendations": "Smart recommendations",
     "savedAddresses": "Saved addresses",
     "home": "Home",
     "work": "Work",
@@ -380,7 +386,8 @@
     "deleteAccount": "Delete Account",
     "guestTitle": "You're browsing as a guest",
     "guestBody": "Create an account to manage your bookings, addresses and payments.",
-    "guestCta": "Create account"
+    "guestCta": "Create account",
+    "gender": "Gender"
   },
   "notifications": {
     "channelName": "Appointment reminders",
@@ -438,7 +445,6 @@
     "editNameTitle": "Edit name",
     "editEmailTitle": "Edit email",
     "optional": "Optional",
-    "nameTooShort": "Name must be at least 2 characters.",
     "emailInvalid": "Enter a valid email address, or leave it empty.",
     "save": "Save",
     "saving": "Saving…",
@@ -465,7 +471,10 @@
     "deleteWalletHint": "To get your balance back, contact support before deleting.",
     "deleteAnyway": "Delete anyway",
     "contactSupport": "Contact support",
-    "deleting": "Deleting…"
+    "deleting": "Deleting…",
+    "namesRequired": "Enter your first and last name.",
+    "genderRequired": "Choose your gender.",
+    "editGenderTitle": "Edit gender"
   },
   "payments": {
     "topUp": "Top up",
@@ -576,5 +585,14 @@
   },
   "legal": {
     "draftUpdated": "Draft — last updated {{date}}"
+  },
+  "genderNotice": {
+    "venue_male": "This salon serves men only.",
+    "venue_female": "This salon serves women only.",
+    "stylist_male": "This stylist serves men only.",
+    "stylist_female": "This stylist serves women only.",
+    "sub": "You can still view its details and reviews.",
+    "badge_male": "Men only",
+    "badge_female": "Women only"
   }
 }

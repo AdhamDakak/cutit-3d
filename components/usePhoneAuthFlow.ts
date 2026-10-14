@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { COUNTRY_CODES, type CountryCode } from '@/components/country-code-picker'
-import type { Gender } from '@/lib/app-state'
+import type { Gender } from '@/lib/data'
 import { useCompleteProfile, useLogIn, useRequestOtp, useVerifyOtp } from '@/lib/hooks'
 
 export type AuthFlow = 'signup' | 'login'
@@ -20,9 +20,10 @@ export function usePhoneAuthFlow({ initialFlow, defaultGender, onAuthenticated }
   const [step, setStep] = useState<AuthStep>('phone')
   const [country, setCountry] = useState<CountryCode>(COUNTRY_CODES[0])
   const [phone, setPhone] = useState('')
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
-  const [gender, setGender] = useState<Gender>(defaultGender)
+  const [gender, setGender] = useState<Gender | null>(defaultGender)
   const [welcomeName, setWelcomeName] = useState('')
 
   const requestOtp = useRequestOtp()
@@ -36,7 +37,8 @@ export function usePhoneAuthFlow({ initialFlow, defaultGender, onAuthenticated }
     setFlow(initialFlow)
     setStep('phone')
     setPhone('')
-    setName('')
+    setFirstName('')
+    setLastName('')
     setEmail('')
     setGender(defaultGender)
     setWelcomeName('')
@@ -60,7 +62,7 @@ export function usePhoneAuthFlow({ initialFlow, defaultGender, onAuthenticated }
       }
       const user = await logIn.mutate(fullPhone)
       if (flow === 'signup') {
-        setWelcomeName(user.fullName)
+        setWelcomeName(user.firstName)
         setStep('welcome-back')
       } else {
         onAuthenticated()
@@ -71,8 +73,9 @@ export function usePhoneAuthFlow({ initialFlow, defaultGender, onAuthenticated }
   }
 
   const submitProfile = async () => {
+    if (!gender) return
     try {
-      await completeProfile.mutate({ fullName: name, email: email || undefined, gender, phone: fullPhone })
+      await completeProfile.mutate({ firstName, lastName, email: email || undefined, gender, phone: fullPhone })
       onAuthenticated()
     } catch {
       // surfaced via `error`
@@ -99,8 +102,10 @@ export function usePhoneAuthFlow({ initialFlow, defaultGender, onAuthenticated }
     setCountry,
     phone,
     setPhone,
-    name,
-    setName,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
     email,
     setEmail,
     gender,

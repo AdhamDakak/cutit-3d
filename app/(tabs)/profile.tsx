@@ -35,8 +35,8 @@ import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
 import { DeleteAccountSheet } from '@/components/delete-account-sheet'
 import { maskedCard } from '@/components/card-brand-badge'
 import { SettingRow, ToggleRow } from '@/components/settings-rows'
-import { useAppState, type Gender } from '@/lib/app-state'
-import { getInitials } from '@/lib/format'
+import { useAppState } from '@/lib/app-state'
+import { getFullName, getInitials } from '@/lib/format'
 import { useAddresses, useCards, useCurrentUser, useDefaultPaymentMethod, useWallet } from '@/lib/hooks'
 import type { AppLanguage } from '@/lib/i18n'
 import { startAlign, tracking } from '@/lib/rtl'
@@ -49,7 +49,7 @@ const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
 
 export default function ProfileScreen() {
   const { t } = useTranslation()
-  const { isSignedIn, activeGender, setActiveGender, signOut, language, setLanguage, theme, toggleTheme, remindersEnabled, toggleReminders } = useAppState()
+  const { isSignedIn, signOut, language, setLanguage, theme, toggleTheme, remindersEnabled, toggleReminders } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
   const isDark = theme === 'dark'
@@ -65,8 +65,8 @@ export default function ProfileScreen() {
   const defaultCard = cards?.find((card) => card.isDefault)
   const balance = wallet?.balanceEGP ?? user?.walletBalance ?? 0
   const visibleAddresses = (addresses ?? []).slice(0, 2)
-  const fullName = user?.fullName ?? ''
-  const initials = getInitials(fullName)
+  const fullName = user ? getFullName(user) : ''
+  const initials = user ? getInitials(user) : ''
 
   const sectionClass = 'overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'
   const labelClass = `mb-2 px-1 text-[11px] font-medium uppercase ${tracking('tracking-[2.5px]')} text-stone-500 dark:text-zinc-400`
@@ -143,21 +143,12 @@ export default function ProfileScreen() {
                   value={user?.email || '—'}
                   onPress={() => router.push({ pathname: '/account/edit-field', params: { field: 'email' } })}
                 />
-                <View className="flex-row items-center gap-3 border-b border-stone-100 px-4 py-3 dark:border-zinc-800">
-                  <View className="size-8 items-center justify-center rounded-lg bg-stone-100 dark:bg-zinc-800">
-                    <UsersRound size={16} color={colors.mutedStrong} />
-                  </View>
-                  <Text style={startAlign} className="flex-1 text-sm font-medium text-stone-900 dark:text-white">{t('profile.smartRecommendations')}</Text>
-                  <View className="flex-row rounded-lg bg-stone-100 p-0.5 dark:bg-zinc-800">
-                    {(['For Her', 'For Him'] as Gender[]).map((item) => (
-                      <Pressable key={item} onPress={() => setActiveGender(item)} className={`rounded-md px-2 py-1.5 ${activeGender === item ? 'bg-blue-600' : ''}`}>
-                        <Text className={`text-[10px] font-semibold ${activeGender === item ? 'text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
-                          {t(`gender.${item}`)}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
+                <SettingRow
+                  icon={UsersRound}
+                  label={t('profile.gender')}
+                  value={user ? t(`auth.${user.gender}`) : ''}
+                  onPress={() => router.push({ pathname: '/account/edit-field', params: { field: 'gender' } })}
+                />
               </View>
             </View>
 

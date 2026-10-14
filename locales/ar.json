@@ -9,8 +9,6 @@
     "done": "تم",
     "addToFavorites": "إضافة {{name}} إلى المفضلة",
     "removeFromFavorites": "إزالة {{name}} من المفضلة",
-    "him": "رجال",
-    "her": "سيدات",
     "somethingWentWrong": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     "loading": "جارٍ التحميل...",
     "retry": "إعادة المحاولة"
@@ -23,7 +21,6 @@
     "phoneSubtitle": "سنرسل إليك رمزاً لتأكيد الحجز.",
     "profileTitle": "خطوة أخيرة",
     "createAndConfirm": "إنشاء الحساب وتأكيد الحجز",
-    "genderLabel": "اعرض اقتراحات",
     "close": "إغلاق",
     "signupTitle": "أنشئ حسابك",
     "signupSubtitle": "احفظ حجوزاتك وعناوينك ومفضلتك.",
@@ -58,7 +55,6 @@
     "resendCode": "إعادة إرسال الرمز خلال 30 ثانية",
     "verifyContinue": "تأكيد ومتابعة",
     "createProfileTitle": "أنشئ ملفك الشخصي",
-    "fullNamePlaceholder": "الاسم الكامل",
     "emailPlaceholder": "البريد الإلكتروني (اختياري)",
     "chooseCountryCode": "اختر رمز الدولة",
     "countryCodeTitle": "رمز الدولة",
@@ -70,7 +66,15 @@
     "welcomeBackLoggedIn": "أهلاً بعودتك يا {{name}}! تم تسجيل دخولك.",
     "switchToLogin": "لديك حساب بالفعل؟ سجّل الدخول",
     "switchToSignup": "جديد على Cutit؟ أنشئ حساباً",
-    "logIn": "تسجيل الدخول"
+    "logIn": "تسجيل الدخول",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "firstNamePlaceholder": "أدخل اسمك الأول",
+    "lastNamePlaceholder": "أدخل اسم العائلة",
+    "gender": "النوع",
+    "genderHint": "نستخدم هذا لعرض الصالونات والخدمات المناسبة لك.",
+    "male": "ذكر",
+    "female": "أنثى"
   },
   "menu": {
     "title": "القائمة",
@@ -149,17 +153,18 @@
     "title": "كيف تفضل الحجز؟",
     "subtitle": "اختر خدمة تأتيك حيث أنت، أو لمناسبتك الخاصة.",
     "atHomeTitle": "في المنزل",
-    "atHomeDescription": "حلاق أو مصفف يأتي إليك",
-    "eventsTitle": "المناسبات والعرائس",
-    "eventsDescription": "إطلالة احترافية ليومك الكبير",
+    "atHomeDescription_male": "حلاق يأتي إليك",
+    "atHomeDescription_female": "مصففة أو خبيرة مكياج تأتي إليك",
+    "eventsTitle_male": "المناسبات والعرسان",
+    "eventsTitle_female": "المناسبات والعرائس",
+    "eventsDescription_male": "إطلالة أنيقة ليومك الكبير",
+    "eventsDescription_female": "إطلالة احترافية ليومك الكبير",
     "noStylists": "لا يوجد مصففون متاحون لهذا الاختيار حالياً."
   },
   "atHome": {
-    "title": "في المنزل",
     "subtitle": "اختر مصففاً للمتابعة."
   },
   "eventsBridal": {
-    "title": "المناسبات والعرائس",
     "subtitle": "اختر مصففاً للمتابعة."
   },
   "bookingFlow": {
@@ -179,16 +184,20 @@
     "bookButton": "احجز مع {{name}}"
   },
   "gender": {
-    "For Her": "للسيدات",
-    "For Him": "للرجال"
+    "female": "للسيدات",
+    "male": "للرجال"
   },
-  "serviceFilterLabels": {
-    "All services": "جميع الخدمات",
-    "Haircut": "قص الشعر",
-    "Beard trim": "تشذيب اللحية",
-    "Hair color": "صبغ الشعر",
-    "Manicure": "مانيكير",
-    "Facials": "تنظيف البشرة"
+  "serviceCategoryLabels": {
+    "all": "جميع الخدمات",
+    "Hair": "قص الشعر",
+    "Beard": "اللحية",
+    "Styling": "تصفيف الشعر",
+    "Color": "صبغ الشعر",
+    "Nails": "الأظافر",
+    "Facial": "العناية بالبشرة",
+    "Makeup": "المكياج",
+    "Bridal": "العرائس",
+    "Combo": "الباقات"
   },
   "home": {
     "greeting": "مساء الخير، {{name}}",
@@ -215,7 +224,7 @@
     "smartPicks": "اختيارات ذكية",
     "recommendedForYou": "مقترحات لك",
     "basedOnProfile": "بناءً على ملفك الشخصي",
-    "exploreBoth": "عرض الكل"
+    "greetingGuest": "مساء الخير"
   },
   "explore": {
     "allTreatments": "جميع الخدمات",
@@ -252,10 +261,8 @@
     "distanceUpTo": "في نطاق {{km}} كم",
     "openNowLabel": "مفتوح الآن",
     "genderLabel": "مخصّص لـ",
-    "genderAny": "الكل",
     "genderMen": "الرجال",
     "genderWomen": "السيدات",
-    "genderUnisex": "الجنسين",
     "categoryLabel": "النوع",
     "apply": "تطبيق الفلاتر",
     "reset": "مسح الكل",
@@ -356,7 +363,6 @@
     "personalInformation": "المعلومات الشخصية",
     "fullName": "الاسم الكامل",
     "emailAddress": "البريد الإلكتروني",
-    "smartRecommendations": "الاقتراحات الذكية",
     "savedAddresses": "العناوين المحفوظة",
     "home": "المنزل",
     "work": "العمل",
@@ -383,7 +389,8 @@
     "deleteAccount": "حذف الحساب",
     "guestTitle": "أنت تتصفح كضيف",
     "guestBody": "أنشئ حساباً لإدارة حجوزاتك وعناوينك وطرق الدفع.",
-    "guestCta": "إنشاء حساب"
+    "guestCta": "إنشاء حساب",
+    "gender": "النوع"
   },
   "notifications": {
     "channelName": "تذكيرات المواعيد",
@@ -441,7 +448,6 @@
     "editNameTitle": "تعديل الاسم",
     "editEmailTitle": "تعديل البريد الإلكتروني",
     "optional": "اختياري",
-    "nameTooShort": "يجب أن يتكون الاسم من حرفين على الأقل.",
     "emailInvalid": "أدخل بريداً إلكترونياً صحيحاً، أو اتركه فارغاً.",
     "save": "حفظ",
     "saving": "جارٍ الحفظ…",
@@ -468,7 +474,10 @@
     "deleteWalletHint": "لاسترداد رصيدك، تواصل مع الدعم قبل حذف الحساب.",
     "deleteAnyway": "حذف الحساب على أي حال",
     "contactSupport": "تواصل مع الدعم",
-    "deleting": "جارٍ الحذف…"
+    "deleting": "جارٍ الحذف…",
+    "namesRequired": "أدخل اسمك الأول واسم العائلة.",
+    "genderRequired": "اختر النوع.",
+    "editGenderTitle": "تعديل النوع"
   },
   "payments": {
     "topUp": "شحن الرصيد",
@@ -579,5 +588,14 @@
   },
   "legal": {
     "draftUpdated": "مسودة — آخر تحديث {{date}}"
+  },
+  "genderNotice": {
+    "venue_male": "هذا الصالون مخصّص للرجال فقط.",
+    "venue_female": "هذا الصالون مخصّص للسيدات فقط.",
+    "stylist_male": "يقدّم هذا المصفف خدماته للرجال فقط.",
+    "stylist_female": "تقدّم هذه المصففة خدماتها للسيدات فقط.",
+    "sub": "يمكنك الاطلاع على تفاصيله وتقييماته.",
+    "badge_male": "للرجال فقط",
+    "badge_female": "للسيدات فقط"
   }
 }

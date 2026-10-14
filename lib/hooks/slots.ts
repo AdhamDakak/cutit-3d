@@ -12,5 +12,6 @@ export function useSlots(params: ListSlotsParams | null) {
     params?.date?.toDateString(),
     params?.durationMinutes,
     params?.excludeBookingId,
+    params?.gender,
   ])
 }

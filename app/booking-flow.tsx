@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { I18nManager, Pressable, ScrollView, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -7,33 +6,27 @@ import { useTranslation } from 'react-i18next'
 
 import { ErrorState } from '@/components/error-state'
 import { StylistCard } from '@/components/stylist-card'
-import { useAppState } from '@/lib/app-state'
 import type { StylistServiceType } from '@/lib/data'
-import { useStylists } from '@/lib/hooks'
+import { useContentGender, useStylists } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
-type GenderFilter = 'him' | 'her'
-const GENDER_FILTERS: GenderFilter[] = ['him', 'her']
 
 export default function BookingFlowScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const colors = useThemeColors()
-  const { activeGender } = useAppState()
+  const contentGender = useContentGender()
   const { type } = useLocalSearchParams<{ type: StylistServiceType }>()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
 
-  // Defaults from the app-wide gender preference, but this toggle is
-  // local-only from here — changing it must never write back to
-  // app-state, per the task. Falls back to "him" if that preference is
-  // ever anything other than exactly "For Her".
-  const [genderFilter, setGenderFilter] = useState<GenderFilter>(activeGender === 'For Her' ? 'her' : 'him')
+  // No toggle: stylists follow the content gender (profile, or Home's guest toggle) — only those who serve it
+  // (lib/api's professionalServesGender). Read straight from the hook, so a profile change is reflected the next time this list renders.
 
   const isEvents = type === 'events-bridal'
-  const title = isEvents ? t('eventsBridal.title') : t('atHome.title')
+  // Same gender-aware title as this category's card on the Cutit Go tab.
+  const title = isEvents ? t('cutitGo.eventsTitle', { context: contentGender }) : t('cutitGo.atHomeTitle')
   const subtitle = isEvents ? t('eventsBridal.subtitle') : t('atHome.subtitle')
-  const servesKey = genderFilter === 'her' ? 'female' : 'male'
-  const { data: matchingStylists, isLoading, error, refetch } = useStylists({ type: isEvents ? 'events-bridal' : 'at-home', gender: servesKey })
+  const { data: matchingStylists, isLoading, error, refetch } = useStylists({ type: isEvents ? 'events-bridal' : 'at-home', gender: contentGender })
 
   return (
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top', 'bottom']}>
@@ -47,24 +40,6 @@ export default function BookingFlowScreen() {
         </Pressable>
         <Text className="flex-1 text-center font-serif text-lg font-semibold text-stone-900 dark:text-white">{title}</Text>
         <View className="size-9" />
-      </View>
-
-      <View className="px-5 pt-4">
-        <View className="flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-900">
-          {GENDER_FILTERS.map((option) => (
-            <Pressable
-              key={option}
-              onPress={() => setGenderFilter(option)}
-              className={`flex-1 items-center rounded-lg py-2.5 ${genderFilter === option ? 'bg-white dark:bg-zinc-800' : ''}`}
-            >
-              <Text
-                className={`text-sm font-semibold ${genderFilter === option ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}
-              >
-                {option === 'him' ? t('common.him') : t('common.her')}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
       </View>
 
       {isLoading ? (

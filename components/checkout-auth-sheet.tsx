@@ -44,11 +44,11 @@ const COPY_KEYS = {
 export function CheckoutAuthSheet({ visible, onClose, onAuthenticated, mode = 'checkout' }: CheckoutAuthSheetProps) {
   const { t } = useTranslation()
   const colors = useThemeColors()
-  const { activeGender } = useAppState()
+  const { guestGender } = useAppState()
 
   const auth = usePhoneAuthFlow({
     initialFlow: mode === 'login' ? 'login' : 'signup',
-    defaultGender: activeGender,
+    defaultGender: guestGender,
     onAuthenticated: () => {
       auth.reset()
       onAuthenticated()
@@ -113,8 +113,10 @@ export function CheckoutAuthSheet({ visible, onClose, onAuthenticated, mode = 'c
                   {auth.step === 'otp' && <OtpStep countryCode={auth.country.code} phone={auth.phone} onComplete={auth.submitOtp} isPending={auth.isVerifying} />}
                   {auth.step === 'profile' && (
                     <ProfileStep
-                      name={auth.name}
-                      onNameChange={auth.setName}
+                      firstName={auth.firstName}
+                      onFirstNameChange={auth.setFirstName}
+                      lastName={auth.lastName}
+                      onLastNameChange={auth.setLastName}
                       email={auth.email}
                       onEmailChange={auth.setEmail}
                       gender={auth.gender}

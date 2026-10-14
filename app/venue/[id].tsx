@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { I18nManager, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -6,13 +6,14 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Heart, Image as ImageIcon, MapPin, Search, Star, UserRound, Users } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { GenderNotice } from '@/components/gender-notice'
 import { CheckoutAuthSheet } from '@/components/checkout-auth-sheet'
 import { ErrorState } from '@/components/error-state'
 import { ReviewCard } from '@/components/review-card'
 import { ReviewPhotoViewer } from '@/components/review-photo-viewer'
-import { ANY_STAFF_ID, type CreateBookingInput, type ListSlotsParams } from '@/lib/api'
+import { ANY_STAFF_ID, venueServesGender, type CreateBookingInput, type ListSlotsParams } from '@/lib/api'
 import { useAppState } from '@/lib/app-state'
-import { useCreateBooking, useFavorites, useSlots, useToggleFavorite, useVenue, useVenueReviews, useVenueServices, useVenueStaff } from '@/lib/hooks'
+import { useContentGender, useCreateBooking, useFavorites, useSlots, useToggleFavorite, useVenue, useVenueReviews, useVenueServices, useVenueStaff } from '@/lib/hooks'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
@@ -36,7 +37,9 @@ export default function VenueScreen() {
   const { isSignedIn } = useAppState()
 
   const { data: establishment, isLoading: venueLoading, error: venueError, refetch: refetchVenue } = useVenue(id)
-  const { data: venueStaffData, isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useVenueStaff(id)
+  // Only staff who serve the viewer's content gender (a venue's staff all serve the venue's one gender).
+  const contentGender = useContentGender()
+  const { data: venueStaffData, isLoading: staffLoading, error: staffError, refetch: refetchStaff } = useVenueStaff(id, contentGender)
   const { data: venueServicesData, isLoading: servicesLoading, error: servicesError, refetch: refetchServices } = useVenueServices(id)
   const { data: venueReviewsData, isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useVenueReviews(id)
   const { data: favoriteVenueIds } = useFavorites()
@@ -70,6 +73,12 @@ export default function VenueScreen() {
 
   const venueServices = venueServicesData ?? []
   const venueStaff = venueStaffData ?? []
+  // A picked staff member who drops out of the list (the content gender changed) is no longer a valid choice.
+  useEffect(() => {
+    if (selectedStaff && selectedStaff !== ANY_STAFF_ID && venueStaffData && !venueStaffData.some((member) => member.id === selectedStaff)) {
+      setSelectedStaff(null)
+    }
+  }, [venueStaffData, selectedStaff])
   const venueReviews = venueReviewsData ?? []
   const reviewCount = venueReviews.length
   const avgRating = reviewCount > 0 ? venueReviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount : establishment?.rating ?? 0
@@ -100,10 +109,14 @@ export default function VenueScreen() {
           serviceId: representativeServiceId,
           date: dates[selectedDate],
           durationMinutes: selectedDurationMinutes,
+          // "Any stylist" availability counts only the staff who serve this gender.
+          gender: contentGender,
         }
       : null
   const { data: daySlots = [], isLoading: slotsLoading, error: slotsError, refetch: refetchSlots } = useSlots(slotsParams)
 
+  // Venues serve one gender; opening one for the other (Favorites, a past booking, a link) shows details only.
+  const servesViewer = establishment ? venueServesGender(establishment, contentGender) : true
   const isLoading = venueLoading || staffLoading || servicesLoading || reviewsLoading
   const hasError = venueError || staffError || servicesError || reviewsError
   const refetchAll = () => {
@@ -223,176 +236,185 @@ export default function VenueScreen() {
             </View>
           </View>
 
-          <View className="mt-8">
-            <Text className="mb-4 font-semibold text-stone-900 dark:text-white">{t('venue.selectStylist')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row gap-3">
-                <Pressable
-                  onPress={() => setSelectedStaff(ANY_STAFF_ID)}
-                  className={`items-center gap-2 rounded-lg px-3 py-2 ${selectedStaff === ANY_STAFF_ID ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
-                >
-                  <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
-                    <Users size={18} color={colors.mutedStrong} />
-                  </View>
-                  <View className="items-center">
-                    <Text className={`text-xs ${selectedStaff === ANY_STAFF_ID ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{t('venue.anyStylist')}</Text>
-                    <Text className={`text-[10px] ${selectedStaff === ANY_STAFF_ID ? 'text-white/80' : 'text-stone-500 dark:text-zinc-400'}`}>
-                      {t('venue.firstAvailable')}
-                    </Text>
-                  </View>
-                </Pressable>
-                {venueStaff.map((person) => {
-                  const active = selectedStaff === person.id
-                  return (
+          {/* A venue that doesn't serve the content gender keeps its details and reviews but has no booking UI. */}
+          {servesViewer ? (
+            <>
+              <View className="mt-8">
+                <Text className="mb-4 font-semibold text-stone-900 dark:text-white">{t('venue.selectStylist')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row gap-3">
                     <Pressable
-                      key={person.id}
-                      onPress={() => setSelectedStaff(person.id)}
-                      className={`items-center gap-2 rounded-lg px-3 py-2 ${active ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
+                      onPress={() => setSelectedStaff(ANY_STAFF_ID)}
+                      className={`items-center gap-2 rounded-lg px-3 py-2 ${selectedStaff === ANY_STAFF_ID ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
                     >
-                      {person.photoUrl ? (
-                        <Image source={{ uri: person.photoUrl }} className="size-10 rounded-full" />
-                      ) : (
-                        <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
-                          <UserRound size={18} color={colors.mutedStrong} />
-                        </View>
-                      )}
+                      <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
+                        <Users size={18} color={colors.mutedStrong} />
+                      </View>
                       <View className="items-center">
-                        <Text className={`text-xs ${active ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{person.name}</Text>
-                        <Text className={`text-[10px] ${active ? 'text-white/80' : 'text-stone-500 dark:text-zinc-400'}`}>{person.role}</Text>
+                        <Text className={`text-xs ${selectedStaff === ANY_STAFF_ID ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{t('venue.anyStylist')}</Text>
+                        <Text className={`text-[10px] ${selectedStaff === ANY_STAFF_ID ? 'text-white/80' : 'text-stone-500 dark:text-zinc-400'}`}>
+                          {t('venue.firstAvailable')}
+                        </Text>
                       </View>
                     </Pressable>
-                  )
-                })}
+                    {venueStaff.map((person) => {
+                      const active = selectedStaff === person.id
+                      return (
+                        <Pressable
+                          key={person.id}
+                          onPress={() => setSelectedStaff(person.id)}
+                          className={`items-center gap-2 rounded-lg px-3 py-2 ${active ? 'bg-stone-900 dark:bg-blue-600' : 'bg-stone-100 dark:bg-zinc-800'}`}
+                        >
+                          {person.photoUrl ? (
+                            <Image source={{ uri: person.photoUrl }} className="size-10 rounded-full" />
+                          ) : (
+                            <View className="size-10 items-center justify-center rounded-full bg-stone-300 dark:bg-zinc-600">
+                              <UserRound size={18} color={colors.mutedStrong} />
+                            </View>
+                          )}
+                          <View className="items-center">
+                            <Text className={`text-xs ${active ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{person.name}</Text>
+                            <Text className={`text-[10px] ${active ? 'text-white/80' : 'text-stone-500 dark:text-zinc-400'}`}>{person.role}</Text>
+                          </View>
+                        </Pressable>
+                      )
+                    })}
+                  </View>
+                </ScrollView>
+                {selectedStaff === null && <Text className="mt-2 text-xs text-amber-600 dark:text-amber-500">{t('venue.chooseStylistHint')}</Text>}
               </View>
-            </ScrollView>
-            {selectedStaff === null && <Text className="mt-2 text-xs text-amber-600 dark:text-amber-500">{t('venue.chooseStylistHint')}</Text>}
-          </View>
 
-          <View className="mt-8">
-            <View className="mb-4 flex-row items-center justify-between gap-3">
-              <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectServices')}</Text>
-              <Text className="text-xs text-stone-500 dark:text-zinc-400">{t('venue.optionsCount', { count: venueServices.length })}</Text>
-            </View>
-            <View className="mb-3 flex-row items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900">
-              <Search size={16} color={colors.muted} />
-              <TextInput
-                value={serviceQuery}
-                onChangeText={setServiceQuery}
-                placeholder={t('venue.searchServices')}
-                placeholderTextColor={colors.muted}
-                textAlignVertical="center"
-                style={{ fontSize: 14, lineHeight: 18 }}
-                className="min-w-0 flex-1 text-sm text-stone-900 dark:text-white"
-              />
-            </View>
-            <View className="gap-3">
-              {filteredServices.map((service) => {
-                const selected = selectedServices.has(service.id)
-                return (
-                  <Pressable
-                    key={service.id}
-                    onPress={() => {
-                      const next = new Set(selectedServices)
-                      if (next.has(service.id)) next.delete(service.id)
-                      else next.add(service.id)
-                      setSelectedServices(next)
-                    }}
-                    className={`flex-row items-start gap-3 rounded-lg border p-3 ${
-                      selected ? 'border-stone-900 bg-stone-50 dark:border-blue-500 dark:bg-blue-900/20' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
-                    }`}
-                  >
-                    <View
-                      className={`mt-1 size-4 items-center justify-center rounded border ${
-                        selected ? 'border-blue-600 bg-blue-600' : 'border-stone-300 bg-white dark:border-zinc-600'
-                      }`}
-                    >
-                      {selected && <View className="size-2 rounded-sm bg-white" />}
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-medium text-stone-900 dark:text-white">{service.name}</Text>
-                      <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.minutesShort', { count: service.durationMinutes })}</Text>
-                    </View>
-                    <Text className="shrink-0 font-semibold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: service.priceEGP })}</Text>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </View>
+              <View className="mt-8">
+                <View className="mb-4 flex-row items-center justify-between gap-3">
+                  <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectServices')}</Text>
+                  <Text className="text-xs text-stone-500 dark:text-zinc-400">{t('venue.optionsCount', { count: venueServices.length })}</Text>
+                </View>
+                <View className="mb-3 flex-row items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900">
+                  <Search size={16} color={colors.muted} />
+                  <TextInput
+                    value={serviceQuery}
+                    onChangeText={setServiceQuery}
+                    placeholder={t('venue.searchServices')}
+                    placeholderTextColor={colors.muted}
+                    textAlignVertical="center"
+                    style={{ fontSize: 14, lineHeight: 18 }}
+                    className="min-w-0 flex-1 text-sm text-stone-900 dark:text-white"
+                  />
+                </View>
+                <View className="gap-3">
+                  {filteredServices.map((service) => {
+                    const selected = selectedServices.has(service.id)
+                    return (
+                      <Pressable
+                        key={service.id}
+                        onPress={() => {
+                          const next = new Set(selectedServices)
+                          if (next.has(service.id)) next.delete(service.id)
+                          else next.add(service.id)
+                          setSelectedServices(next)
+                        }}
+                        className={`flex-row items-start gap-3 rounded-lg border p-3 ${
+                          selected ? 'border-stone-900 bg-stone-50 dark:border-blue-500 dark:bg-blue-900/20' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
+                        }`}
+                      >
+                        <View
+                          className={`mt-1 size-4 items-center justify-center rounded border ${
+                            selected ? 'border-blue-600 bg-blue-600' : 'border-stone-300 bg-white dark:border-zinc-600'
+                          }`}
+                        >
+                          {selected && <View className="size-2 rounded-sm bg-white" />}
+                        </View>
+                        <View className="flex-1">
+                          <Text className="font-medium text-stone-900 dark:text-white">{service.name}</Text>
+                          <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.minutesShort', { count: service.durationMinutes })}</Text>
+                        </View>
+                        <Text className="shrink-0 font-semibold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: service.priceEGP })}</Text>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+              </View>
 
-          <View className="mt-8">
-            <Text className="mb-4 font-semibold text-stone-900 dark:text-white">{t('venue.selectDate')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View className="flex-row gap-2">
-                {dates.map((date, idx) => {
-                  const active = selectedDate === idx
-                  return (
-                    <Pressable
-                      key={idx}
-                      onPress={() => setSelectedDate(idx)}
-                      className={`items-center rounded-lg px-4 py-3 ${active ? 'bg-stone-900 dark:bg-blue-600' : 'border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'}`}
-                    >
-                      <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-500 dark:text-zinc-400'}`}>{dayFormatter.format(date)}</Text>
-                      <Text className={`text-lg font-bold ${active ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{date.getDate()}</Text>
+              <View className="mt-8">
+                <Text className="mb-4 font-semibold text-stone-900 dark:text-white">{t('venue.selectDate')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row gap-2">
+                    {dates.map((date, idx) => {
+                      const active = selectedDate === idx
+                      return (
+                        <Pressable
+                          key={idx}
+                          onPress={() => setSelectedDate(idx)}
+                          className={`items-center rounded-lg px-4 py-3 ${active ? 'bg-stone-900 dark:bg-blue-600' : 'border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'}`}
+                        >
+                          <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-500 dark:text-zinc-400'}`}>{dayFormatter.format(date)}</Text>
+                          <Text className={`text-lg font-bold ${active ? 'text-white' : 'text-stone-900 dark:text-white'}`}>{date.getDate()}</Text>
+                        </Pressable>
+                      )
+                    })}
+                  </View>
+                </ScrollView>
+              </View>
+
+              <View className="mt-8 gap-4">
+                <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectTime')}</Text>
+                {slotsLoading ? (
+                  <View className="flex-row flex-wrap gap-2">
+                    {SLOT_SKELETON_KEYS.map((key) => (
+                      <View key={key} className="h-9 w-[70px] rounded-lg bg-stone-100 dark:bg-zinc-800" />
+                    ))}
+                  </View>
+                ) : slotsError ? (
+                  <View className="items-center gap-2 py-2">
+                    <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.somethingWentWrong')}</Text>
+                    <Pressable onPress={refetchSlots} className="rounded-lg bg-stone-900 px-4 py-2 dark:bg-blue-600">
+                      <Text className="text-xs font-semibold text-white">{t('common.retry')}</Text>
                     </Pressable>
-                  )
-                })}
+                  </View>
+                ) : (
+                  <>
+                    {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.noAvailability')}</Text>}
+                    {(['Morning', 'Afternoon', 'Evening'] as const).map((period) => {
+                      const periodSlots = daySlots.filter((slot) => getSlotPeriod(slot.startTime) === period)
+                      if (periodSlots.length === 0) return null
+                      return (
+                        <View key={period}>
+                          <Text className={`mb-2 text-xs font-medium uppercase ${tracking('tracking-wider')} text-stone-500 dark:text-zinc-400`}>{periodLabels[period]}</Text>
+                          <View className="flex-row flex-wrap gap-2">
+                            {periodSlots.map((slot) => {
+                              const active = selectedTime === slot.startTime
+                              const disabled = slot.status !== 'available'
+                              const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              return (
+                                <Pressable
+                                  key={slot.id}
+                                  disabled={disabled}
+                                  onPress={() => setSelectedTime(slot.startTime)}
+                                  className={`min-w-[70px] items-center rounded-lg border py-2 ${
+                                    active
+                                      ? 'border-transparent bg-stone-900 dark:bg-blue-600'
+                                      : disabled
+                                        ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
+                                        : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
+                                  }`}
+                                >
+                                  <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
+                                </Pressable>
+                              )
+                            })}
+                          </View>
+                        </View>
+                      )
+                    })}
+                  </>
+                )}
               </View>
-            </ScrollView>
-          </View>
-
-          <View className="mt-8 gap-4">
-            <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.selectTime')}</Text>
-            {slotsLoading ? (
-              <View className="flex-row flex-wrap gap-2">
-                {SLOT_SKELETON_KEYS.map((key) => (
-                  <View key={key} className="h-9 w-[70px] rounded-lg bg-stone-100 dark:bg-zinc-800" />
-                ))}
-              </View>
-            ) : slotsError ? (
-              <View className="items-center gap-2 py-2">
-                <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('common.somethingWentWrong')}</Text>
-                <Pressable onPress={refetchSlots} className="rounded-lg bg-stone-900 px-4 py-2 dark:bg-blue-600">
-                  <Text className="text-xs font-semibold text-white">{t('common.retry')}</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <>
-                {daySlots.length === 0 && <Text className="text-sm text-stone-500 dark:text-zinc-400">{t('venue.noAvailability')}</Text>}
-                {(['Morning', 'Afternoon', 'Evening'] as const).map((period) => {
-                  const periodSlots = daySlots.filter((slot) => getSlotPeriod(slot.startTime) === period)
-                  if (periodSlots.length === 0) return null
-                  return (
-                    <View key={period}>
-                      <Text className={`mb-2 text-xs font-medium uppercase ${tracking('tracking-wider')} text-stone-500 dark:text-zinc-400`}>{periodLabels[period]}</Text>
-                      <View className="flex-row flex-wrap gap-2">
-                        {periodSlots.map((slot) => {
-                          const active = selectedTime === slot.startTime
-                          const disabled = slot.status !== 'available'
-                          const timeLabel = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          return (
-                            <Pressable
-                              key={slot.id}
-                              disabled={disabled}
-                              onPress={() => setSelectedTime(slot.startTime)}
-                              className={`min-w-[70px] items-center rounded-lg border py-2 ${
-                                active
-                                  ? 'border-transparent bg-stone-900 dark:bg-blue-600'
-                                  : disabled
-                                    ? 'border-stone-100 bg-stone-50 opacity-40 dark:border-zinc-800 dark:bg-zinc-900'
-                                    : 'border-stone-200 bg-white dark:border-transparent dark:bg-zinc-800'
-                              }`}
-                            >
-                              <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-stone-900 dark:text-zinc-100'}`}>{timeLabel}</Text>
-                            </Pressable>
-                          )
-                        })}
-                      </View>
-                    </View>
-                  )
-                })}
-              </>
-            )}
-          </View>
+            </>
+          ) : (
+            <View className="mt-8">
+              <GenderNotice kind="venue" gender={establishment.gender} />
+            </View>
+          )}
 
           <View className="mt-10 border-t border-stone-200/70 pt-6 dark:border-zinc-800">
             <Text className="font-semibold text-stone-900 dark:text-white">{t('venue.customerReviews')}</Text>
@@ -414,18 +436,20 @@ export default function VenueScreen() {
         </View>
       </ScrollView>
 
-      <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        {confirmError ? <Text className="mb-2 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className={`text-xs uppercase ${tracking('tracking-widest')} text-stone-500 dark:text-zinc-400`}>{t('venue.total')}</Text>
-            <Text className="text-2xl font-bold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: totalPrice })}</Text>
+      {servesViewer ? (
+        <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          {confirmError ? <Text className="mb-2 text-xs text-red-500">{t('common.somethingWentWrong')}</Text> : null}
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text className={`text-xs uppercase ${tracking('tracking-widest')} text-stone-500 dark:text-zinc-400`}>{t('venue.total')}</Text>
+              <Text className="text-2xl font-bold text-stone-900 dark:text-white">{t('venue.priceEGP', { price: totalPrice })}</Text>
+            </View>
+            <Pressable disabled={!canConfirm || isConfirming} onPress={confirmBooking} className="rounded-xl bg-blue-600 px-6 py-3 disabled:opacity-50">
+              <Text className="font-semibold text-white">{t(isConfirming ? 'venue.confirmingBooking' : 'venue.confirmBooking')}</Text>
+            </Pressable>
           </View>
-          <Pressable disabled={!canConfirm || isConfirming} onPress={confirmBooking} className="rounded-xl bg-blue-600 px-6 py-3 disabled:opacity-50">
-            <Text className="font-semibold text-white">{t(isConfirming ? 'venue.confirmingBooking' : 'venue.confirmBooking')}</Text>
-          </Pressable>
         </View>
-      </View>
+      ) : null}
 
       <ReviewPhotoViewer
         visible={viewerPhotos !== null}

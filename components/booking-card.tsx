@@ -5,10 +5,10 @@ import { CalendarDays, CalendarX2, HelpCircle, MapPin, PhoneCall, Users } from '
 import { useTranslation } from 'react-i18next'
 
 import { BookingTimeline } from '@/components/booking-timeline'
-import { getBookingDetails } from '@/lib/api'
+import { getBookingDetails, professionalServesGender, venueServesGender } from '@/lib/api'
 import type { Booking } from '@/lib/data'
 import { getInitials } from '@/lib/format'
-import { useAddresses } from '@/lib/hooks'
+import { useAddresses, useContentGender } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 type BookingCardProps = {
@@ -25,6 +25,7 @@ export function BookingCard({ booking, variant, onLeaveReview, hasReviewed }: Bo
   const router = useRouter()
   const colors = useThemeColors()
   const { data: addresses } = useAddresses()
+  const contentGender = useContentGender()
 
   const details = getBookingDetails(booking, addresses ?? [])
   const isSalon = booking.bookingType === 'salon'
@@ -33,6 +34,10 @@ export function BookingCard({ booking, variant, onLeaveReview, hasReviewed }: Bo
   const area = isSalon ? details.venue?.area : details.address?.area
   const imageUrl = isSalon ? details.venue?.coverImageUrl : details.stylist?.photoUrl
   const serviceNames = details.services.map((service) => service.name).join(', ')
+  // Rebook only while the venue/stylist still serves the viewer's gender (it may not after a Profile change).
+  const canRebook = isSalon
+    ? !!details.venue && venueServesGender(details.venue, contentGender)
+    : !!details.stylist && professionalServesGender(details.stylist, contentGender)
 
   const isToday = details.startDate.toDateString() === new Date().toDateString()
   const dateTimeLabel = isToday
@@ -83,16 +88,20 @@ export function BookingCard({ booking, variant, onLeaveReview, hasReviewed }: Bo
             <Text className="mt-3 text-sm font-semibold text-stone-900 dark:text-white">{t('bookings.totalPaid', { price: details.priceEGP })}</Text>
           </View>
         </View>
-        <View className="flex-row gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
-          <Pressable onPress={() => router.push('/(tabs)/explore')} className="flex-1 items-center rounded-xl bg-stone-900 py-2.5 dark:bg-blue-600">
-            <Text className="text-xs font-semibold text-white">{t('bookings.rebook')}</Text>
-          </Pressable>
-          {!hasReviewed && (
-            <Pressable onPress={onLeaveReview} className="flex-1 items-center rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
-              <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.leaveReview')}</Text>
-            </Pressable>
-          )}
-        </View>
+        {canRebook || !hasReviewed ? (
+          <View className="flex-row gap-2 border-t border-stone-100 p-4 dark:border-zinc-800">
+            {canRebook ? (
+              <Pressable onPress={() => router.push('/(tabs)/explore')} className="flex-1 items-center rounded-xl bg-stone-900 py-2.5 dark:bg-blue-600">
+                <Text className="text-xs font-semibold text-white">{t('bookings.rebook')}</Text>
+              </Pressable>
+            ) : null}
+            {!hasReviewed && (
+              <Pressable onPress={onLeaveReview} className="flex-1 items-center rounded-xl border border-stone-200 py-2.5 dark:border-zinc-700">
+                <Text className="text-xs font-semibold text-stone-700 dark:text-zinc-200">{t('bookings.leaveReview')}</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : null}
       </View>
     )
   }

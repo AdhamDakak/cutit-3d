@@ -2,6 +2,7 @@ import { reviews as seedReviews, type Review } from '@/lib/data'
 import { delay } from './_internal/delay'
 import { createInvalidationBus } from './_internal/bus'
 import { hydrate, persist } from './_internal/persist'
+import { getDisplayName } from '@/lib/format'
 import { getCurrentUser } from './user'
 
 const STORAGE_KEY = '@cutit/reviews'
@@ -70,7 +71,8 @@ export async function createReview(input: CreateReviewInput): Promise<Review> {
     rating: input.rating,
     text: input.text?.trim() || null,
     photoUrls: input.photoUris ?? [],
-    authorName: user.fullName,
+    // Public: first name + last initial only ("Omar K."), never the full surname.
+    authorName: getDisplayName(user),
     createdAt: new Date().toISOString(),
   }
   setStore([...store, review])

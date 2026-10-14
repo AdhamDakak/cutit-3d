@@ -4,6 +4,7 @@ import * as Updates from 'expo-updates'
 import { colorScheme } from 'nativewind'
 
 import { syncBookingReminders } from '@/lib/api'
+import type { Gender } from '@/lib/data'
 import i18n, { type AppLanguage } from '@/lib/i18n'
 import { setReminderPreference } from '@/lib/notifications'
 import { getItem, setItem } from '@/lib/storage'
@@ -15,10 +16,11 @@ const ONBOARDED_STORAGE_KEY = '@cutit/onboarded'
 // MOCK session: a bare "signed in" flag. The real session will be a Supabase session token kept in
 // expo-secure-store (not plain storage) once the backend lands — replace this key, signIn and signOut then.
 const SIGNED_IN_STORAGE_KEY = '@cutit/signed-in'
+const GUEST_GENDER_STORAGE_KEY = '@cutit/guest-gender'
 
 export type Theme = 'light' | 'dark'
 
-export type Gender = 'For Her' | 'For Him'
+export type { Gender } from '@/lib/data'
 
 // Session/UI-only state lives here. Everything that used to be mock "data"
 // — bookings, addresses, favorites, and their mutations — now lives behind
@@ -30,8 +32,12 @@ type AppState = {
   isSignedIn: boolean
   signIn: () => void
   signOut: () => void
-  activeGender: Gender
-  setActiveGender: (value: Gender) => void
+  /**
+   * The content gender while signed out (Home's guest toggle). Signed in, content follows the profile's gender
+   * instead — read either through useContentGender() (lib/hooks), never this directly.
+   */
+  guestGender: Gender
+  setGuestGender: (value: Gender) => void
   language: AppLanguage
   setLanguage: (value: AppLanguage) => Promise<void>
   theme: Theme
@@ -47,7 +53,7 @@ const AppStateContext = createContext<AppState | null>(null)
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [hasOnboarded, setHasOnboarded] = useState(false)
   const [isSignedIn, setIsSignedIn] = useState(false)
-  const [activeGender, setActiveGender] = useState<Gender>('For Her')
+  const [guestGender, setGuestGenderState] = useState<Gender>('female')
   const [language, setLanguageState] = useState<AppLanguage>(i18n.language as AppLanguage)
   const [theme, setThemeState] = useState<Theme>(colorScheme.get() ?? 'light')
   const [remindersEnabled, setRemindersEnabled] = useState(true)
@@ -56,16 +62,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [storedLanguage, storedTheme, storedReminders, storedOnboarded, storedSignedIn] = await Promise.all([
+      const [storedLanguage, storedTheme, storedReminders, storedOnboarded, storedSignedIn, storedGuestGender] = await Promise.all([
         getItem(LANGUAGE_STORAGE_KEY),
         getItem(THEME_STORAGE_KEY),
         getItem(REMINDERS_STORAGE_KEY),
         getItem(ONBOARDED_STORAGE_KEY),
         getItem(SIGNED_IN_STORAGE_KEY),
+        getItem(GUEST_GENDER_STORAGE_KEY),
       ])
       if (!cancelled) {
         setHasOnboarded(storedOnboarded === 'true')
         setIsSignedIn(storedSignedIn === 'true')
+        if (storedGuestGender === 'male' || storedGuestGender === 'female') setGuestGenderState(storedGuestGender)
       }
       if (!cancelled && (storedLanguage === 'en' || storedLanguage === 'ar')) {
         await i18n.changeLanguage(storedLanguage)
@@ -150,8 +158,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setIsSignedIn(false)
         setItem(SIGNED_IN_STORAGE_KEY, 'false')
       },
-      activeGender,
-      setActiveGender,
+      guestGender,
+      setGuestGender: (value: Gender) => {
+        setGuestGenderState(value)
+        setItem(GUEST_GENDER_STORAGE_KEY, value)
+      },
       language,
       setLanguage,
       theme,
@@ -160,7 +171,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       toggleReminders,
       isHydrated,
     }),
-    [hasOnboarded, isSignedIn, activeGender, language, theme, remindersEnabled, isHydrated],
+    [hasOnboarded, isSignedIn, guestGender, language, theme, remindersEnabled, isHydrated],
   )
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

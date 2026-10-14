@@ -6,11 +6,13 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, ArrowRight, Image as ImageIcon, Star } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
+import { GenderNotice } from '@/components/gender-notice'
 import { ErrorState } from '@/components/error-state'
 import { ReviewCard } from '@/components/review-card'
 import { ReviewPhotoViewer } from '@/components/review-photo-viewer'
 import type { StylistServiceType } from '@/lib/data'
-import { useStylist, useStylistReviews, useVenue } from '@/lib/hooks'
+import { professionalServesGender } from '@/lib/api'
+import { useContentGender, useStylist, useStylistReviews, useVenue } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 export default function StylistScreen() {
@@ -22,7 +24,10 @@ export default function StylistScreen() {
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
 
+  // The category badge uses the content gender's wording ("Events & Grooms" / "Events & Bridal").
+  const contentGender = useContentGender()
   const { data: stylist, isLoading: stylistLoading, error: stylistError, refetch: refetchStylist } = useStylist(id)
+  const servesViewer = stylist ? professionalServesGender(stylist, contentGender) : true
   const { data: stylistReviewsData, isLoading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useStylistReviews(id)
   const { data: venue } = useVenue(stylist?.venueId ?? undefined)
   const stylistReviews = stylistReviewsData ?? []
@@ -153,7 +158,7 @@ export default function StylistScreen() {
               {stylist.serviceTypes.map((type) => (
                 <View key={type} className="rounded-full border border-stone-200 px-3 py-1.5 dark:border-zinc-700">
                   <Text className="text-xs font-medium text-stone-700 dark:text-zinc-200">
-                    {type === 'events-bridal' ? t('cutitGo.eventsTitle') : t('cutitGo.atHomeTitle')}
+                    {type === 'events-bridal' ? t('cutitGo.eventsTitle', { context: contentGender }) : t('cutitGo.atHomeTitle')}
                   </Text>
                 </View>
               ))}
@@ -197,11 +202,18 @@ export default function StylistScreen() {
         </View>
       </ScrollView>
 
-      <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <Pressable onPress={bookStylist} className="items-center rounded-xl bg-blue-600 py-3.5">
-          <Text className="font-semibold text-white">{t('stylist.bookButton', { name: stylist.name })}</Text>
-        </Pressable>
-      </View>
+      {/* A stylist serves one gender; for the other, the profile stays viewable but Book becomes this notice. */}
+      {servesViewer ? (
+        <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <Pressable onPress={bookStylist} className="items-center rounded-xl bg-blue-600 py-3.5">
+            <Text className="font-semibold text-white">{t('stylist.bookButton', { name: stylist.name })}</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View className="border-t border-stone-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <GenderNotice kind="stylist" gender={stylist.serves} />
+        </View>
+      )}
 
       <ReviewPhotoViewer
         visible={viewerPhotos !== null}

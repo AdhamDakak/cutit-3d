@@ -1,6 +1,7 @@
-import { generateStylistTimeSlots, generateTimeSlots, type StylistTimeSlot, type TimeSlot } from '@/lib/data'
+import { ANY_STAFF_ID, generateStylistTimeSlots, generateTimeSlots, type Gender, type StylistTimeSlot, type TimeSlot } from '@/lib/data'
 import { delay } from './_internal/delay'
 import { getBookingsSnapshot } from './bookings'
+import { getVenueStaff } from './venues'
 
 export type ListSlotsParams = {
   venueId?: string
@@ -12,6 +13,8 @@ export type ListSlotsParams = {
   durationMinutes?: number
   /** Reschedule flow: exclude the booking being moved from its own conflict check. */
   excludeBookingId?: string
+  /** The viewer's content gender: with staffId = ANY_STAFF_ID, only staff who serve it count toward availability. */
+  gender?: Gender
 }
 
 /**
@@ -40,12 +43,16 @@ export async function listSlots(params: ListSlotsParams): Promise<(TimeSlot | St
   // rather than fixed: this refactor relocates data access, it doesn't
   // change behavior.
   if (params.venueId && params.staffId && params.serviceId) {
+    // "Any stylist" = any staff member who serves the viewer's gender; with no matching staff there are no slots.
+    const anyStaffPool =
+      params.staffId === ANY_STAFF_ID && params.gender ? (await getVenueStaff(params.venueId, params.gender)).map((member) => member.id) : undefined
     return generateTimeSlots({
       venueId: params.venueId,
       staffId: params.staffId,
       serviceId: params.serviceId,
       date: params.date,
       durationMinutes: params.durationMinutes,
+      anyStaffPool,
     })
   }
 

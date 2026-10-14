@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 
 import { ANY_STAFF_ID, getBookingDetails, type ListSlotsParams } from '@/lib/api'
-import { useAddresses, useBooking, useRescheduleBooking, useSlots } from '@/lib/hooks'
+import { useAddresses, useBooking, useContentGender, useRescheduleBooking, useSlots } from '@/lib/hooks'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
 
@@ -37,6 +37,7 @@ export default function RescheduleScreen() {
 
   const details = booking ? getBookingDetails(booking, addresses ?? []) : null
   const isSalon = booking?.bookingType === 'salon'
+  const contentGender = useContentGender()
   const totalDuration = details ? details.services.reduce((sum, service) => sum + service.durationMinutes, 0) || 30 : 30
   const activeDate = selectedDate ?? dates[0]
 
@@ -49,6 +50,7 @@ export default function RescheduleScreen() {
           serviceId: details?.services[0]?.id ?? '',
           date: activeDate,
           durationMinutes: totalDuration,
+          gender: contentGender,
         }
       : booking.stylistId
         ? {

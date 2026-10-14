@@ -1,5 +1,4 @@
-import type { Gender } from '@/lib/app-state'
-import { currentUser, type Address, type User } from '@/lib/data'
+import { currentUser, type Address, type Gender, type User } from '@/lib/data'
 import { delay } from './_internal/delay'
 import { createInvalidationBus } from './_internal/bus'
 import { hydrate, persist } from './_internal/persist'
@@ -17,7 +16,22 @@ let addressStore: Address[] = [...currentUser.addresses]
 // MOCK "server" account registry: who has signed up, keyed by E.164 phone. Stands in for Supabase Auth's users table.
 // It lives on this device, so an uninstall wipes it — a true "reinstall and log in" only works once the backend
 // exists. signOut keeps it (the account still exists); deleteAccount removes the entry.
-export type RegisteredAccount = { fullName: string; email: string; gender: Gender }
+export type RegisteredAccount = { firstName: string; lastName: string; email: string; gender: Gender }
+
+// --- Migration of data saved before the name split / gender change -----------
+// Older saves have `fullName` (split on the first space: first word → firstName, the rest → lastName) and a
+// 'For Her' / 'For Him' gender (→ 'female' / 'male'). Applied to the user record and every registry entry on load.
+
+type LegacyPerson = { fullName?: string; firstName?: string; lastName?: string; gender?: string }
+
+function migratePerson<T extends object>(raw: T & LegacyPerson): Omit<T, 'fullName'> & { firstName: string; lastName: string; gender: Gender } {
+  const { fullName, ...rest } = raw
+  const [first = '', ...others] = (fullName ?? '').trim().split(/\s+/).filter(Boolean)
+  const gender: Gender = raw.gender === 'male' || raw.gender === 'For Him' ? 'male' : 'female'
+  return { ...rest, firstName: raw.firstName ?? first, lastName: raw.lastName ?? others.join(' '), gender }
+}
+
+const needsMigration = (raw: LegacyPerson) => raw.fullName !== undefined || (raw.gender !== 'male' && raw.gender !== 'female')
 
 /**
  * "+20 100 123 4567" / "+20 01001234567" → "+201001234567": the dial code plus the national number's digits, with a
@@ -30,7 +44,7 @@ export function toE164(phone: string): string {
 }
 
 const seedAccounts = (): Record<string, RegisteredAccount> => ({
-  [toE164(currentUser.phone)]: { fullName: currentUser.fullName, email: currentUser.email, gender: currentUser.gender },
+  [toE164(currentUser.phone)]: { firstName: currentUser.firstName, lastName: currentUser.lastName, email: currentUser.email, gender: currentUser.gender },
 })
 let accountStore: Record<string, RegisteredAccount> = seedAccounts()
 
@@ -39,13 +53,21 @@ let accountStore: Record<string, RegisteredAccount> = seedAccounts()
 // awaits this before touching either store.
 const ready: Promise<void> = Promise.all([
   hydrate(USER_STORAGE_KEY, () => userStore).then((loaded) => {
-    userStore = loaded
+    const raw = loaded as User & LegacyPerson
+    userStore = needsMigration(raw) ? (migratePerson(raw) as User) : loaded
+    if (userStore !== loaded) persist(USER_STORAGE_KEY, userStore)
   }),
   hydrate(ADDRESSES_STORAGE_KEY, () => addressStore).then((loaded) => {
     addressStore = loaded
   }),
   hydrate(ACCOUNTS_STORAGE_KEY, seedAccounts).then((loaded) => {
-    accountStore = loaded
+    const entries = Object.entries(loaded as Record<string, RegisteredAccount & LegacyPerson>)
+    if (!entries.some(([, account]) => needsMigration(account))) {
+      accountStore = loaded
+      return
+    }
+    accountStore = Object.fromEntries(entries.map(([phone, account]) => [phone, migratePerson(account) as RegisteredAccount]))
+    persist(ACCOUNTS_STORAGE_KEY, accountStore)
   }),
 ]).then(() => undefined)
 
@@ -120,13 +142,15 @@ export async function logIn(phone: string): Promise<User> {
   await delay()
   const account = accountStore[toE164(phone)]
   if (!account) throw new AccountNotFoundError()
-  setUserStore({ ...userStore, ...account, phone: phone.trim() })
+  const { firstName, lastName, email, gender } = account
+  setUserStore({ ...userStore, firstName, lastName, email, gender, phone: phone.trim() })
   userBus.invalidate()
   return userStore
 }
 
 export type CompleteProfileInput = {
-  fullName: string
+  firstName: string
+  lastName: string
   email?: string
   gender: Gender
   /** Dial code + number as entered at sign-up; kept on the record so Profile shows it. */
@@ -144,22 +168,26 @@ export async function completeProfile(input: CompleteProfileInput): Promise<User
   await delay()
   setUserStore({
     ...userStore,
-    fullName: input.fullName.trim(),
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
     email: input.email?.trim() ?? '',
     gender: input.gender,
     phone: input.phone?.trim() || userStore.phone,
   })
   // Registers the account, so this number can log back in later instead of signing up again.
   const phone = input.phone?.trim() || userStore.phone
-  if (phone) setAccountStore({ ...accountStore, [toE164(phone)]: { fullName: userStore.fullName, email: userStore.email, gender: userStore.gender } })
+  if (phone) setAccountStore({ ...accountStore, [toE164(phone)]: accountFor(userStore) })
   userBus.invalidate()
   return userStore
 }
 
-export type UpdateProfileInput = { fullName?: string; email?: string }
+const accountFor = (user: User): RegisteredAccount => ({ firstName: user.firstName, lastName: user.lastName, email: user.email, gender: user.gender })
+
+export type UpdateProfileInput = { firstName?: string; lastName?: string; email?: string; gender?: Gender }
 
 /**
- * Edits the signed-in user's name and/or email in place. Phone is deliberately not editable here: once real auth
+ * Edits the signed-in user's name, email and/or gender in place (gender drives which venues/services the app shows,
+ * so content follows as soon as this invalidates). Phone is deliberately not editable here: once real auth
  * exists, changing it has to go through OTP re-verification of the new number, not a plain field update.
  */
 export async function updateProfile(input: UpdateProfileInput): Promise<User> {
@@ -167,11 +195,13 @@ export async function updateProfile(input: UpdateProfileInput): Promise<User> {
   await delay()
   setUserStore({
     ...userStore,
-    ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : null),
+    ...(input.firstName !== undefined ? { firstName: input.firstName.trim() } : null),
+    ...(input.lastName !== undefined ? { lastName: input.lastName.trim() } : null),
     ...(input.email !== undefined ? { email: input.email.trim() } : null),
+    ...(input.gender !== undefined ? { gender: input.gender } : null),
   })
   const key = userStore.phone ? toE164(userStore.phone) : null
-  if (key && accountStore[key]) setAccountStore({ ...accountStore, [key]: { ...accountStore[key], fullName: userStore.fullName, email: userStore.email } })
+  if (key && accountStore[key]) setAccountStore({ ...accountStore, [key]: accountFor(userStore) })
   userBus.invalidate()
   return userStore
 }
@@ -228,7 +258,7 @@ export async function deleteAccount({ forfeitWalletBalance = false }: { forfeitW
     setAccountStore(remaining)
   }
   // Same id, so a later sign-up on this device starts from an empty record rather than the seeded demo user.
-  setUserStore({ ...userStore, fullName: '', email: '', phone: '', avatarUrl: null, addresses: [], walletBalance: 0 })
+  setUserStore({ ...userStore, firstName: '', lastName: '', email: '', phone: '', avatarUrl: null, addresses: [], walletBalance: 0 })
   addressBus.invalidate()
   userBus.invalidate()
   await notifications.clearNotifications()

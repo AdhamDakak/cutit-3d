@@ -10,9 +10,9 @@ import { ErrorState } from '@/components/error-state'
 import { EstablishmentCard } from '@/components/establishment-card'
 import { RecommendationFeed } from '@/components/recommendation-feed'
 import { SkeletonCard } from '@/components/skeleton-card'
-import { useAppState, type Gender } from '@/lib/app-state'
-import { serviceFilters } from '@/lib/data'
-import { useVenues } from '@/lib/hooks'
+import { useAppState } from '@/lib/app-state'
+import type { Gender } from '@/lib/data'
+import { useContentGender, useCurrentUser, useVenues, useVenueServiceCategories } from '@/lib/hooks'
 import { useUserLocation } from '@/lib/location'
 import { tracking } from '@/lib/rtl'
 import { useThemeColors } from '@/lib/theme'
@@ -21,32 +21,39 @@ const ForwardChevron = I18nManager.isRTL ? ChevronLeft : ChevronRight
 
 export default function HomeScreen() {
   const { t } = useTranslation()
-  const { activeGender, setActiveGender, isSignedIn } = useAppState()
+  const { isSignedIn, guestGender, setGuestGender } = useAppState()
   const colors = useThemeColors()
   const router = useRouter()
-  const [service, setService] = useState('All services')
+  const contentGender = useContentGender()
+  const { data: user } = useCurrentUser()
+  // null = "All services"; otherwise a service category from the chips below.
+  const [service, setService] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
   // Never prompts here (Explore does that); once location is granted, "Near you" is sorted by real distance.
+  // Venues already come back matched to the content gender, so the feed and "Near you" both follow it.
   const userLocation = useUserLocation({ prompt: false })
-  const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues(
-    userLocation ? { location: userLocation } : undefined,
-  )
+  const { data: venuesData, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues({
+    gender: contentGender,
+    ...(userLocation ? { location: userLocation } : null),
+  })
   const venues = venuesData ?? []
+
+  // Chips are the service categories those venues actually offer, so every chip has venues behind it — and they
+  // differ by gender. A chip that disappears after a gender switch falls back to "All services".
+  const { data: categories } = useVenueServiceCategories(venues.map((venue) => venue.id))
+  const activeCategory = categories?.find((option) => option.category === service) ?? null
 
   const filtered = useMemo(() => {
     return venues.filter((item) => {
-      const genderKey = activeGender === 'For Her' ? 'Women' : 'Men'
-      const genderMatch = item.gender === genderKey || item.gender === 'Unisex'
-      const serviceMatch = service === 'All services' || item.servicesOffered.includes(service)
+      const serviceMatch = !activeCategory || activeCategory.venueIds.includes(item.id)
       const search = `${item.name} ${item.area} ${item.category} ${item.servicesOffered.join(' ')}`.toLowerCase()
-      return genderMatch && serviceMatch && search.includes(query.toLowerCase())
+      return serviceMatch && search.includes(query.toLowerCase())
     })
-  }, [venues, activeGender, query, service])
+  }, [venues, activeCategory, query])
 
   const resetFilters = () => {
-    setActiveGender('For Her')
-    setService('All services')
+    setService(null)
     setQuery('')
   }
 
@@ -54,30 +61,33 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-[#f7f5f1] dark:bg-zinc-950" edges={['top']}>
       <AppHeader />
       <ScrollView className="flex-1" contentContainerClassName="pb-8">
-        <RecommendationFeed establishments={venues} signedIn={isSignedIn} gender={activeGender} />
+        <RecommendationFeed establishments={venues} signedIn={isSignedIn} />
 
         <View className="px-5 pt-7">
-          <Text className="text-sm font-medium text-stone-500 dark:text-zinc-400">{t('home.greeting', { name: 'Amira' })}</Text>
+          <Text className="text-sm font-medium text-stone-500 dark:text-zinc-400">{isSignedIn && user?.firstName ? t('home.greeting', { name: user.firstName }) : t('home.greetingGuest')}</Text>
           <Text className={`mt-1 font-serif text-3xl font-semibold leading-tight ${tracking('tracking-tight')} text-stone-900 dark:text-white`}>
             {t('home.headlinePrefix')} <Text className="font-normal text-stone-500 dark:text-zinc-400">{t('home.headlineSuffix')}</Text>
           </Text>
         </View>
 
-        <View className="px-5 pt-5">
-          <View className="flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-800">
-            {(['For Her', 'For Him'] as Gender[]).map((type) => (
-              <Pressable
-                key={type}
-                onPress={() => setActiveGender(type)}
-                className={`flex-1 items-center rounded-lg py-2.5 ${activeGender === type ? 'bg-white dark:bg-zinc-900' : ''}`}
-              >
-                <Text className={`text-sm font-medium ${activeGender === type ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
-                  {t(`gender.${type}`)}
-                </Text>
-              </Pressable>
-            ))}
+        {/* Guests pick what to browse; signed in, content follows the profile's gender (edit it in Profile). */}
+        {!isSignedIn ? (
+          <View className="px-5 pt-5">
+            <View className="flex-row rounded-xl bg-stone-200/70 p-1 dark:bg-zinc-800">
+              {(['female', 'male'] as Gender[]).map((option) => (
+                <Pressable
+                  key={option}
+                  onPress={() => setGuestGender(option)}
+                  className={`flex-1 items-center rounded-lg py-2.5 ${guestGender === option ? 'bg-white dark:bg-zinc-900' : ''}`}
+                >
+                  <Text className={`text-sm font-medium ${guestGender === option ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400'}`}>
+                    {t(`gender.${option}`)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
+        ) : null}
 
         <View className="px-5 pt-4">
           <View className="flex-row items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -101,19 +111,22 @@ export default function HomeScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-5 py-4">
           <View className="flex-row items-center gap-2">
-            {serviceFilters.map((item) => (
-              <Pressable
-                key={item}
-                onPress={() => setService(item)}
-                className={`rounded-full border px-3.5 py-2 ${
-                  service === item ? 'border-stone-900 bg-stone-900 dark:border-blue-500 dark:bg-blue-600' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
-                }`}
-              >
-                <Text className={`text-xs font-medium ${service === item ? 'text-white' : 'text-stone-600 dark:text-zinc-400'}`}>
-                  {t(`serviceFilterLabels.${item}`)}
-                </Text>
-              </Pressable>
-            ))}
+            {[null, ...(categories ?? []).map((option) => option.category)].map((category) => {
+              const selected = (activeCategory?.category ?? null) === category
+              return (
+                <Pressable
+                  key={category ?? 'all'}
+                  onPress={() => setService(category)}
+                  className={`rounded-full border px-3.5 py-2 ${
+                    selected ? 'border-stone-900 bg-stone-900 dark:border-blue-500 dark:bg-blue-600' : 'border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800'
+                  }`}
+                >
+                  <Text className={`text-xs font-medium ${selected ? 'text-white' : 'text-stone-600 dark:text-zinc-400'}`}>
+                    {t(category ? `serviceCategoryLabels.${category}` : 'serviceCategoryLabels.all', { defaultValue: category ?? '' })}
+                  </Text>
+                </Pressable>
+              )
+            })}
             <Pressable accessibilityLabel={t('home.openFilters')} className="size-8 items-center justify-center rounded-full border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
               <SlidersHorizontal size={14} color={colors.muted} />
             </Pressable>

@@ -11,7 +11,8 @@ import { useThemeColors } from '@/lib/theme'
 
 const FAVORITE_RED = '#ef4444'
 
-export function EstablishmentCard({ establishment, onPress }: { establishment: Venue; onPress: () => void }) {
+/** `badge`: a small label on the cover, e.g. Favorites' "Women only" for a venue that doesn't serve the viewer. */
+export function EstablishmentCard({ establishment, onPress, badge }: { establishment: Venue; onPress: () => void; badge?: string }) {
   const { t } = useTranslation()
   const colors = useThemeColors()
   const { data: favoriteVenueIds } = useFavorites()
@@ -28,6 +29,11 @@ export function EstablishmentCard({ establishment, onPress }: { establishment: V
       className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white active:opacity-90 dark:border-zinc-800 dark:bg-zinc-900"
     >
       <View className="relative h-36 bg-stone-200 dark:bg-zinc-800">
+        {badge ? (
+          <View className="absolute bottom-3 start-3 z-10 rounded-full bg-stone-900/80 px-2.5 py-1">
+            <Text className="text-[10px] font-semibold text-white">{badge}</Text>
+          </View>
+        ) : null}
         <Image source={{ uri: establishment.coverImageUrl ?? undefined }} className="h-full w-full" contentFit="cover" />
         <View className="absolute inset-x-0 top-0 flex-row items-center justify-between p-2.5">
           <View className={`rounded-full px-2 py-1 ${isOpen ? 'bg-white/95' : 'bg-stone-900/75'}`}>

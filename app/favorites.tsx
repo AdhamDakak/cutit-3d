@@ -7,13 +7,15 @@ import { useTranslation } from 'react-i18next'
 import { ErrorState } from '@/components/error-state'
 import { EstablishmentCard } from '@/components/establishment-card'
 import { SkeletonCard } from '@/components/skeleton-card'
-import { useFavorites, useVenues } from '@/lib/hooks'
+import { venueServesGender } from '@/lib/api'
+import { useContentGender, useFavorites, useVenues } from '@/lib/hooks'
 import { useThemeColors } from '@/lib/theme'
 
 export default function FavoritesScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const colors = useThemeColors()
+  const contentGender = useContentGender()
   const { data: favoriteVenueIds, isLoading: favoritesLoading, error: favoritesError, refetch: refetchFavorites } = useFavorites()
   const { data: venues, isLoading: venuesLoading, error: venuesError, refetch: refetchVenues } = useVenues()
   const BackIcon = I18nManager.isRTL ? ArrowRight : ArrowLeft
@@ -64,7 +66,13 @@ export default function FavoritesScreen() {
       ) : (
         <ScrollView className="flex-1" contentContainerClassName="gap-4 px-5 py-6">
           {favoriteVenues.map((venue) => (
-            <EstablishmentCard key={venue.id} establishment={venue} onPress={() => router.push(`/venue/${venue.id}`)} />
+            <EstablishmentCard
+              key={venue.id}
+              establishment={venue}
+              onPress={() => router.push(`/venue/${venue.id}`)}
+              // Kept even when it no longer serves the viewer's gender (e.g. after a Profile change), just labelled.
+              badge={venueServesGender(venue, contentGender) ? undefined : t('genderNotice.badge', { context: venue.gender })}
+            />
           ))}
         </ScrollView>
       )}
